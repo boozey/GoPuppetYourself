@@ -13,6 +13,7 @@ import android.widget.RelativeLayout;
 
 public class MainActivity extends ActionBarActivity {
 
+    private static String LOG_TAG = "GoPuppetYourself";
     View head, upperJaw, lowerJaw;
     private ViewGroup stage;
     private int _xDelta;
@@ -51,19 +52,45 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+    @Override
+    public void onStart(){
+        super.onStart();
+        onResume();
+    }
+    @Override
+    public void onResume(){
+        super.onResume();
+        upperJaw.setPivotX(upperJaw.getLeft() + 50);
+        upperJaw.setPivotY(upperJaw.getBottom());
+        //int padding = (upperJaw.getWidth() + upperJaw.getHeight()) / 4;
+        //head.setMinimumHeight(upperJaw.getHeight() + padding);
+        //head.setMinimumWidth(upperJaw.getWidth() + padding);
+        //Log.d(LOG_TAG, "Padding = " + String.valueOf(padding));
+        //head.setMinimumWidth(upperJaw.getWidth() * 3 / 2);
+        //head.setMinimumHeight(upperJaw.getHeight() + upperJaw.getWidth() / 2 + lowerJaw.getHeight());
+    }
 
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+            final int X = (int) event.getRawX();
+            final int Y = (int) event.getRawY();
             switch (event.getAction()){
                 case MotionEvent.ACTION_DOWN:
+                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) head.getLayoutParams();
+                    _xDelta = X - lParams.leftMargin;
+                    _yDelta = Y - lParams.topMargin;
                     return true;
                 case MotionEvent.ACTION_MOVE:
                     if (event.getPointerCount() > 1) {
                         moveMouth(event.getX(0), event.getY(0), event.getX(1), event.getY(1));
+                        moveHead(X, Y);
                     }
-                    else{
-                        moveHead(event.getRawX(), event.getRawY());
+                    else {
+                        moveHead(X, Y);
+                        upperJaw.setRotation(0);
+                        Log.d(LOG_TAG, "Raw x, y = " + String.valueOf(event.getRawX()) + ", " + String.valueOf(event.getRawY()));
+                        Log.d(LOG_TAG, "x, y = " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
                     }
                     return true;
                 case MotionEvent.ACTION_UP:
@@ -75,12 +102,8 @@ public class MainActivity extends ActionBarActivity {
         }
     };
     private void moveMouth(float X0, float Y0, float X1, float Y1){
-        upperJaw.setPivotX(upperJaw.getLeft());
-        upperJaw.setPivotY(upperJaw.getBottom());
         double width = Math.abs(Y1 - Y0);
-        if (width < 200)
-            upperJaw.setRotation(0);
-        else if (width < 300)
+        if (width < 300)
             upperJaw.setRotation(-15);
         else
             upperJaw.setRotation(-30);
@@ -88,38 +111,13 @@ public class MainActivity extends ActionBarActivity {
         Log.d("Rotate", String.valueOf(width));
     }
     private void moveHead(float X, float Y){
-        head.setX(X - head.getWidth() / 2);
-        head.setY(Y - (head.getHeight()));
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) head
+                .getLayoutParams();
+        layoutParams.leftMargin = (int)(X - _xDelta);
+        layoutParams.topMargin = (int)(Y - _yDelta);
+        layoutParams.rightMargin = -250;
+        layoutParams.bottomMargin = -250;
+        head.setLayoutParams(layoutParams);
+        stage.invalidate();
     }
-    /*private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent event) {
-            final int X = (int) event.getRawX();
-            final int Y = (int) event.getRawY();
-            switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                case MotionEvent.ACTION_DOWN:
-                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
-                    _xDelta = X - lParams.leftMargin;
-                    _yDelta = Y - lParams.topMargin;
-                    break;
-                case MotionEvent.ACTION_UP:
-                    break;
-                case MotionEvent.ACTION_POINTER_DOWN:
-                    break;
-                case MotionEvent.ACTION_POINTER_UP:
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view
-                            .getLayoutParams();
-                    layoutParams.leftMargin = X - _xDelta;
-                    layoutParams.topMargin = Y - _yDelta;
-                    layoutParams.rightMargin = -250;
-                    layoutParams.bottomMargin = -250;
-                    view.setLayoutParams(layoutParams);
-                    break;
-            }
-            stage.invalidate();
-            return true;
-        }
-    };*/
 }

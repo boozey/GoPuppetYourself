@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -36,6 +37,9 @@ public class Puppet extends View {
         private void Initialize(){
             upperJaw = new UpperJaw(context);
             lowerJaw = new LowerJaw(context);
+        }
+        @Override
+        protected void onDraw(Canvas canvas) {
         }
 
         public class UpperJaw extends View{
