@@ -1,18 +1,21 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:id="@+id/stage">
+    android:orientation="vertical">
 
     <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/stage">
+
+    <com.nakedape.gopuppetyourself.Puppet
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
         android:clipChildren="false"
-        android:gravity="center"
-        android:id="@+id/head"
-        android:focusable="true"
-        android:focusableInTouchMode="true">
+        android:id="@+id/puppet"
+        android:background="#00000000">
     <ImageView
         android:layout_width="200dp"
         android:layout_height="100dp"
@@ -28,6 +31,41 @@
         android:id="@+id/lower_jaw"
         android:background="@drawable/lower_jaw_blank"
         android:layout_below="@id/upper_jaw"/>
+    </com.nakedape.gopuppetyourself.Puppet>
     </RelativeLayout>
-
-</RelativeLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/backstage_button_bar"
+        android:visibility="gone">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/edit_button"
+            style="?android:buttonBarButtonStyle"
+            android:text="New Puppet"
+            android:onClick="NewButtonClick"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?android:buttonBarButtonStyle"
+            android:text="Set Background"
+            android:onClick="BackGroundButtonClick"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/perform_button_bar">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/record"
+            style="?android:buttonBarButtonStyle"
+            android:text="Record"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?android:buttonBarButtonStyle"
+            android:text="Backstage"/>
+    </LinearLayout>
+</LinearLayout>

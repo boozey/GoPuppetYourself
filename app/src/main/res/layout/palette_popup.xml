@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="@dimen/palette_width"
+    android:layout_height="@dimen/palette_height"
+    android:id="@+id/palette_popup"
+    style="@android:style/Theme.Translucent"
+    android:background="@drawable/palette_background"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/black"
+            android:background="@drawable/palette_black"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/light_grey"
+            android:background="@drawable/palette_light_grey"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect"/>
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/red"
+            android:background="@drawable/palette_red"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/orange"
+            android:background="@drawable/palette_orange"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/brown"
+            android:background="@drawable/palette_brown"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/green"
+            android:background="@drawable/palette_green"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/blue"
+            android:background="@drawable/palette_blue"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/indigo"
+            android:background="@drawable/palette_indigo"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/brush_xlarge"
+            android:background="@drawable/palette_brush_size"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="BrushSizeSelect" />
+        <ImageButton
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/brush_large"
+            android:background="@drawable/palette_brush_size"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="BrushSizeSelect" />
+        <ImageButton
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/brush_med"
+            android:background="@drawable/palette_brush_size"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="BrushSizeSelect" />
+        <ImageButton
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:id="@+id/brush_small"
+            android:background="@drawable/palette_brush_size"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="BrushSizeSelect" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:layout_weight="1">
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/dark_grey"
+            android:background="@drawable/palette_dark_grey"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect"/>
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/white"
+            android:background="@drawable/palette_white"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/pink"
+            android:background="@color/pink"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/yellow"
+            android:background="@drawable/palette_yellow"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/light_brown"
+            android:background="@drawable/palette_light_brown"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/light_green"
+            android:background="@drawable/palette_light_green"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/light_blue"
+            android:background="@drawable/palette_light_blue"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/violet"
+            android:background="@drawable/palette_violet"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/eraser"
+            android:background="@drawable/ic_eraser"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/bg_eraser"
+            android:background="@drawable/ic_erase_background"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/bg_magic_eraser"
+            android:background="@drawable/ic_magic_erase_background"
+            android:layout_margin="2dp"
+            android:layout_gravity="center_horizontal"
+            android:onClick="ColorSelect" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,5 +1,13 @@
 package com.nakedape.gopuppetyourself;
 
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,36 +16,47 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private static String LOG_TAG = "GoPuppetYourself";
-    View head, upperJaw, lowerJaw;
+    private static final int REQUEST_PUPPET_GET = 4001;
+    private static final int REQUEST_IMAGE_GET = 4002;
+    private Context context;
+    ImageView upperJaw, lowerJaw;
     private ViewGroup stage;
     private int _xDelta;
     private int _yDelta;
+    private Puppet puppet1;
+    private ArrayList<Puppet> puppets;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        stage = (ViewGroup)findViewById(R.id.stage);
-        head = findViewById(R.id.head);
-        upperJaw = findViewById(R.id.upper_jaw);
-        lowerJaw = findViewById(R.id.lower_jaw);
-        head.setOnTouchListener(headTouchListener);
-        //upperJaw.setOnTouchListener(headTouchListener);
-        //lowerJaw.setOnTouchListener(headTouchListener);
-    }
+        context = this;
+        stage = (RelativeLayout)findViewById(R.id.stage);
+        puppet1 = (Puppet)findViewById(R.id.puppet);
+        upperJaw = (ImageView)findViewById(R.id.upper_jaw);
+        puppet1.setUpperJawImage(upperJaw);
+        lowerJaw = (ImageView)findViewById(R.id.lower_jaw);
+        puppet1.setLowerJawImage(lowerJaw);
+        puppet1.setOnTouchListener(headTouchListener);
 
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -52,72 +71,105 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
     @Override
-    public void onStart(){
-        super.onStart();
-        onResume();
+     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PUPPET_GET && resultCode == RESULT_OK) {
+            SetupNewPuppet(data);
+        }
+        else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK){
+            Uri imageUri = data.getData();
+            setBackGround(imageUri);
+        }
     }
-    @Override
-    public void onResume(){
-        super.onResume();
-        upperJaw.setPivotX(upperJaw.getLeft() + 50);
-        upperJaw.setPivotY(upperJaw.getBottom());
-        //int padding = (upperJaw.getWidth() + upperJaw.getHeight()) / 4;
-        //head.setMinimumHeight(upperJaw.getHeight() + padding);
-        //head.setMinimumWidth(upperJaw.getWidth() + padding);
-        //Log.d(LOG_TAG, "Padding = " + String.valueOf(padding));
-        //head.setMinimumWidth(upperJaw.getWidth() * 3 / 2);
-        //head.setMinimumHeight(upperJaw.getHeight() + upperJaw.getWidth() / 2 + lowerJaw.getHeight());
-    }
+
 
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
-        public boolean onTouch(View v, MotionEvent event) {
+        public boolean onTouch(View view, MotionEvent event) {
+            Puppet puppet = (Puppet)view;
             final int X = (int) event.getRawX();
             final int Y = (int) event.getRawY();
-            switch (event.getAction()){
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
                 case MotionEvent.ACTION_DOWN:
-                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) head.getLayoutParams();
+                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
                     _xDelta = X - lParams.leftMargin;
                     _yDelta = Y - lParams.topMargin;
-                    return true;
+                    break;
+                case MotionEvent.ACTION_UP:
+                    break;
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    break;
+                case MotionEvent.ACTION_POINTER_UP:
+                    break;
                 case MotionEvent.ACTION_MOVE:
-                    if (event.getPointerCount() > 1) {
-                        moveMouth(event.getX(0), event.getY(0), event.getX(1), event.getY(1));
-                        moveHead(X, Y);
+                    if (event.getPointerCount() > 1){
+                        moveMouth(puppet, event.getY(0), event.getY(1));
                     }
                     else {
-                        moveHead(X, Y);
-                        upperJaw.setRotation(0);
-                        Log.d(LOG_TAG, "Raw x, y = " + String.valueOf(event.getRawX()) + ", " + String.valueOf(event.getRawY()));
-                        Log.d(LOG_TAG, "x, y = " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
+                        puppet.upperJaw.setRotation(0);
                     }
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    upperJaw.setRotation(0);
-                    return true;
-                default:
-                    return false;
+                    moveView(view, X, Y);
+                    break;
             }
+            stage.invalidate();
+            return true;
         }
     };
-    private void moveMouth(float X0, float Y0, float X1, float Y1){
+    private void moveMouth(Puppet puppet, float Y0, float Y1){
         double width = Math.abs(Y1 - Y0);
-        if (width < 300)
-            upperJaw.setRotation(-15);
-        else
-            upperJaw.setRotation(-30);
-        stage.invalidate();
-        Log.d("Rotate", String.valueOf(width));
+        if (width < 300) {
+            puppet.upperJaw.setRotation(15 * puppet.getPivotDirection());
+        }
+        else {
+            puppet.upperJaw.setRotation(30 * puppet.getPivotDirection());
+        }
     }
-    private void moveHead(float X, float Y){
-        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) head
+    private void moveView(View view, int X, int Y){
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view
                 .getLayoutParams();
-        layoutParams.leftMargin = (int)(X - _xDelta);
-        layoutParams.topMargin = (int)(Y - _yDelta);
+        layoutParams.leftMargin = X - _xDelta;
+        layoutParams.topMargin = Y - _yDelta;
         layoutParams.rightMargin = -250;
         layoutParams.bottomMargin = -250;
-        head.setLayoutParams(layoutParams);
-        stage.invalidate();
+        view.setLayoutParams(layoutParams);
+    }
+
+    public void NewButtonClick(View v){
+        Intent intent = new Intent(this, DesignerActivity.class);
+        startActivityForResult(intent, REQUEST_PUPPET_GET);
+    }
+    private void SetupNewPuppet(Intent data){
+        Point upperPivot = data.getParcelableExtra(DesignerActivity.UPPER_PIVOT);
+        Point lowerPivot = data.getParcelableExtra(DesignerActivity.LOWER_PIVOT);
+        String imagePath = data.getStringExtra(DesignerActivity.UPPER_JAW);
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        Bitmap upperJawBitmap = BitmapFactory.decodeFile(imagePath, bmOptions);
+        imagePath = data.getStringExtra(DesignerActivity.LOWER_JAW);
+        Bitmap lowerJawBitmap = BitmapFactory.decodeFile(imagePath, bmOptions);
+        Puppet puppet = new Puppet(context, null);
+        puppet.setImages(upperJawBitmap, lowerJawBitmap, upperPivot, lowerPivot);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        puppet.setLayoutParams(params);
+        puppet.setOrientation(data.getIntExtra(DesignerActivity.PROFILE_ORIENTATION, 0));
+        puppet.setOnTouchListener(headTouchListener);
+        stage.addView(puppet);
+        Log.d(LOG_TAG, "new puppet should be visible");
+    }
+    public void BackGroundButtonClick(View v){
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent, REQUEST_IMAGE_GET);
+        }
+    }
+    private void setBackGround(Uri imageUri){
+        Bitmap bitmap = null;
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+        } catch (IOException e){Toast.makeText(this, "Error loading backgournd", Toast.LENGTH_SHORT).show();}
+        if (bitmap != null){
+            stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+        }
     }
 }
