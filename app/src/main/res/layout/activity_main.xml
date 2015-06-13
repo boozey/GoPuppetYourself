@@ -41,6 +41,12 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            style="?android:buttonBarButtonStyle"
+            android:text="Play"
+            android:onClick="GoToPerformance"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:id="@+id/edit_button"
             style="?android:buttonBarButtonStyle"
             android:text="New Puppet"
@@ -66,6 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="?android:buttonBarButtonStyle"
-            android:text="Backstage"/>
+            android:text="Backstage"
+            android:onClick="GoBackstage"/>
     </LinearLayout>
 </LinearLayout>

@@ -20,6 +20,9 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.Utils;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -27,15 +30,19 @@ import java.util.ArrayList;
 public class MainActivity extends ActionBarActivity {
 
     private static String LOG_TAG = "GoPuppetYourself";
+    public static final String PUPPET_INDEX = "com.nakedape.gopuppetyourself.PUPPET_INDEX";
+    public static final String PUPPET_CACHE_PATH = "com.nakedape.gopuppetyourself.PUPPET_CACHE_PATH";
     private static final int REQUEST_PUPPET_GET = 4001;
     private static final int REQUEST_IMAGE_GET = 4002;
+    private static final int REQUEST_EDIT = 4003;
     private Context context;
     ImageView upperJaw, lowerJaw;
     private ViewGroup stage;
-    private int _xDelta;
-    private int _yDelta;
-    private Puppet puppet1;
+    private int dx;
+    private int dy;
+    private Puppet selectedPuppet;
     private ArrayList<Puppet> puppets;
+    private boolean isBackstage = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,13 +50,12 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         context = this;
         stage = (RelativeLayout)findViewById(R.id.stage);
-        puppet1 = (Puppet)findViewById(R.id.puppet);
+        selectedPuppet = (Puppet)findViewById(R.id.puppet);
         upperJaw = (ImageView)findViewById(R.id.upper_jaw);
-        puppet1.setUpperJawImage(upperJaw);
+        selectedPuppet.setUpperJawImage(upperJaw);
         lowerJaw = (ImageView)findViewById(R.id.lower_jaw);
-        puppet1.setLowerJawImage(lowerJaw);
-        puppet1.setOnTouchListener(headTouchListener);
-
+        selectedPuppet.setLowerJawImage(lowerJaw);
+        selectedPuppet.setOnTouchListener(headTouchListener);
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -83,39 +89,47 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    private View.OnTouchListener backstageListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent event) {
+            return HandleBackstageTouch(view, event);
+        }
+    };
 
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            Puppet puppet = (Puppet)view;
-            final int X = (int) event.getRawX();
-            final int Y = (int) event.getRawY();
-            switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                case MotionEvent.ACTION_DOWN:
-                    RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
-                    _xDelta = X - lParams.leftMargin;
-                    _yDelta = Y - lParams.topMargin;
-                    break;
-                case MotionEvent.ACTION_UP:
-                    break;
-                case MotionEvent.ACTION_POINTER_DOWN:
-                    break;
-                case MotionEvent.ACTION_POINTER_UP:
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if (event.getPointerCount() > 1){
-                        moveMouth(puppet, event.getY(0), event.getY(1));
-                    }
-                    else {
-                        puppet.upperJaw.setRotation(0);
-                    }
-                    moveView(view, X, Y);
-                    break;
-            }
-            stage.invalidate();
-            return true;
+            return HandlePerformanceTouch(view, event);
         }
     };
+    private boolean HandlePerformanceTouch(View view, MotionEvent event){
+        Puppet puppet = (Puppet)view;
+        final int X = (int) event.getRawX();
+        final int Y = (int) event.getRawY();
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+            case MotionEvent.ACTION_DOWN:
+                RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                dx = X - lParams.leftMargin;
+                dy = Y - lParams.topMargin;
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (event.getPointerCount() > 1) {
+                    moveMouth(puppet, event.getY(0), event.getY(1));
+                } else {
+                    puppet.upperJaw.setRotation(0);
+                }
+                moveView(view, X, Y);
+                break;
+        }
+        stage.invalidate();
+        return true;
+    }
     private void moveMouth(Puppet puppet, float Y0, float Y1){
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
@@ -128,16 +142,92 @@ public class MainActivity extends ActionBarActivity {
     private void moveView(View view, int X, int Y){
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view
                 .getLayoutParams();
-        layoutParams.leftMargin = X - _xDelta;
-        layoutParams.topMargin = Y - _yDelta;
+        layoutParams.leftMargin = X - dx;
+        layoutParams.topMargin = Y - dy;
         layoutParams.rightMargin = -250;
         layoutParams.bottomMargin = -250;
         view.setLayoutParams(layoutParams);
     }
 
+    public void GoBackstage(View v){
+        findViewById(R.id.perform_button_bar).setVisibility(View.GONE);
+        findViewById(R.id.backstage_button_bar).setVisibility(View.VISIBLE);
+        stage.setOnClickListener(backgroundClickListener);
+        isBackstage = true;
+        for (int i = 0; i < stage.getChildCount(); i++){
+            stage.getChildAt(i).setOnTouchListener(null);
+            stage.getChildAt(i).setOnClickListener(puppetClickListener);
+            stage.getChildAt(i).setOnLongClickListener(puppetLongClickListener);
+        }
+    }
+    private View.OnClickListener puppetClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            selectedPuppet.setBackground(null);
+            selectedPuppet = (Puppet)view;
+            selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
+        }
+    };
+    private View.OnLongClickListener puppetLongClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            selectedPuppet.setBackground(null);
+            selectedPuppet = (Puppet)view;
+            selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
+            EditPuppet(selectedPuppet);
+            return false;
+        }
+    };
+    private View.OnClickListener backgroundClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            selectedPuppet.setBackground(null);
+            selectedPuppet = null;
+        }
+    };
+    private boolean HandleBackstageTouch(View view, MotionEvent event){
+        Puppet puppet = (Puppet)view;
+        final int X = (int) event.getRawX();
+        final int Y = (int) event.getRawY();
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+            case MotionEvent.ACTION_DOWN:
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                break;
+            case MotionEvent.ACTION_MOVE:
+                break;
+        }
+        stage.invalidate();
+        return true;
+    }
+    public void GoToPerformance(View v){
+        findViewById(R.id.backstage_button_bar).setVisibility(View.GONE);
+        findViewById(R.id.perform_button_bar).setVisibility(View.VISIBLE);
+        stage.setOnClickListener(null);
+        if (selectedPuppet != null) selectedPuppet.setBackground(null);
+        isBackstage = false;
+        for (int i = 0; i < stage.getChildCount(); i++){
+            stage.getChildAt(i).setOnClickListener(null);
+            stage.getChildAt(i).setOnLongClickListener(null);
+            stage.getChildAt(i).setOnTouchListener(headTouchListener);
+        }
+    }
     public void NewButtonClick(View v){
         Intent intent = new Intent(this, DesignerActivity.class);
         startActivityForResult(intent, REQUEST_PUPPET_GET);
+    }
+    public void EditPuppet(View v){
+        Intent intent = new Intent(this, DesignerActivity.class);
+        for (int i = 0; i < stage.getChildCount(); i++){
+            if (stage.getChildAt(i).equals(v))
+                intent.putExtra(PUPPET_INDEX, i);
+        }
+        intent.putExtra(PUPPET_CACHE_PATH, Utils.WritePuppetToFile(((Puppet) v), getCacheDir().getAbsolutePath()));
+        startActivityForResult(intent, REQUEST_EDIT);
     }
     private void SetupNewPuppet(Intent data){
         Point upperPivot = data.getParcelableExtra(DesignerActivity.UPPER_PIVOT);
@@ -172,4 +262,5 @@ public class MainActivity extends ActionBarActivity {
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
         }
     }
+
 }

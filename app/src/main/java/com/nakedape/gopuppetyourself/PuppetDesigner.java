@@ -2,6 +2,7 @@ package com.nakedape.gopuppetyourself;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -227,6 +228,20 @@ public class PuppetDesigner extends View {
     public Point getLowerJawPivotPoint() { // (0, 0) is top left of box
         Log.d(LOG_TAG, "Lower jaw pivot x = " + String.valueOf(lowerJawPivotPoint.x - lowerJawBox.left));
         return new Point(lowerJawPivotPoint.x - lowerJawBox.left, 0);
+    }
+    public void loadPuppet(PuppetData data){
+        int height, width;
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        Bitmap upperJawBitmap = BitmapFactory.decodeFile(data.getUpperJawBitmapPath(), bmOptions);
+        Bitmap lowerJawBitmap = BitmapFactory.decodeFile(data.getLowerJawBitmapPath(), bmOptions);
+        width = lowerJawBitmap.getWidth() + data.getLowerLeftPadding() + data.getLowerRightPadding();
+        height = upperJawBitmap.getHeight() + lowerJawBitmap.getHeight();
+        Bitmap overlay = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(overlay);
+        canvas.drawBitmap(upperJawBitmap, data.getUpperLeftPadding(), 0, null);
+        canvas.drawBitmap(lowerJawBitmap, data.getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
+        SetNewImage(overlay);
+        invalidate();
     }
 
     // Touch related methods

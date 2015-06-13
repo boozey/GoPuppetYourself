@@ -10,6 +10,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import com.Utils;
+
+import java.io.File;
+
 /**
  * Created by Nathan on 6/8/2015.
  */
@@ -21,14 +25,17 @@ public class Puppet extends RelativeLayout {
     public static final int PROFILE_RIGHT = 0;
     public static final int PROFILE_LEFT = 1;
 
+    // Instance variables
     private Context context;
     public ImageView lowerJaw, upperJaw;
-    private int leftMargin, topMargin;
     private Point upperPivotPoint, lowerPivotPoint;
+    private int orientation = 0;
+    private Bitmap upperJawBitmap, lowerJawBitmap;
+    private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0;
     private int upperBitmapWidth, upperBitmapHeight, lowerBitmapWidth, lowerBitmapHeight;
 
-    private int orientation = 0;
 
+    // Constructors
     public Puppet(Context context, AttributeSet attrs){
         super(context, attrs);
         this.context = context;
@@ -36,45 +43,89 @@ public class Puppet extends RelativeLayout {
         lowerJaw.setId(0);
         upperJaw = new ImageView(context);
         upperJaw.setId(1);
-        leftMargin = 0;
-        topMargin = 0;
 
     }
 
+
     // Setters and getters
+    public Bitmap getUpperJawBitmap() {
+        return upperJawBitmap;
+    }
+
+    public Bitmap getLowerJawBitmap() {
+        return lowerJawBitmap;
+    }
+
+    public int getUpperLeftPadding() {
+        return upperLeftPadding;
+    }
+
+    public int getUpperRightPadding() {
+        return upperRightPadding;
+    }
+
+    public int getLowerLeftPadding() {
+        return lowerLeftPadding;
+    }
+
+    public int getLowerRightPadding() {
+        return lowerRightPadding;
+    }
+
+    public int getUpperBitmapWidth() {
+        return upperBitmapWidth;
+    }
+
+    public int getUpperBitmapHeight() {
+        return upperBitmapHeight;
+    }
+
+    public int getLowerBitmapWidth() {
+        return lowerBitmapWidth;
+    }
+
+    public int getLowerBitmapHeight() {
+        return lowerBitmapHeight;
+    }
+
     public Point getUpperPivotPoint() {
         return upperPivotPoint;
     }
+
     public void setUpperPivotPoint(Point upperPivotPoint) {
         this.upperPivotPoint = upperPivotPoint;
     }
+
     public Point getLowerPivotPoint() {
         return lowerPivotPoint;
     }
+
     public void setLowerPivotPoint(Point lowerPivotPoint) {
         this.lowerPivotPoint = lowerPivotPoint;
     }
+
     public void setUpperJawImage(ImageView upperJaw){this.upperJaw = upperJaw;}
+
     public ImageView getUpperJaw(){return upperJaw;}
+
     public void setLowerJawImage(ImageView lowerJaw){this.lowerJaw = lowerJaw;}
+
     public ImageView getLowerJaw(){return lowerJaw;}
-    public void setLeftMargin(int leftMargin){this.leftMargin = leftMargin;}
-    public int getLeftMargin(){return leftMargin;}
-    public void setTopMargin(int topMargin){this.topMargin = topMargin;}
-    public int getTopMargin(){return topMargin;}
+
     public int getOrientation() {
         return orientation;
     }
+
     public void setOrientation(int orientation) {
         this.orientation = orientation;
     }
+
     public int getPivotDirection(){
         if (orientation == PROFILE_RIGHT)
             return ROTATION_CCW;
         else
             return ROTATION_CW;
     }
-
 
     public void setImages(Bitmap upperJawBitmap, Bitmap lowerJawBitmap, Point upperPivotPoint, Point lowerPivotPoint){
         this.upperPivotPoint = upperPivotPoint;
@@ -87,23 +138,43 @@ public class Puppet extends RelativeLayout {
     }
 
     public void setUpperJawImage(Bitmap bitmap){
+        upperJawBitmap = bitmap;
         upperBitmapHeight = bitmap.getHeight();
         upperBitmapWidth = bitmap.getWidth();
         upperJaw.setBackground(new BitmapDrawable(getResources(), bitmap));
 
     }
+
     public void setLowerJawImage(Bitmap bitmap){
+        lowerJawBitmap = bitmap;
         lowerBitmapHeight = bitmap.getHeight();
         lowerBitmapWidth = bitmap.getWidth();
         lowerJaw.setBackground(new BitmapDrawable(getResources(), bitmap));
     }
+
+    public PuppetData getData(String path){
+        PuppetData data = new PuppetData();
+        data.setOrientation(this.orientation);
+        data.setLowerPivotPointx(this.lowerPivotPoint.x);
+        data.setLowerPivotPointy(this.lowerPivotPoint.y);
+        data.setUpperPivotPointx(this.upperPivotPoint.x);
+        data.setUpperPivotPointy(this.upperPivotPoint.y);
+        data.setLowerLeftPadding(lowerLeftPadding);
+        data.setLowerRightPadding(lowerRightPadding);
+        data.setUpperLeftPadding(upperLeftPadding);
+        data.setUpperRightPadding(upperRightPadding);
+        data.setLowerJawBitmapPath(Utils.WriteImage(lowerJawBitmap, path + File.pathSeparator + "lowerJaw"));
+        data.setUpperJawBitmapPath(Utils.WriteImage(upperJawBitmap, path + File.pathSeparator + "upperJaw"));
+        return data;
+    }
+
+    // Public methods
     public void applyLayoutParams(){
         removeAllViews();
         int upperLeft = upperPivotPoint.x;
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
         int lowerLeft = lowerPivotPoint.x;
-        int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
-        int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0;
+        int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;;
 
         if (upperLeft > lowerLeft) lowerLeftPadding = upperLeft - lowerLeft;
         else upperLeftPadding = lowerLeft - upperLeft;

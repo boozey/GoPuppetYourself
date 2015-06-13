@@ -13,11 +13,13 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 
+import com.Utils;
+
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +51,7 @@ public class DesignerActivity extends ActionBarActivity {
             return true;
         }
     };
+    Puppet puppet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +62,14 @@ public class DesignerActivity extends ActionBarActivity {
         showBoxButton.setSelected(true);
         showBoxButton.setOnLongClickListener(showBoxButtonLongClick);
         showBoxButton.setTag(Puppet.PROFILE_RIGHT);
-        launchGetPicIntent();
+        Intent intent = getIntent();
+        if (intent.hasExtra(MainActivity.PUPPET_CACHE_PATH)){
+            //puppet = (Puppet) Utils.ReadPuppetFromFile(new File(intent.getStringExtra(MainActivity.PUPPET_CACHE_PATH)));
+            designer.loadPuppet(Utils.ReadPuppetFromFile(new File(intent.getStringExtra(MainActivity.PUPPET_CACHE_PATH))));
+        }
+        else {
+            launchGetPicIntent();
+        }
     }
 
     @Override
