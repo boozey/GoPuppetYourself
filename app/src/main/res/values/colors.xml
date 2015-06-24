@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palette Colors -->
+    <color name="black">#000</color>
+    <color name="dark_grey">#666</color>
+    <color name="light_grey">#BBB</color>
+    <color name="white">#FFF</color>
+    <color name="red">#F00</color>
+    <color name="pink">#FAA</color>
+    <color name="orange">#F70</color>
+    <color name="yellow">#FF0</color>
+    <color name="brown">#740</color>
+    <color name="light_brown">#DA0</color>
+    <color name="green">#080</color>
+    <color name="light_green">#0C0</color>
+    <color name="indigo">#ff360057</color>
+    <color name="violet">#A0A</color>
+    <color name="blue">#00F</color>
+    <color name="light_blue">#8AF</color>
+    <color name="highlighted">#A00</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- App colors -->
+    <color name="background">#FFFFFF</color>
+    <color name="color_primary_dark">#3F51B5</color>
+    <color name="color_primary">#9FA8DA</color>
+    <color name="color_accent">#00E5FF</color>
+</resources>

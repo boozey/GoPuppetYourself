@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/action_edit_puppet"
+        android:title="@string/action_edit_puppet"/>
+    <item android:id="@+id/action_puppet_onstage"
+        android:title="@string/action_puppet_onstage"
+        android:checkable="true"
+        android:checked="true" />
+    <item android:id="@+id/action_clone_puppet"
+        android:title="@string/action_clone_puppet"/>
+    <item android:id="@+id/action_delete_puppet"
+        android:title="@string/action_delete_puppet" />
+
+</menu>

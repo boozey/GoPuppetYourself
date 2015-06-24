@@ -1,6 +1,7 @@
 package com;
 
 import android.graphics.Bitmap;
+import android.os.Environment;
 import android.util.Log;
 
 import com.nakedape.gopuppetyourself.Puppet;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.StreamCorruptedException;
 
 /**
@@ -23,31 +25,42 @@ public class Utils {
 
     private static final String LOG_TAG = "Utils";
 
-    public static String WritePuppetToFile(Puppet puppet, String path){
-        ObjectOutput out = null;
-        PuppetData data = puppet.getData(path);
-        File file = new File(path + File.pathSeparator + "puppet_data");
+    public static boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static String WritePuppetToFile(Puppet puppet, File saveFile){
+        ObjectOutputStream out = null;
+        if (saveFile.isFile()) saveFile.delete();
 
         try {
-            out = new ObjectOutputStream(new FileOutputStream(file));
-            out.writeObject(data);
-            out.close();
+            saveFile.createNewFile();
+            if (saveFile.canWrite()) {
+                out = new ObjectOutputStream(new FileOutputStream(saveFile));
+                puppet.writeObject(out);
+                out.close();
+                Log.d(LOG_TAG, "File written");
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return file.getAbsolutePath();
+        return saveFile.getAbsolutePath();
     }
 
-    public static PuppetData ReadPuppetFromFile(File file){
+    public static void ReadPuppetFromFile(Puppet puppet, File file) {
         ObjectInputStream input;
-        PuppetData data = null;
 
         try {
             input = new ObjectInputStream(new FileInputStream(file));
-            data = (PuppetData)input.readObject();
+            puppet.readObject(input);
             input.close();
+            puppet.setPath(file.getAbsolutePath());
         } catch (StreamCorruptedException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {
@@ -57,7 +70,6 @@ public class Utils {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return data;
     }
 
     public static String WriteImage(Bitmap image, String filePath) {
@@ -73,4 +85,6 @@ public class Utils {
         }
         return "";
     }
+
+
 }

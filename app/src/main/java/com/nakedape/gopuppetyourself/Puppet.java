@@ -2,6 +2,7 @@ package com.nakedape.gopuppetyourself;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
@@ -12,12 +13,17 @@ import android.widget.RelativeLayout;
 
 import com.Utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 /**
  * Created by Nathan on 6/8/2015.
  */
-public class Puppet extends RelativeLayout {
+public class Puppet extends RelativeLayout implements Serializable {
     private static final String LOG_TAG = "Puppet";
 
     public static final int ROTATION_CW = 1;
@@ -26,13 +32,16 @@ public class Puppet extends RelativeLayout {
     public static final int PROFILE_LEFT = 1;
 
     // Instance variables
-    private Context context;
-    public ImageView lowerJaw, upperJaw;
-    private Point upperPivotPoint, lowerPivotPoint;
-    private int orientation = 0;
-    private Bitmap upperJawBitmap, lowerJawBitmap;
-    private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0;
-    private int upperBitmapWidth, upperBitmapHeight, lowerBitmapWidth, lowerBitmapHeight;
+    transient private Context context;
+    transient public ImageView lowerJaw, upperJaw;
+    transient private Point upperPivotPoint, lowerPivotPoint;
+    transient private int orientation = 0;
+    transient private Bitmap upperJawBitmap, lowerJawBitmap;
+    transient private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0;
+    transient private int upperBitmapWidth, upperBitmapHeight, lowerBitmapWidth, lowerBitmapHeight;
+    transient private String name = getResources().getString(R.string.default_puppet_name);
+    transient private String path = "";
+    transient private boolean onStage = true;
 
 
     // Constructors
@@ -48,6 +57,31 @@ public class Puppet extends RelativeLayout {
 
 
     // Setters and getters
+
+    public boolean isOnStage() {
+        return onStage;
+    }
+
+    public void setOnStage(boolean onStage) {
+        this.onStage = onStage;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Bitmap getUpperJawBitmap() {
         return upperJawBitmap;
     }
@@ -174,7 +208,8 @@ public class Puppet extends RelativeLayout {
         int upperLeft = upperPivotPoint.x;
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
         int lowerLeft = lowerPivotPoint.x;
-        int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;;
+        int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
+        int topPadding = (int)Math.sqrt(upperBitmapWidth*upperBitmapWidth + upperBitmapHeight*upperBitmapHeight) - upperBitmapHeight;
 
         if (upperLeft > lowerLeft) lowerLeftPadding = upperLeft - lowerLeft;
         else upperLeftPadding = lowerLeft - upperLeft;
@@ -182,7 +217,7 @@ public class Puppet extends RelativeLayout {
         else upperRightPadding = lowerRight - upperRight;
 
         RelativeLayout.LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.setMargins(upperLeftPadding, upperBitmapHeight, upperRightPadding, 0);
+        params.setMargins(upperLeftPadding, topPadding, upperRightPadding, 0);
         upperJaw.setLayoutParams(params);
         Log.d(LOG_TAG, "UpperLeftPadding, UpperRightPadding = " + String.valueOf(upperLeftPadding) + ", " + String.valueOf(upperRightPadding));
         upperJaw.setPivotX(upperPivotPoint.x);
@@ -195,5 +230,48 @@ public class Puppet extends RelativeLayout {
         addView(lowerJaw, params2);
         addView(upperJaw, params);
         Log.d(LOG_TAG, "LowerLeftPadding, LowerRightPadding = " + String.valueOf(lowerLeftPadding) + ", " + String.valueOf(lowerRightPadding));
+    }
+
+    public void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeObject(name);
+        out.writeInt(orientation);
+        out.writeBoolean(onStage);
+        out.writeInt(upperPivotPoint.x);
+        out.writeInt(upperPivotPoint.y);
+        out.writeInt(lowerPivotPoint.x);
+        out.writeInt(lowerPivotPoint.y);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        upperJawBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        int byteLength = stream.toByteArray().length;
+        out.writeInt(byteLength);
+        out.write(stream.toByteArray());
+
+        stream = new ByteArrayOutputStream();
+        lowerJawBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byteLength = stream.toByteArray().length;
+        out.writeInt(byteLength);
+        out.write(stream.toByteArray());
+
+    }
+
+    public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+        name = (String)in.readObject();
+        orientation = in.readInt();
+        onStage = in.readBoolean();
+        upperPivotPoint = new Point(in.readInt(), in.readInt());
+        lowerPivotPoint = new Point(in.readInt(), in.readInt());
+
+        byte[] bytes = new byte[in.readInt()];
+        in.readFully(bytes);
+        upperJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        Log.d(LOG_TAG, "Bitmap size " + bytes.length);
+        setUpperJawImage(upperJawBitmap);
+
+        bytes = new byte[in.readInt()];
+        in.readFully(bytes);
+        lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        setLowerJawImage(lowerJawBitmap);
+        applyLayoutParams();
     }
 }

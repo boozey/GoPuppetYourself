@@ -46,7 +46,7 @@ public class PuppetDesigner extends View {
     private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
     private Path drawPath;
     private Canvas drawCanvas, backgroundCanvas;
-    private int edgeThresh = 10, pointThresh = 20;
+    private int edgeThresh = 10, pointThresh = 30;
     private int selectionId = 0;
     private float prevX, prevY;
     private boolean isMagicErase = false, showUpperJawBox = true, showLowerJawBox = true,
@@ -243,7 +243,23 @@ public class PuppetDesigner extends View {
         SetNewImage(overlay);
         invalidate();
     }
-
+    public void loadPuppet(Puppet puppet){
+        int height, width;
+        Bitmap upperJawBitmap = puppet.getUpperJawBitmap();
+        Bitmap lowerJawBitmap = puppet.getLowerJawBitmap();
+        width = lowerJawBitmap.getWidth() + puppet.getLowerLeftPadding() + puppet.getLowerRightPadding();
+        height = upperJawBitmap.getHeight() + lowerJawBitmap.getHeight();
+        Bitmap overlay = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(overlay);
+        canvas.drawBitmap(upperJawBitmap, puppet.getUpperLeftPadding(), 0, null);
+        canvas.drawBitmap(lowerJawBitmap, puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
+        SetNewImage(overlay);
+        upperJawBox = new Rect(puppet.getUpperLeftPadding(), 0, puppet.getUpperLeftPadding() + upperJawBitmap.getWidth(), upperJawBitmap.getHeight());
+        lowerJawBox = new Rect(puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), puppet.getLowerLeftPadding() + lowerJawBitmap.getWidth(), overlay.getHeight());
+        lowerJawPivotPoint = new Point(puppet.getLowerLeftPadding() + puppet.getLowerPivotPoint().x, upperJawBitmap.getHeight());
+        upperJawPivotPoint = lowerJawPivotPoint;
+        invalidate();
+    }
     // Touch related methods
     @Override
     public boolean onTouchEvent(MotionEvent event){
@@ -336,9 +352,10 @@ public class PuppetDesigner extends View {
         if (Math.abs(lowerJawPivotPoint.x - upperJawPivotPoint.x) < edgeThresh && Math.abs(lowerJawPivotPoint.y - upperJawPivotPoint.y) < edgeThresh ) {
             if (selectionId < LOWER_JAW) {
                 lowerJawPivotPoint.set(upperJawPivotPoint.x, upperJawPivotPoint.y);
+                upperJawPivotPoint = lowerJawPivotPoint;
                 lowerJawBox.top = upperJawBox.bottom;
             } else {
-                upperJawPivotPoint.set(lowerJawPivotPoint.x, lowerJawPivotPoint.y);
+                upperJawPivotPoint = lowerJawPivotPoint;
                 upperJawBox.bottom = lowerJawBox.top;
             }
             pivotsSnapped = true;
@@ -369,12 +386,14 @@ public class PuppetDesigner extends View {
         switch (selectionId){
             case NO_SELECTION:
                 break;
+
+            // Upper Jaw cases
             case UPPER_JAW:
                 upperJawBox.offset(dx, dy);
                 upperJawPivotPoint.offset(dx, dy);
                 if (pivotsSnapped) {
                     lowerJawBox.offset(dx, dy);
-                    lowerJawPivotPoint.offset(dx, dy);
+                    //lowerJawPivotPoint.offset(dx, dy);
                 }
                 break;
             case UPPER_JAW_TOP:
@@ -385,7 +404,7 @@ public class PuppetDesigner extends View {
                 upperJawPivotPoint.y = y2;
                 if (pivotsSnapped){
                     lowerJawBox.top = upperJawBox.bottom;
-                    lowerJawPivotPoint.y = upperJawPivotPoint.y;
+                    //lowerJawPivotPoint.y = upperJawPivotPoint.y;
                 }
                 break;
             case UPPER_JAW_LEFT:
@@ -400,24 +419,26 @@ public class PuppetDesigner extends View {
                 break;
             case UPPER_JAW_PIVOT:
                 upperJawPivotPoint.offset(x2 - x1, 0);
-                if (pivotsSnapped){
+                /*if (pivotsSnapped){
                     lowerJawPivotPoint.offset(x2- x1, 0);
-                }
+                }*/
                 break;
+
+            // Lower Jaw cases
             case LOWER_JAW:
                 lowerJawBox.offset(x2 - x1, y2 - y1);
                 lowerJawPivotPoint.offset(x2 - x1, y2 - y1);
                 if (pivotsSnapped) {
                     upperJawBox.offset(dx, dy);
-                    upperJawPivotPoint.offset(dx, dy);
+                    //upperJawPivotPoint.offset(dx, dy);
                 }
                 break;
             case LOWER_JAW_TOP:
                 lowerJawBox.top = y2;
                 lowerJawPivotPoint.y = y2;
                 if (pivotsSnapped){
-                    upperJawBox.top = lowerJawBox.bottom;
-                    upperJawPivotPoint.y = lowerJawPivotPoint.y;
+                    upperJawBox.bottom = lowerJawBox.top;
+                    //upperJawPivotPoint.y = lowerJawPivotPoint.y;
                 }
                 break;
             case LOWER_JAW_BOTTOM:
@@ -432,9 +453,10 @@ public class PuppetDesigner extends View {
                 break;
             case LOWER_JAW_PIVOT:
                 lowerJawPivotPoint.offset(dx, 0);
+                /*
                 if (pivotsSnapped){
                     upperJawPivotPoint.offset(dx, 0);
-                }
+                }*/
         }
         prevX = x2; prevY = y2;
         if (lowerJawBox.width() < MIN_BOX_SIZE) {

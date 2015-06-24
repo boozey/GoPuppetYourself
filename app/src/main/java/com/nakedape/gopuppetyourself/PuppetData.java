@@ -7,6 +7,16 @@ import java.io.Serializable;
  */
 public class PuppetData implements Serializable{
 
+    protected class BitmapDataObject implements Serializable {
+    private static final long serialVersionUID = 111696345129311948L;
+    public byte[] imageByteArray;
+}
+
+    private int upperPivotPointx, upperPivotPointy, lowerPivotPointx, lowerPivotPointy;
+    private int orientation = 0;
+    private String upperJawBitmapPath, lowerJawBitmapPath;
+
+
     public int getOrientation() {
         return orientation;
     }
@@ -96,10 +106,6 @@ public class PuppetData implements Serializable{
     public void setLowerPivotPointy(int lowerPivotPointy) {
         this.lowerPivotPointy = lowerPivotPointy;
     }
-
-    private int upperPivotPointx, upperPivotPointy, lowerPivotPointx, lowerPivotPointy;
-    private int orientation = 0;
-    private String upperJawBitmapPath, lowerJawBitmapPath;
 
     public PuppetData(){}
 }
