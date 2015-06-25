@@ -47,9 +47,10 @@ public class PuppetDesigner extends View {
     private Path drawPath;
     private Canvas drawCanvas, backgroundCanvas;
     private int edgeThresh = 10, pointThresh = 30;
+    private int magicEraseThreshold = 75;
     private int selectionId = 0;
-    private float prevX, prevY;
-    private boolean isMagicErase = false, showUpperJawBox = true, showLowerJawBox = true,
+    private float prevX = -1, prevY = -1;
+    private boolean isMagicErase = false, showUpperJawBox = false, showLowerJawBox = false,
             pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isBackgroundEraseMode = false;
 
 
@@ -156,6 +157,7 @@ public class PuppetDesigner extends View {
         this.showLowerJawBox = showLowerJawBox;
         invalidate();
     }
+
     public void setMagicEraseMode(){
         isMagicErase = true;
         isEraseMode = false;
@@ -168,6 +170,10 @@ public class PuppetDesigner extends View {
     public boolean isMagicErase(){
         return isMagicErase;
     }
+    public void setMagicEraseThreshold(int threshold){
+        magicEraseThreshold = threshold;
+    }
+
     public void setIsDrawMode(boolean isDrawMode) {
         if (isDrawMode) {
             this.isDrawMode = true;
@@ -179,8 +185,6 @@ public class PuppetDesigner extends View {
         }
         else {
             this.isDrawMode = false;
-            showLowerJawBox = true;
-            showUpperJawBox = true;
             cancelBackgroundErase();
             cancelMagicEraseMode();
             invalidate();
@@ -189,6 +193,7 @@ public class PuppetDesigner extends View {
     public boolean isDrawMode() {
         return isDrawMode;
     }
+
     public void setBackgroundErase(){
         isBackgroundEraseMode = true;
         drawPaint.setColor(Color.TRANSPARENT);
@@ -199,6 +204,7 @@ public class PuppetDesigner extends View {
         isBackgroundEraseMode = false;
         drawPaint.setXfermode(null);
     }
+
     public void setColor(int color){
         drawPaint.setColor(color);
     }
@@ -218,6 +224,16 @@ public class PuppetDesigner extends View {
     public void setStrokeWidth(float width){
         drawPaint.setStrokeWidth(width);
     }
+
+    public void flipHorz(){
+        Matrix m = new Matrix();
+        m.preScale(-1, 1);
+        Bitmap dst = Bitmap.createBitmap(background, 0, 0, background.getWidth(), background.getHeight(), m, false);
+        background = dst;
+        invalidate();
+        //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
+    }
+
     public Point getUpperJawPivotPoint(){ // (0, h) is bottom left of box
         if (pivotsSnapped){
             upperJawPivotPoint = new Point(lowerJawPivotPoint.x, lowerJawPivotPoint.y);
@@ -229,6 +245,7 @@ public class PuppetDesigner extends View {
         Log.d(LOG_TAG, "Lower jaw pivot x = " + String.valueOf(lowerJawPivotPoint.x - lowerJawBox.left));
         return new Point(lowerJawPivotPoint.x - lowerJawBox.left, 0);
     }
+
     public void loadPuppet(PuppetData data){
         int height, width;
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
@@ -258,11 +275,13 @@ public class PuppetDesigner extends View {
         lowerJawBox = new Rect(puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), puppet.getLowerLeftPadding() + lowerJawBitmap.getWidth(), overlay.getHeight());
         lowerJawPivotPoint = new Point(puppet.getLowerLeftPadding() + puppet.getLowerPivotPoint().x, upperJawBitmap.getHeight());
         upperJawPivotPoint = lowerJawPivotPoint;
+        orientation = puppet.getOrientation();
         invalidate();
     }
     // Touch related methods
     @Override
     public boolean onTouchEvent(MotionEvent event){
+        super.onTouchEvent(event);
         float x = event.getX(), y = event.getY();
         if(isMagicErase){
             switch (event.getAction()){
@@ -310,14 +329,28 @@ public class PuppetDesigner extends View {
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    drawPath.lineTo(x, y);
-                    drawCanvas.drawPath(drawPath, drawPaint);
+                    if (prevX <= 0 || prevY <= 0){
+                        prevX = x;
+                        prevY = y;
+                        drawPath.moveTo(x, y);
+                    }
+                    else {
+                        drawPath.lineTo(x, y);
+                        drawCanvas.drawPath(drawPath, drawPaint);
+                    }
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
-                    drawCanvas.drawPath(drawPath, drawPaint);
-                    drawPath.reset();
-                    selectionId = NO_SELECTION;
+                    if (prevX <= 0 || prevY <= 0){
+                        prevX = x;
+                        prevY = y;
+                        drawPath.moveTo(x, y);
+                    }
+                    else {
+                        drawCanvas.drawPath(drawPath, drawPaint);
+                        drawPath.reset();
+                        selectionId = NO_SELECTION;
+                    }
                     invalidate();
                     return true;
                 default:
@@ -480,7 +513,6 @@ public class PuppetDesigner extends View {
         invalidate();
     }
     private void magicErase(float x, float y){
-        float similaryThreshold = 75;
         boolean keepSearchingy = true;
         boolean keepSearchingx = true;
         int rgbInit = background.getPixel((int)x, (int)y), rgbCurrent;
@@ -496,7 +528,7 @@ public class PuppetDesigner extends View {
                 r1 = (rgbCurrent >> 16) & 0xFF;
                 g1 = (rgbCurrent >> 8) & 0xFF;
                 b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < similaryThreshold){
+                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
                     background.setPixel(xN, yN, 0x00000000);
                 }
                 else {
@@ -510,7 +542,7 @@ public class PuppetDesigner extends View {
                 r1 = (rgbCurrent >> 16) & 0xFF;
                 g1 = (rgbCurrent >> 8) & 0xFF;
                 b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < similaryThreshold){
+                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
                     background.setPixel(xN, yN, 0x00000000);
                 }
                 else {
@@ -529,7 +561,7 @@ public class PuppetDesigner extends View {
                 r1 = (rgbCurrent >> 16) & 0xFF;
                 g1 = (rgbCurrent >> 8) & 0xFF;
                 b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < similaryThreshold){
+                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
                     background.setPixel(xN, yN, 0x00000000);
                 }
                 else {
@@ -543,7 +575,7 @@ public class PuppetDesigner extends View {
                 r1 = (rgbCurrent >> 16) & 0xFF;
                 g1 = (rgbCurrent >> 8) & 0xFF;
                 b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < similaryThreshold){
+                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
                     background.setPixel(xN, yN, 0x00000000);
                 }
                 else {

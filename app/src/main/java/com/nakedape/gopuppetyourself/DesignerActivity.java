@@ -1,10 +1,8 @@
 package com.nakedape.gopuppetyourself;
 
-import android.animation.AnimatorSet;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
@@ -13,13 +11,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 
@@ -41,13 +40,25 @@ public class DesignerActivity extends ActionBarActivity {
     private static final int BRUSH_SIZE_S = 6;
     private static final int BRUSH_SIZE_M = 12;
     private static final int BRUSH_SIZE_L = 18;
-    private static final int[] mainButtonIds = {R.id.palette_button, R.id.background_button, R.id.show_box_button, R.id.save_button};
+    private static final int MAX_BRUSH_SIZE = 64;
 
-    PuppetDesigner designer;
+    private View mainButtonBar, backgroundButtonBar, eraseBackgroundButtonBar, magicEraseButtonBar, portraitButtonBar;
+    private PuppetDesigner designer;
     private Context context = this;
-    private PopupWindow popup;
+    private View popup;
+    private RelativeLayout rootLayout;
+    private View.OnTouchListener backgroundTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    cancelPopup();
+                    break;
+            }
+            return true;
+        }
+    };
     private int colorSelection = R.id.black;
-    private int brushSelection = R.id.brush_small;
     private int paletteBrushSize = BRUSH_SIZE_M;
     private ImageButton showBoxButton;
     private View.OnLongClickListener showBoxButtonLongClick = new View.OnLongClickListener() {
@@ -65,11 +76,13 @@ public class DesignerActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_designer);
+        rootLayout = (RelativeLayout)findViewById(R.id.relative_layout);
         designer = (PuppetDesigner)findViewById(R.id.designer);
-        showBoxButton = (ImageButton)findViewById(R.id.show_box_button);
-        showBoxButton.setSelected(true);
-        showBoxButton.setOnLongClickListener(showBoxButtonLongClick);
-        showBoxButton.setTag(Puppet.PROFILE_RIGHT);
+        mainButtonBar = findViewById(R.id.main_buttons);
+        backgroundButtonBar = findViewById(R.id.background_button_bar);
+        eraseBackgroundButtonBar = findViewById(R.id.bg_erase_bar);
+        magicEraseButtonBar = findViewById(R.id.magic_erase_bar);
+        portraitButtonBar = findViewById(R.id.portrait_bar);
 
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
@@ -89,6 +102,11 @@ public class DesignerActivity extends ActionBarActivity {
             puppet = new Puppet(context, null);
             Utils.ReadPuppetFromFile(puppet, new File(intent.getStringExtra(MainActivity.PUPPET_PATH)));
             designer.loadPuppet(puppet);
+            if (designer.getOrientation() == Puppet.PROFILE_LEFT) {
+                findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
+                findViewById(R.id.portrait_left_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left_selected));
+                findViewById(R.id.portrait_right_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
+            }
             stageIndex = intent.getIntExtra(MainActivity.PUPPET_INDEX, -1);
             EditText editText = (EditText)findViewById(R.id.puppet_name);
             editText.setText(puppet.getName());
@@ -157,7 +175,7 @@ public class DesignerActivity extends ActionBarActivity {
         } else {
             puppet.setName(getString(R.string.default_puppet_name));
         }
-        puppet.setOrientation(0);
+        puppet.setOrientation(designer.getOrientation());
         puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         // Save puppet to storage directory
         File saveFile = new File(storageDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
@@ -171,13 +189,16 @@ public class DesignerActivity extends ActionBarActivity {
         setResult(MainActivity.RESULT_OK, data);
         finish();
     }
-    public void PaletteClick(View v){
+
+    // Draw menu methods
+    public void BrushClick(View v){
         // Hide button bar and show brush bar
-        final View buttonBar = findViewById(R.id.button_bar);
+        final View buttonBar = mainButtonBar;
         if (buttonBar.getVisibility() != View.GONE) {
+            final View navButton = findViewById(R.id.nav_button);
             // Set slider to current value
             SeekBar slider = (SeekBar)findViewById(R.id.brush_slider);
-            slider.setMax(48);
+            slider.setMax(MAX_BRUSH_SIZE);
             slider.setProgress(paletteBrushSize);
 
             // Set brush view to current value
@@ -225,6 +246,13 @@ public class DesignerActivity extends ActionBarActivity {
                     buttonBar.setVisibility(View.GONE);
                     View brushBar = findViewById(R.id.brush_bar);
                     brushBar.setVisibility(View.VISIBLE);
+                    navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                    navButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            BrushBarDoneClick(view);
+                        }
+                    });
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
                     brushBar.startAnimation(scaleUpRight);
                 }
@@ -234,41 +262,21 @@ public class DesignerActivity extends ActionBarActivity {
 
                 }
             });
+            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
             buttonBar.startAnimation(scaleDownLeft);
+            navButton.startAnimation(spinOut);
         }
         else {
             showPalette();
         }
 
     }
-    public void showPalette(){
-        // Inflate the popup_layout.xml
-        final LinearLayout viewGroup = (LinearLayout) findViewById(R.id.palette_popup);
-        LayoutInflater layoutInflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View layout = layoutInflater.inflate(R.layout.palette_popup, viewGroup);
-        // Create the PopupWindow
-        popup = new PopupWindow(context);
-        popup.setContentView(layout);
-        // Show current selection
-        View selection = layout.findViewById(colorSelection);
-        selection.setSelected(true);
-        selection = layout.findViewById(brushSelection);
-        selection.setSelected(true);
-        // Set popup dimensions
-        int width = (int)getResources().getDimension(R.dimen.palette_width),
-                height = (int)getResources().getDimension(R.dimen.palette_height);
-        popup.setWidth(width);
-        popup.setHeight(height);
-        popup.setFocusable(true);
-        popup.setBackgroundDrawable(new ColorDrawable(
-                android.graphics.Color.TRANSPARENT));
-        // Displaying the popup at the specified location
-        popup.showAsDropDown(designer, 0, -height);
-    }
     public void BrushBarDoneClick(View v){
         final View brushBar = findViewById(R.id.brush_bar);
         if (brushBar.getVisibility() != View.GONE) {
+            final View navButton = findViewById(R.id.nav_button);
+            cancelPopup();
+            designer.setIsDrawMode(false);
             Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
@@ -279,7 +287,9 @@ public class DesignerActivity extends ActionBarActivity {
                 @Override
                 public void onAnimationEnd(Animation animation) {
                     brushBar.setVisibility(View.GONE);
-                    View buttonBar = findViewById(R.id.button_bar);
+                    View navButton = findViewById(R.id.nav_button);
+                    navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
                     buttonBar.startAnimation(scaleUpRight);
@@ -290,12 +300,37 @@ public class DesignerActivity extends ActionBarActivity {
 
                 }
             });
+            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+            navButton.startAnimation(spinOut);
             brushBar.startAnimation(scaleDownLeft);
         }
     }
+    public void showPalette(){
+        // Inflate the popup_layout.xml
+        if (popup == null) {
+            designer.setOnTouchListener(backgroundTouchListener);
+            final LinearLayout viewGroup = (LinearLayout) findViewById(R.id.palette_popup);
+            LayoutInflater layoutInflater = (LayoutInflater) context
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            popup = layoutInflater.inflate(R.layout.palette_popup, viewGroup);
 
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.addRule(RelativeLayout.ABOVE, R.id.button_bar);
+            popup.setLayoutParams(params);
+            rootLayout.addView(popup);
+        }
+        else {
+            cancelPopup();
+        }
+    }
+    private void cancelPopup(){
+        if (popup != null) {
+            rootLayout.removeView(popup);
+            popup = null;
+            designer.setOnTouchListener(null);
+        }
+    }
     public void ColorSelect(View v){
-        popup.dismiss();
         designer.setEraseMode(false);
         designer.cancelMagicEraseMode();
         designer.cancelBackgroundErase();
@@ -352,21 +387,320 @@ public class DesignerActivity extends ActionBarActivity {
             case R.id.eraser:
                 designer.setEraseMode(true);
                 break;
-            case R.id.bg_eraser:
-                designer.setBackgroundErase();
-                break;
-            case R.id.bg_magic_eraser:
-                designer.setMagicEraseMode();
-                break;
         }
     }
-    public void BrushSizeSelect(View v){
-        popup.dismiss();
-        paletteBrushSize = v.getWidth();
-        brushSelection = v.getId();
+
+    // Background menu methods
+    public void BackgroundButtonClick(View v){
+        // Hide button bar and show background bar
+        View buttonBar = null;
+        if (mainButtonBar.getVisibility() == View.VISIBLE)
+            buttonBar = mainButtonBar;
+        else if (magicEraseButtonBar.getVisibility() == View.VISIBLE) {
+            buttonBar = magicEraseButtonBar;
+            designer.cancelMagicEraseMode();
+        }
+        else if (eraseBackgroundButtonBar.getVisibility() == View.VISIBLE) {
+            buttonBar = eraseBackgroundButtonBar;
+            designer.cancelBackgroundErase();
+        }
+        final View buttonBarFinal = buttonBar;
+        final View navButton = findViewById(R.id.nav_button);
+        // Animate disappearance of button bar and appearance of background bar
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                if (buttonBarFinal != null) buttonBarFinal.setVisibility(View.GONE);
+                View backgroundBar = findViewById(R.id.background_button_bar);
+                backgroundBar.setVisibility(View.VISIBLE);
+                View navButton = findViewById(R.id.nav_button);
+                navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        BackgroundBarDoneClick(view);
+                    }
+                });
+                Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                backgroundBar.startAnimation(scaleUpRight);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        navButton.startAnimation(spinOut);
+        if (buttonBarFinal != null) buttonBarFinal.startAnimation(scaleDownLeft);
+    }
+    public void BackgroundBarDoneClick(View v){
+        final View backgroundBar = findViewById(R.id.background_button_bar);
+        if (backgroundBar.getVisibility() != View.GONE) {
+            final View navButton = findViewById(R.id.nav_button);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    backgroundBar.setVisibility(View.GONE);
+                    View navButton = findViewById(R.id.nav_button);
+                    navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    View buttonBar = findViewById(R.id.main_buttons);
+                    buttonBar.setVisibility(View.VISIBLE);
+                    Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                    buttonBar.startAnimation(scaleUpRight);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+            navButton.startAnimation(spinOut);
+            backgroundBar.startAnimation(scaleDownLeft);
+        }
+    }
+    public void EraseBackGroundClick(View v){
+        // Hide background bar and show background erase bar
+        final View buttonBar = backgroundButtonBar;
+        final View navButton = findViewById(R.id.nav_button);
+        // Set slider to current value
+        SeekBar slider = (SeekBar)findViewById(R.id.erase_brush_slider);
+        slider.setMax(MAX_BRUSH_SIZE);
+        slider.setProgress(paletteBrushSize);
+
+        // Set brush view to current value
+        final View view = findViewById(R.id.erase_brush_size);
         designer.setStrokeWidth((float) paletteBrushSize);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)view.getLayoutParams();
+        params.width = paletteBrushSize;
+        params.height = paletteBrushSize;
+        view.setLayoutParams(params);
+
+        // Listener to update brush view and palatteBrushSize
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                paletteBrushSize = i;
+                designer.setStrokeWidth((float) paletteBrushSize);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                params.width = i;
+                params.height = i;
+                view.setLayoutParams(params);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        // Animate disappearance of button bar and appearance of background bar
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                designer.setBackgroundErase();
+                buttonBar.setVisibility(View.GONE);
+                View newButtonBar = eraseBackgroundButtonBar;
+                newButtonBar.setVisibility(View.VISIBLE);
+                View navButton = findViewById(R.id.nav_button);
+                navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        BackgroundButtonClick(view);
+                    }
+                });
+                Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                newButtonBar.startAnimation(scaleUpRight);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        navButton.startAnimation(spinOut);
+        buttonBar.startAnimation(scaleDownLeft);
+
+    }
+    public void MagicEraseBGClick(View v){
+        // Hide background bar and show background erase bar
+        final View buttonBar = findViewById(R.id.background_button_bar);
+        final View navButton = findViewById(R.id.nav_button);
+        final EditText thresholdText = (EditText)findViewById(R.id.threshold_text);
+
+        // Listener to update brush view and palatteBrushSize
+        SeekBar slider = (SeekBar)findViewById(R.id.magic_erase_slider);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                thresholdText.setText(String.valueOf(i));
+                designer.setMagicEraseThreshold(i);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        // Animate disappearance of old button bar and appearance of new button bar
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                designer.setMagicEraseMode();
+                buttonBar.setVisibility(View.GONE);
+                View newButtonBar = findViewById(R.id.magic_erase_bar);
+                newButtonBar.setVisibility(View.VISIBLE);
+                View navButton = findViewById(R.id.nav_button);
+                navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        BackgroundButtonClick(view);
+                    }
+                });
+                Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                newButtonBar.startAnimation(scaleUpRight);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        navButton.startAnimation(spinOut);
+        buttonBar.startAnimation(scaleDownLeft);
+    }
+    public void FlipHorzClick(View v){
+        designer.flipHorz();
     }
 
+    // Portrait adjustment methods
+    public void PortraitButtonClick(View v){
+        final View buttonBar = mainButtonBar;
+        final View navButton = findViewById(R.id.nav_button);
+
+        // Animate disappearance of button bar and appearance of brush bar
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                designer.setShowLowerJawBox(true);
+                designer.setShowUpperJawBox(true);
+                buttonBar.setVisibility(View.GONE);
+                View newButtonBar = portraitButtonBar;
+                newButtonBar.setVisibility(View.VISIBLE);
+                navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        PortraitBarDoneClick(view);
+                    }
+                });
+                Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                newButtonBar.startAnimation(scaleUpRight);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        buttonBar.startAnimation(scaleDownLeft);
+        navButton.startAnimation(spinOut);
+
+    }
+    public void PortraitBarDoneClick(View v){
+        final View buttonBar = portraitButtonBar;
+        if (buttonBar.getVisibility() != View.GONE) {
+            final View navButton = findViewById(R.id.nav_button);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    designer.setShowLowerJawBox(false);
+                    designer.setShowUpperJawBox(false);
+                    buttonBar.setVisibility(View.GONE);
+                    View navButton = findViewById(R.id.nav_button);
+                    navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    View buttonBar = findViewById(R.id.main_buttons);
+                    buttonBar.setVisibility(View.VISIBLE);
+                    Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                    buttonBar.startAnimation(scaleUpRight);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+            navButton.startAnimation(spinOut);
+            buttonBar.startAnimation(scaleDownLeft);
+        }
+
+    }
+    public void RightPortraitClick(View v){
+        v.setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right_selected));
+        findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
+        findViewById(R.id.portrait_left_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
+        designer.setOrientation(Puppet.PROFILE_RIGHT);
+    }
+    public void LeftPortraitClick(View v){
+        v.setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left_selected));
+        findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
+        findViewById(R.id.portrait_right_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
+        designer.setOrientation(Puppet.PROFILE_LEFT);
+    }
     public void ShowBoxes(View v){
         if (v.isSelected()){
             v.setSelected(false);

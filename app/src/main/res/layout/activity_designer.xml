@@ -1,7 +1,8 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.nakedape.gopuppetyourself.DesignerActivity"
+    android:id="@+id/relative_layout"
     android:orientation="vertical">
     <EditText
         android:layout_width="match_parent"
@@ -9,27 +10,43 @@
         android:id="@+id/puppet_name"
         android:textSize="24sp"
         android:hint="@string/puppet_name_hint" />
-<FrameLayout
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="1">
 <com.nakedape.gopuppetyourself.PuppetDesigner
     android:layout_height="wrap_content"
     android:layout_width="wrap_content"
     android:id="@+id/designer"
-    android:clickable="false"/>
-</FrameLayout>
-    <RelativeLayout
+    android:clickable="false"
+    android:layout_below="@id/puppet_name"/>
+
+    <!-- Navigation Button Bar Layout -->
+    <LinearLayout
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:gravity="end"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
         android:id="@+id/button_bar">
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/nav_button"
+            android:background="@drawable/ic_action_navigation_menu"
+            android:visibility="visible"/>
+
+        <!-- Main Button Bar Layout -->
+        <RelativeLayout
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/main_buttons"
+        android:visibility="visible">
         <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/palette_button"
             android:background="@drawable/ic_action_image_brush"
-            android:onClick="PaletteClick"
+            android:onClick="BrushClick"
             android:layout_centerVertical="true" />
         <ImageButton
             android:layout_width="wrap_content"
@@ -37,33 +54,26 @@
             android:layout_toEndOf="@id/palette_button"
             android:layout_toRightOf="@id/palette_button"
             android:id="@+id/background_button"
-            android:background="@drawable/ic_action_image_photo"
-            android:layout_centerVertical="true" />
+            android:background="@drawable/ic_action_image_nature_people"
+            android:layout_centerVertical="true"
+            android:onClick="BackgroundButtonClick"/>
         <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toEndOf="@id/background_button"
             android:layout_toRightOf="@id/background_button"
-            android:id="@+id/show_box_button"
-            android:background="@drawable/ic_action_image_portrait"
-            android:onClick="ShowBoxes"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:id="@+id/save_button"
-        style="?android:buttonBarButtonStyle"
-        android:text="Save"
-        android:onClick="Save"/>
+            android:id="@+id/portrait_edit_button"
+            android:background="@drawable/ic_action_profile_right"
+            android:onClick="PortraitButtonClick"/>
     </RelativeLayout>
 
-
-    <RelativeLayout
+        <!-- Brush Bar Layout -->
+        <RelativeLayout
         android:layout_height="wrap_content"
-        android:layout_width="match_parent"
-        android:gravity="end"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
         android:id="@+id/brush_bar"
         android:visibility="gone">
         <ImageButton
@@ -71,7 +81,7 @@
             android:layout_height="wrap_content"
             android:id="@id/palette_button"
             android:background="@drawable/ic_action_image_palette"
-            android:onClick="PaletteClick"
+            android:onClick="BrushClick"
             android:layout_centerVertical="true" />
         <ImageButton
             android:layout_width="12dp"
@@ -101,6 +111,134 @@
         android:id="@+id/palette_close_button"
         style="?android:buttonBarButtonStyle"
         android:text="Done"
-            android:onClick="BrushBarDoneClick"/>
+            android:onClick="BrushBarDoneClick"
+            android:visibility="gone"/>
         </RelativeLayout>
-</LinearLayout>
+
+        <!-- Background Bar Layout -->
+        <RelativeLayout
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/background_button_bar"
+        android:visibility="gone">
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/flip_horz_button"
+            android:background="@drawable/ic_action_image_flip_horz"
+            android:layout_centerVertical="true"
+            android:onClick="FlipHorzClick"/>
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/erase_background_button"
+            android:layout_toEndOf="@id/flip_horz_button"
+            android:layout_toRightOf="@id/flip_horz_button"
+            android:background="@drawable/ic_action_erase_background"
+            android:layout_centerVertical="true"
+            android:onClick="EraseBackGroundClick"/>
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/magic_erase_background_button"
+            android:layout_toEndOf="@id/erase_background_button"
+            android:layout_toRightOf="@id/erase_background_button"
+            android:background="@drawable/ic_action_magic_erase_background"
+            android:layout_centerVertical="true"
+            android:onClick="MagicEraseBGClick"/>
+
+        </RelativeLayout>
+
+        <!-- Background Erase Bar Layout-->
+        <RelativeLayout
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/bg_erase_bar"
+            android:visibility="gone">
+            <ImageButton
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_centerVertical="true"
+                android:id="@+id/erase_brush_size"
+                android:background="@drawable/palette_brush_size"
+                android:layout_margin="2dp"/>
+            <SeekBar
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/erase_brush_size"
+                android:layout_toRightOf="@id/erase_brush_size"
+                android:id="@+id/erase_brush_slider"/>
+        </RelativeLayout>
+
+        <!-- Magic Erase Bar Layout -->
+        <RelativeLayout
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/magic_erase_bar"
+            android:visibility="gone">
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:id="@+id/threshold_text"
+            android:text="75"/>
+        <SeekBar
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/threshold_text"
+            android:layout_toRightOf="@id/threshold_text"
+            android:id="@+id/magic_erase_slider"
+            android:progress="75"
+            android:max="120"/>
+    </RelativeLayout>
+
+        <!-- Portrait Adjustment Bar Layout-->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/portrait_bar"
+            android:visibility="gone">
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:id="@+id/portrait_right_button"
+                android:background="@drawable/ic_action_profile_right_selected"
+                android:onClick="RightPortraitClick"/>
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:id="@+id/portrait_left_button"
+                android:background="@drawable/ic_action_profile_left"
+                android:onClick="LeftPortraitClick"/>
+
+        </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:id="@+id/save_button"
+            style="?android:buttonBarButtonStyle"
+            android:text="Save"
+            android:onClick="Save"/>
+
+    </LinearLayout>
+</RelativeLayout>
