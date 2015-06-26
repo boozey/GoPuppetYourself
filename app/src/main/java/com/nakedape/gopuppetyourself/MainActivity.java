@@ -45,7 +45,7 @@ public class MainActivity extends ActionBarActivity {
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
     private File storageDir;
-    private PuppetShowRecorder player;
+    private PuppetShowRecorder showRecorder;
     private final Handler mHandler = new Handler();
     private int nextPuppetId = 0;
 
@@ -55,8 +55,8 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         context = this;
         stage = (RelativeLayout)findViewById(R.id.stage);
-        player = new PuppetShowRecorder(stage);
-        player.setHandler(mHandler);
+        showRecorder = new PuppetShowRecorder(stage);
+        showRecorder.setHandler(mHandler);
         /*
         selectedPuppet = (Puppet)findViewById(R.id.puppet);
         upperJaw = (ImageView)findViewById(R.id.upper_jaw);
@@ -171,7 +171,7 @@ public class MainActivity extends ActionBarActivity {
                     moveMouth(puppet, event.getY(0), event.getY(1));
                 } else {
                     puppet.upperJaw.setRotation(0);
-                    if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.CLOSE_MOUTH);
+                    if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.CLOSE_MOUTH);
                 }
                 moveView(view, X, Y);
                 break;
@@ -183,11 +183,11 @@ public class MainActivity extends ActionBarActivity {
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
             puppet.upperJaw.setRotation(15 * puppet.getPivotDirection());
-            if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_NARROW);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_NARROW);
         }
         else {
             puppet.upperJaw.setRotation(30 * puppet.getPivotDirection());
-            if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_MED);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_MED);
         }
     }
     private void moveView(Puppet puppet, int X, int Y){
@@ -197,19 +197,19 @@ public class MainActivity extends ActionBarActivity {
         layoutParams.topMargin = Y - dy;
         layoutParams.rightMargin = -250;
         layoutParams.bottomMargin = -250;
-        if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
+        if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
         puppet.setLayoutParams(layoutParams);
     }
     public void RecordClick(View v){
-        if (player == null){
-            player = new PuppetShowRecorder(stage);
+        if (showRecorder == null){
+            showRecorder = new PuppetShowRecorder(stage);
         }
-        player.RecordStart();
+        showRecorder.RecordStart();
     }
     public void PlayClick(View v){
-        if (player != null){
-            player.RecordStop();
-            player.Play();
+        if (showRecorder != null){
+            showRecorder.RecordStop();
+            showRecorder.Play();
         }
     }
 
