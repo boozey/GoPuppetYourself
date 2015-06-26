@@ -47,7 +47,9 @@ public class MainActivity extends ActionBarActivity {
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
     private File storageDir;
+    private PuppetShowPlayer player;
     private final Handler mHandler = new Handler();
+    private int nextPuppetId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,12 +57,16 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         context = this;
         stage = (RelativeLayout)findViewById(R.id.stage);
+        player = new PuppetShowPlayer(stage);
+        player.setHandler(mHandler);
+        /*
         selectedPuppet = (Puppet)findViewById(R.id.puppet);
         upperJaw = (ImageView)findViewById(R.id.upper_jaw);
         selectedPuppet.setUpperJawImage(upperJaw);
         lowerJaw = (ImageView)findViewById(R.id.lower_jaw);
         selectedPuppet.setLowerJawImage(lowerJaw);
         selectedPuppet.setOnTouchListener(headTouchListener);
+        */
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
@@ -95,6 +101,7 @@ public class MainActivity extends ActionBarActivity {
                             @Override
                             public void run() {
                                 p.setOnTouchListener(headTouchListener);
+                                p.setId(nextPuppetId++);
                                 stage.addView(p);
                             }
                         });
@@ -142,10 +149,10 @@ public class MainActivity extends ActionBarActivity {
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            return HandlePerformanceTouch(view, event);
+            return HandlePerformanceTouch((Puppet)view, event);
         }
     };
-    private boolean HandlePerformanceTouch(View view, MotionEvent event){
+    private boolean HandlePerformanceTouch(Puppet view, MotionEvent event){
         Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
         final int Y = (int) event.getRawY();
@@ -166,6 +173,7 @@ public class MainActivity extends ActionBarActivity {
                     moveMouth(puppet, event.getY(0), event.getY(1));
                 } else {
                     puppet.upperJaw.setRotation(0);
+                    if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.CLOSE_MOUTH);
                 }
                 moveView(view, X, Y);
                 break;
@@ -177,19 +185,34 @@ public class MainActivity extends ActionBarActivity {
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
             puppet.upperJaw.setRotation(15 * puppet.getPivotDirection());
+            if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_NARROW);
         }
         else {
             puppet.upperJaw.setRotation(30 * puppet.getPivotDirection());
+            if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_MED);
         }
     }
-    private void moveView(View view, int X, int Y){
-        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) view
+    private void moveView(Puppet puppet, int X, int Y){
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) puppet
                 .getLayoutParams();
         layoutParams.leftMargin = X - dx;
         layoutParams.topMargin = Y - dy;
         layoutParams.rightMargin = -250;
         layoutParams.bottomMargin = -250;
-        view.setLayoutParams(layoutParams);
+        if (player.isRecording()) player.RecordFrame(puppet.getId(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
+        puppet.setLayoutParams(layoutParams);
+    }
+    public void RecordClick(View v){
+        if (player == null){
+            player = new PuppetShowPlayer(stage);
+        }
+        player.RecordStart();
+    }
+    public void PlayClick(View v){
+        if (player != null){
+            player.RecordStop();
+            player.Play();
+        }
     }
 
 
@@ -207,7 +230,7 @@ public class MainActivity extends ActionBarActivity {
     private View.OnTouchListener backstageListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            return HandleBackstageTouch(view, event);
+            return HandleBackstageTouch((Puppet)view, event);
         }
     };
     private View.OnClickListener backgroundClickListener = new View.OnClickListener() {
@@ -217,7 +240,7 @@ public class MainActivity extends ActionBarActivity {
             selectedPuppet = null;
         }
     };
-    private boolean HandleBackstageTouch(View view, MotionEvent event){
+    private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
         Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
         final int Y = (int) event.getRawY();
