@@ -1,11 +1,14 @@
 package com.nakedape.gopuppetyourself;
 
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -18,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.Utils;
@@ -37,7 +41,6 @@ public class MainActivity extends ActionBarActivity {
     private static final int REQUEST_IMAGE_GET = 4002;
     private static final int REQUEST_EDIT = 4003;
     private Context context;
-    ImageView upperJaw, lowerJaw;
     private ViewGroup stage;
     private int dx;
     private int dy;
@@ -46,8 +49,18 @@ public class MainActivity extends ActionBarActivity {
     private boolean isBackstage = false;
     private File storageDir;
     private PuppetShowRecorder showRecorder;
-    private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case PuppetShowRecorder.COUNTER_UPDATE:
+                    progressBar.setProgress((int)showRecorder.getTimeFromStartMillis());
+            }
+        }
+    };
+    private SeekBar progressBar;
     private int nextPuppetId = 0;
+    private MainActivityDataFrag savedData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,16 +68,12 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         context = this;
         stage = (RelativeLayout)findViewById(R.id.stage);
+        progressBar = (SeekBar)findViewById(R.id.progress_bar);
+
+        // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
         showRecorder.setHandler(mHandler);
-        /*
-        selectedPuppet = (Puppet)findViewById(R.id.puppet);
-        upperJaw = (ImageView)findViewById(R.id.upper_jaw);
-        selectedPuppet.setUpperJawImage(upperJaw);
-        lowerJaw = (ImageView)findViewById(R.id.lower_jaw);
-        selectedPuppet.setLowerJawImage(lowerJaw);
-        selectedPuppet.setOnTouchListener(headTouchListener);
-        */
+
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
@@ -78,17 +87,26 @@ public class MainActivity extends ActionBarActivity {
                 if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating internal files directory");
             Log.d(LOG_TAG, "Using internal files directory");
         }
-        // Load any puppet files found on a separate thread and update UI
+
+        // Check for a data fragment retained after activity restart
+        FragmentManager fm = getFragmentManager();
+        savedData = (MainActivityDataFrag) fm.findFragmentByTag("data");
+        if (savedData != null){ // Load the data
+            stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
+        }
+        else { // Create a new instance to save the data
+            savedData = new MainActivityDataFrag();
+            fm.beginTransaction().add(savedData, "data").commit();
+        }
+
+        // Search for puppet files on a separate thread and update UI as they're loaded
         Runnable loadPuppetsThread = new Runnable() {
             @Override
             public void run() {
                 File[] files = storageDir.listFiles(new FileFilter() {
                     @Override
                     public boolean accept(File file) {
-                        if (file.getPath().endsWith(getString(R.string.puppet_extension)))
-                            return  true;
-                        else
-                            return false;
+                        return file.getPath().endsWith(getString(R.string.puppet_extension));
                     }
                 });
                 if (files.length > 0) {
@@ -98,8 +116,12 @@ public class MainActivity extends ActionBarActivity {
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                p.setOnTouchListener(headTouchListener);
                                 p.setId(nextPuppetId++);
+                                p.setOnTouchListener(headTouchListener);
+                                if (!p.isOnStage()) p.setVisibility(View.GONE);
+                                if (savedData.layoutParamses.size() > 0){
+                                    p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
+                                }
                                 stage.addView(p);
                             }
                         });
@@ -108,6 +130,16 @@ public class MainActivity extends ActionBarActivity {
             }
         };
         new Thread(loadPuppetsThread).start();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (!isFinishing()){ // Save instance data for activity restart
+            // Save puppet positions
+            for (int i = 0; i < stage.getChildCount(); i++){
+                savedData.layoutParamses.add(stage.getChildAt(i).getLayoutParams());
+            }
+        }
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -129,9 +161,8 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
-
     @Override
-     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PUPPET_GET && resultCode == RESULT_OK) {
             SetupNewPuppet(data);
         }
@@ -205,10 +236,12 @@ public class MainActivity extends ActionBarActivity {
             showRecorder = new PuppetShowRecorder(stage);
         }
         showRecorder.RecordStart();
+        progressBar.setProgress(progressBar.getMax());
     }
     public void PlayClick(View v){
         if (showRecorder != null){
             showRecorder.RecordStop();
+            progressBar.setMax(showRecorder.getLength());
             showRecorder.Play();
         }
     }
@@ -220,6 +253,7 @@ public class MainActivity extends ActionBarActivity {
         findViewById(R.id.backstage_button_bar).setVisibility(View.VISIBLE);
         stage.setOnClickListener(backgroundClickListener);
         isBackstage = true;
+        savedData.isBackstage = isBackstage;
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(backstageListener);
             stage.getChildAt(i).setVisibility(View.VISIBLE);
@@ -363,6 +397,7 @@ public class MainActivity extends ActionBarActivity {
         } catch (IOException e){Toast.makeText(this, "Error loading backgournd", Toast.LENGTH_SHORT).show();}
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+            savedData.currentBackground = bitmap;
         }
     }
 

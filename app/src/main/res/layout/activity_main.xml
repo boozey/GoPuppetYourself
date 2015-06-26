@@ -10,30 +10,11 @@
         android:layout_weight="1"
         android:id="@+id/stage">
 
-    <com.nakedape.gopuppetyourself.Puppet
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clipChildren="false"
-        android:id="@+id/puppet"
-        android:background="#00000000"
-        android:visibility="gone">
-    <ImageView
-        android:layout_width="200dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginLeft="50dp"
-        android:id="@+id/upper_jaw"
-        android:background="@drawable/upper_jaw_blank"
-        android:focusableInTouchMode="true"/>
-    <ImageView
-        android:layout_width="200dp"
-        android:layout_height="100dp"
-        android:layout_marginLeft="50dp"
-        android:id="@+id/lower_jaw"
-        android:background="@drawable/lower_jaw_blank"
-        android:layout_below="@id/upper_jaw"/>
-    </com.nakedape.gopuppetyourself.Puppet>
     </RelativeLayout>
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/progress_bar"/>
     <!-- Backstage button bar -->
     <LinearLayout
         android:layout_width="fill_parent"
@@ -53,11 +34,11 @@
             style="?android:buttonBarButtonStyle"
             android:text="New Puppet"
             android:onClick="NewButtonClick"/>
-        <Button
+        <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?android:buttonBarButtonStyle"
             android:text="Set Background"
+            android:background="@drawable/ic_action_set_background"
             android:onClick="BackGroundButtonClick"/>
     </LinearLayout>
     <!-- Frontstage button bar -->
@@ -72,18 +53,20 @@
             style="?android:buttonBarButtonStyle"
             android:text="Record"
             android:onClick="RecordClick"/>
-        <Button
+        <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:id="@+id/play"
-            style="?android:buttonBarButtonStyle"
             android:text="Play"
+            android:background="@drawable/ic_action_av_play_arrow"
             android:onClick="PlayClick"/>
-        <Button
+        <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?android:buttonBarButtonStyle"
+            android:layout_gravity="center_vertical"
             android:text="Backstage"
+            android:background="@drawable/ic_action_av_recent_actors"
             android:onClick="GoBackstage"/>
     </LinearLayout>
 </LinearLayout>

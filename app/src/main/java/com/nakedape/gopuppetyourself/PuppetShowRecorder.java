@@ -89,6 +89,9 @@ public class PuppetShowRecorder {
         isRecording = false;
         Log.d(LOG_TAG, "Recording stopped");
     }
+    public int getLength(){
+        return (int)recordingEndTime;
+    }
     public PuppetShow getRecording(){
         PuppetShow show = new PuppetShow();
         for (int i = 0; i < stage.getChildCount(); i++){
