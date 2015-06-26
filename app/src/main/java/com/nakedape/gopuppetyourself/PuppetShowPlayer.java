@@ -47,17 +47,22 @@ public class PuppetShowPlayer {
     }
     public void RecordFrame(int puppetId, int event){
         frameSequence.add(new KeyFrame(getTimeFromStartMillis(), puppetId, event));
-        Log.d(LOG_TAG, "Frame recorded" + getTimeFromStartMillis());
     }
     public void RecordFrame(int puppetId, int event, int x, int y){
         frameSequence.add(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x, y));
-        Log.d(LOG_TAG, "Frame recorded" + getTimeFromStartMillis());
     }
     public void RecordStop(){
         recordingEndTime = getTimeFromStartMillis();
         isRecording = false;
     }
-
+    public PuppetShow getRecording(){
+        PuppetShow show = new PuppetShow();
+        for (int i = 0; i < stage.getChildCount(); i++){
+            show.addPuppet((Puppet)stage.getChildAt(i));
+        }
+        show.setFrameSequence(frameSequence);
+        return show;
+    }
 
     public long getTimeFromStartMillis(){
         return SystemClock.elapsedRealtime() - startMillis;
@@ -81,9 +86,7 @@ public class PuppetShowPlayer {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
             startMillis = SystemClock.elapsedRealtime();
             for (int i = 0; i < frameSequence.size() && isPlaying; i++) {
-                Log.d(LOG_TAG, "Play time: " + getTimeFromStartMillis());
                 final KeyFrame frame = frameSequence.get(i);
-                Log.d(LOG_TAG, "Frame time: " + frame.time);
                 while (getTimeFromStartMillis() < frame.time && isPlaying){
                     try {
                         Thread.sleep(10);
@@ -93,7 +96,6 @@ public class PuppetShowPlayer {
                     Message msg = mHandler.obtainMessage(COUNTER_UPDATE);
                     msg.sendToTarget();
                 }
-                Log.d(LOG_TAG, "Frame played id = " + frame.puppetId);
                 final Puppet p = (Puppet)stage.findViewById(frame.puppetId);
                 switch (frame.eventType){
                     case KeyFrame.OPEN_MOUTH_NARROW:
