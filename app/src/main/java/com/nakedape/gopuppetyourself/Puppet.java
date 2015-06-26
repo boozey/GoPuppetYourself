@@ -209,7 +209,21 @@ public class Puppet extends RelativeLayout implements Serializable {
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
         int lowerLeft = lowerPivotPoint.x;
         int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
-        int topPadding = (int)Math.sqrt(upperBitmapWidth*upperBitmapWidth + upperBitmapHeight*upperBitmapHeight) - upperBitmapHeight;
+        int topPadding; // = (int)Math.sqrt(upperBitmapWidth*upperBitmapWidth + upperBitmapHeight*upperBitmapHeight) - upperBitmapHeight;
+        if (orientation == PROFILE_RIGHT){
+            double h = upperBitmapHeight, x = upperBitmapWidth - upperPivotPoint.x;
+            double l = Math.sqrt(h*h + x*x);
+            double theta = Math.atan(h/x);
+            topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
+            Log.d(LOG_TAG, "h = " + h + " x = " + x + " l = " + l + " theta = " + theta + " top = " + topPadding);
+        }
+        else{
+            double h = upperBitmapHeight, x = upperPivotPoint.x;
+            double l = Math.sqrt(h*h + x*x);
+            double theta = Math.atan(h/x);
+            topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
+            Log.d(LOG_TAG, "h = " + h + " x = " + x + " l = " + l + " theta = " + theta + " top = " + topPadding);
+        }
 
         if (upperLeft > lowerLeft) lowerLeftPadding = upperLeft - lowerLeft;
         else upperLeftPadding = lowerLeft - upperLeft;
