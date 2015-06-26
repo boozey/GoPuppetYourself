@@ -230,6 +230,7 @@ public class PuppetDesigner extends View {
         m.preScale(-1, 1);
         Bitmap dst = Bitmap.createBitmap(background, 0, 0, background.getWidth(), background.getHeight(), m, false);
         background = dst;
+        backgroundCanvas = new Canvas(background);
         invalidate();
         //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
     }
