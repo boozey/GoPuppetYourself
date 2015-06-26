@@ -6,8 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Message;
-import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -47,7 +45,7 @@ public class MainActivity extends ActionBarActivity {
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
     private File storageDir;
-    private PuppetShowPlayer player;
+    private PuppetShowRecorder player;
     private final Handler mHandler = new Handler();
     private int nextPuppetId = 0;
 
@@ -57,7 +55,7 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         context = this;
         stage = (RelativeLayout)findViewById(R.id.stage);
-        player = new PuppetShowPlayer(stage);
+        player = new PuppetShowRecorder(stage);
         player.setHandler(mHandler);
         /*
         selectedPuppet = (Puppet)findViewById(R.id.puppet);
@@ -204,7 +202,7 @@ public class MainActivity extends ActionBarActivity {
     }
     public void RecordClick(View v){
         if (player == null){
-            player = new PuppetShowPlayer(stage);
+            player = new PuppetShowRecorder(stage);
         }
         player.RecordStart();
     }

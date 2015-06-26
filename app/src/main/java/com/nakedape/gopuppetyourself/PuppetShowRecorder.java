@@ -1,5 +1,8 @@
 package com.nakedape.gopuppetyourself;
 
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
@@ -7,13 +10,14 @@ import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * Created by Nathan on 6/25/2015.
  */
 
-public class PuppetShowPlayer {
+public class PuppetShowRecorder {
     private static final String LOG_TAG = "PuppetShowPlayer";
     public static final int COUNTER_UPDATE = 919;
     private boolean stopCounterThread = false,
@@ -24,9 +28,13 @@ public class PuppetShowPlayer {
     private ArrayList<KeyFrame> frameSequence;
     private Handler mHandler = new Handler();
     private PlayLoop playLoop;
+    private MediaRecorder mRecorder;
+    private String audioFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "//recording.3gp";
+    private MediaPlayer mPlayer;
 
-    public PuppetShowPlayer(ViewGroup stage){
+    public PuppetShowRecorder(ViewGroup stage){
         this.stage = stage;
+
     }
     public void setHandler(Handler handler){
         mHandler = handler;
@@ -40,7 +48,24 @@ public class PuppetShowPlayer {
         frameSequence = new ArrayList<>(100);
         startMillis = SystemClock.elapsedRealtime();
         recordingEndTime = -1;
+
+        // Setup audio recording
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFile(audioFilePath);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        try {
+            mRecorder.prepare();
+            mRecorder.start();
+            Log.d(LOG_TAG, "Audio recording started");
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "MediaRecorder.prepare() failed");
+            e.printStackTrace();
+        }
+
         isRecording = true;
+        Log.d(LOG_TAG, "Show recording started");
     }
     public boolean isRecording(){
         return isRecording;
@@ -53,7 +78,16 @@ public class PuppetShowPlayer {
     }
     public void RecordStop(){
         recordingEndTime = getTimeFromStartMillis();
+
+        // Stop audio recording
+        if (mRecorder != null) {
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+        }
+
         isRecording = false;
+        Log.d(LOG_TAG, "Recording stopped");
     }
     public PuppetShow getRecording(){
         PuppetShow show = new PuppetShow();
@@ -69,11 +103,28 @@ public class PuppetShowPlayer {
     }
 
     public void Play(){
-        isPlaying = true;
+        // Start playing audio
+        mPlayer = new MediaPlayer();
+        try {
+            mPlayer.setDataSource(audioFilePath);
+            mPlayer.prepare();
+            mPlayer.start();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+        }
+        // Start playing animation
         playLoop = new PlayLoop();
         new Thread(playLoop).start();
+        isPlaying = true;
     }
     public void Stop(){
+        // Stop media player
+        if (mPlayer != null) {
+            mPlayer.release();
+            mPlayer = null;
+        }
+
+        // Stop animation loop
         isPlaying = false;
         isRecording = false;
         stopCounterThread = true;
