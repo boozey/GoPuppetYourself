@@ -46,6 +46,7 @@ public class PuppetShowRecorder {
 
     public void RecordStart(){
         frameSequence = new ArrayList<>(100);
+        frameSequence.add(new KeyFrame(0, KeyFrame.START));
         startMillis = SystemClock.elapsedRealtime();
         recordingEndTime = -1;
 
@@ -78,6 +79,7 @@ public class PuppetShowRecorder {
     }
     public void RecordStop(){
         recordingEndTime = getTimeFromStartMillis();
+        frameSequence.add(new KeyFrame(recordingEndTime, KeyFrame.END));
 
         // Stop audio recording
         if (mRecorder != null) {
