@@ -65,8 +65,10 @@ public class MainActivity extends ActionBarActivity {
     private SeekBar progressBar;
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
-    private ImageButton bottomLeftButton;
+    private ImageButton mainControlButton, recordButton, playButton;
     private RelativeLayout rootLayout;
+    private boolean isControlMode = false;
+    private boolean isSecondControlShowing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,9 +78,18 @@ public class MainActivity extends ActionBarActivity {
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
         progressBar = (SeekBar)findViewById(R.id.progress_bar);
-        bottomLeftButton = (ImageButton)findViewById(R.id.bottom_left_button);
-        bottomLeftButton.setOnClickListener(mainControlClickListener);
-        bottomLeftButton.setOnLongClickListener(mainControlLongClickListener);
+        mainControlButton = (ImageButton)findViewById(R.id.bottom_left_button);
+        //mainControlButton.setOnClickListener(mainControlClickListener);
+        //mainControlButton.setOnLongClickListener(mainControlLongClickListener);
+        mainControlButton.setOnTouchListener(mainControlTouchListener);
+        recordButton = new ImageButton(context);
+        recordButton.setBackground(getResources().getDrawable(R.drawable.record_background));
+        recordButton.setVisibility(View.GONE);
+        playButton = new ImageButton(context);
+        playButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_play_arrow));
+        playButton.setVisibility(View.GONE);
+        rootLayout.addView(recordButton);
+        rootLayout.addView(playButton);
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
@@ -270,56 +281,55 @@ public class MainActivity extends ActionBarActivity {
         public boolean onTouch(View view, MotionEvent motionEvent) {
             switch (motionEvent.getAction()){
                 case MotionEvent.ACTION_DOWN:
+                    GoBackstage(view);
                     mainControlFadeIn();
-                    Log.d(LOG_TAG, "Main control touch down");
                     return true;
                 case MotionEvent.ACTION_MOVE:
+                    secondControlsFadeIn();
                     return true;
                 case MotionEvent.ACTION_UP:
+                    GoToPerformance(view);
                     mainControlFadeOut();
+                    secondControlsFadeOut();
                     return true;
             }
             return false;
         }
     };
-    private View.OnClickListener mainControlClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            fadeIn.setAnimationListener(new Animation.AnimationListener() {
-                @Override
-                public void onAnimationStart(Animation animation) {
-
-                }
-
-                @Override
-                public void onAnimationEnd(Animation animation) {
-                    mainControlFadeOut();
-                }
-
-                @Override
-                public void onAnimationRepeat(Animation animation) {
-
-                }
-            });
-            bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
-            bottomLeftButton.startAnimation(fadeIn);
-        }
-    };
-    private View.OnLongClickListener mainControlLongClickListener = new View.OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View view) {
-            bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
-
-            ImageButton button = new ImageButton(context);
-            button.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+    private void secondControlsFadeIn(){
+        if (!isSecondControlShowing) {
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+            recordButton.setVisibility(View.VISIBLE);
+            playButton.setVisibility(View.VISIBLE);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(50, 50);
-            params.setMargins(bottomLeftButton.getLeft(), rootLayout.getHeight() - bottomLeftButton.getHeight() - 50 - 50, 0, 0);
-            button.setLayoutParams(params);
-            rootLayout.addView(button);
-            return true;
+            params.setMargins(mainControlButton.getLeft(), rootLayout.getHeight() - mainControlButton.getHeight() - 50 - 50, 0, 0);
+            recordButton.setLayoutParams(params);
+            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            recordButton.startAnimation(fadeIn);
+            isSecondControlShowing = true;
         }
-    };
+    }
+    private void secondControlsFadeOut(){
+        Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+        fadeOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                recordButton.setBackground(new ColorDrawable(Color.TRANSPARENT));
+                isSecondControlShowing = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        recordButton.startAnimation(fadeOut);
+    }
     private void mainControlFadeOut(){
         Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_grow_fade_out);
         fade_out.setAnimationListener(new Animation.AnimationListener() {
@@ -330,7 +340,7 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                bottomLeftButton.setBackground(new ColorDrawable(Color.TRANSPARENT));
+                mainControlButton.setBackground(new ColorDrawable(Color.TRANSPARENT));
             }
 
             @Override
@@ -338,7 +348,7 @@ public class MainActivity extends ActionBarActivity {
 
             }
         });
-        bottomLeftButton.startAnimation(fade_out);
+        mainControlButton.startAnimation(fade_out);
     }
     private void progressBarFadeOut(){
         Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_fade_out);
@@ -363,14 +373,12 @@ public class MainActivity extends ActionBarActivity {
     }
     private void mainControlFadeIn(){
         Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
-        bottomLeftButton.startAnimation(fadeIn);
+        mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+        mainControlButton.startAnimation(fadeIn);
     }
 
     // Backstage related methods
     public void GoBackstage(View v){
-        findViewById(R.id.perform_button_bar).setVisibility(View.GONE);
-        findViewById(R.id.backstage_button_bar).setVisibility(View.VISIBLE);
         stage.setOnClickListener(backgroundClickListener);
         isBackstage = true;
         savedData.isBackstage = isBackstage;
@@ -452,8 +460,6 @@ public class MainActivity extends ActionBarActivity {
         }
     };
     public void GoToPerformance(View v){
-        findViewById(R.id.backstage_button_bar).setVisibility(View.GONE);
-        findViewById(R.id.perform_button_bar).setVisibility(View.VISIBLE);
         stage.setOnClickListener(null);
         if (selectedPuppet != null) selectedPuppet.setBackground(null);
         isBackstage = false;
