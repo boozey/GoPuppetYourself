@@ -14,6 +14,7 @@
 
     </RelativeLayout>
 
+
     <ImageButton
         android:id="@+id/bottom_left_button"
         android:layout_width="50dp"
@@ -23,12 +24,40 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
         android:background="@drawable/control_button_background"/>
+    <ImageButton
+        android:id="@+id/record_button"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_margin="10dp"
+        android:layout_above="@id/bottom_left_button"
+        android:background="@drawable/record_background"/>
+
+    <ImageButton
+        android:id="@+id/play_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:layout_above="@id/bottom_left_button"
+        android:layout_toRightOf="@id/record_button"
+        android:background="@drawable/ic_action_av_play_arrow"/>
+
+    <ImageButton
+        android:id="@+id/puppet_library_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="-8dp"
+        android:layout_above="@id/bottom_left_button"
+        android:layout_toRightOf="@id/bottom_left_button"
+        android:background="@drawable/ic_action_av_recent_actors"/>
+
     <SeekBar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toEndOf="@id/bottom_left_button"
         android:layout_toRightOf="@id/bottom_left_button"
         android:paddingBottom="18dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginRight="15dp"
         android:layout_alignParentBottom="true"
         android:id="@+id/progress_bar"/>
     <!-- Backstage button bar -->
