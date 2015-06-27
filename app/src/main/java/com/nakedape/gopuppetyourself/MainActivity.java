@@ -61,6 +61,29 @@ public class MainActivity extends ActionBarActivity {
             switch (msg.what){
                 case PuppetShowRecorder.COUNTER_UPDATE:
                     progressBar.setProgress((int)showRecorder.getTimeFromStartMillis());
+                    break;
+                case PuppetShowRecorder.COUNTER_END:
+                    mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_play_arrow));
+                    Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+                    fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                        @Override
+                        public void onAnimationStart(Animation animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animation animation) {
+                            setViewGone(progressBar);
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animation animation) {
+
+                        }
+                    });
+                    progressBar.startAnimation(fadeOut);
+                    mainControlFadeOut();
+                    isPlaying = false;
             }
         }
     };
@@ -69,8 +92,10 @@ public class MainActivity extends ActionBarActivity {
     private MainActivityDataFrag savedData;
     private ImageButton mainControlButton, recordButton, playButton, libraryButton;
     private RelativeLayout rootLayout;
-    private boolean isControlMode = false;
+    private boolean isControlPressed = false;
     private boolean isSecondControlShowing = false;
+    private boolean isPlaying = false;
+    private boolean isRecording = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,18 +105,14 @@ public class MainActivity extends ActionBarActivity {
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
         progressBar = (SeekBar)findViewById(R.id.progress_bar);
+        progressBar.setVisibility(View.GONE);
         mainControlButton = (ImageButton)findViewById(R.id.bottom_left_button);
-        //mainControlButton.setOnClickListener(mainControlClickListener);
-        //mainControlButton.setOnLongClickListener(mainControlLongClickListener);
         mainControlButton.setOnTouchListener(mainControlTouchListener);
         recordButton = (ImageButton)findViewById(R.id.record_button);
-        recordButton.setBackground(getResources().getDrawable(R.drawable.record_background));
         recordButton.setVisibility(View.GONE);
         playButton = (ImageButton)findViewById(R.id.play_button);
-        playButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_play_arrow));
         playButton.setVisibility(View.GONE);
         libraryButton = (ImageButton)findViewById(R.id.puppet_library_button);
-        libraryButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_recent_actors));
         libraryButton.setVisibility(View.GONE);
 
         // Prepare show recorder
@@ -278,6 +299,10 @@ public class MainActivity extends ActionBarActivity {
                     return true;
                 case MotionEvent.ACTION_UP:
                     GoToPerformance(view);
+                    if (isPlaying){
+                        StopPlay();
+                        return true;
+                    }
                     Rect hitRect = new Rect();
                     playButton.getGlobalVisibleRect(hitRect);
                     if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())) {
@@ -423,20 +448,35 @@ public class MainActivity extends ActionBarActivity {
         });
         progressBar.startAnimation(fade_out);
     }
+    private void setViewGone(View v){
+        v.setVisibility(View.GONE);
+    }
     private void mainControlFadeIn(){
         Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
         mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
         mainControlButton.startAnimation(fadeIn);
     }
     public void RecordClick(View v){
-        if (showRecorder == null){
-            showRecorder = new PuppetShowRecorder(stage);
+        if (!isRecording) {
+            if (showRecorder == null) {
+                showRecorder = new PuppetShowRecorder(stage);
+            }
+            showRecorder.RecordStart();
+            progressBar.setProgress(progressBar.getMax());
+            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.record_background));
+            mainControlButton.startAnimation(fadeIn);
+            recordButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_stop));
+            isRecording = true;
         }
-        showRecorder.RecordStart();
-        progressBar.setProgress(progressBar.getMax());
-        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        mainControlButton.setBackground(getResources().getDrawable(R.drawable.record_background));
-        mainControlButton.startAnimation(fadeIn);
+        else {
+            showRecorder.RecordStop();
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+            recordButton.setBackground(getResources().getDrawable(R.drawable.ic_action_rec));
+            mainControlFadeOut();
+            secondControlsFadeOut();
+            isRecording = false;
+        }
     }
     public void PlayClick(View v){
         if (showRecorder != null){
@@ -449,6 +489,33 @@ public class MainActivity extends ActionBarActivity {
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_pause));
             mainControlButton.startAnimation(fadeIn);
             showRecorder.Play();
+            isPlaying = true;
+        }
+    }
+    public void StopPlay(){
+        if (isPlaying){
+            showRecorder.Stop();
+            Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+            fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    setViewGone(progressBar);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            progressBar.startAnimation(fadeOut);
+            mainControlFadeOut();
+            secondControlsFadeOut();
+            isPlaying = false;
         }
     }
 

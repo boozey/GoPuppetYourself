@@ -20,6 +20,7 @@ import java.util.ArrayList;
 public class PuppetShowRecorder {
     private static final String LOG_TAG = "PuppetShowPlayer";
     public static final int COUNTER_UPDATE = 919;
+    public static final int COUNTER_END = 920;
     private boolean stopCounterThread = false,
             isRecording = false, isPlaying = false;
     private long startMillis = SystemClock.elapsedRealtime(),
@@ -194,6 +195,8 @@ public class PuppetShowRecorder {
                         break;
                 }
             }
+            Message msg = mHandler.obtainMessage(COUNTER_END);
+            msg.sendToTarget();
 
         }
     }

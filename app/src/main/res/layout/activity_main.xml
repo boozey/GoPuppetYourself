@@ -26,29 +26,34 @@
         android:background="@drawable/control_button_background"/>
     <ImageButton
         android:id="@+id/record_button"
-        android:layout_width="15dp"
-        android:layout_height="15dp"
-        android:layout_margin="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_marginBottom="4dp"
         android:layout_above="@id/bottom_left_button"
-        android:background="@drawable/record_background"/>
+        android:background="@drawable/ic_action_rec"/>
 
     <ImageButton
         android:id="@+id/play_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
+        android:layout_marginLeft="4dp"
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/record_button"
-        android:background="@drawable/ic_action_av_play_arrow"/>
+        android:background="@drawable/ic_action_av_play_arrow"
+        android:onClick="RecordClick"/>
 
     <ImageButton
         android:id="@+id/puppet_library_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="-8dp"
+        android:layout_marginBottom="-12dp"
+        android:layout_marginLeft="8dp"
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/bottom_left_button"
-        android:background="@drawable/ic_action_av_recent_actors"/>
+        android:background="@drawable/ic_action_av_recent_actors"
+        android:onClick="PlayClick"/>
 
     <SeekBar
         android:layout_width="match_parent"
