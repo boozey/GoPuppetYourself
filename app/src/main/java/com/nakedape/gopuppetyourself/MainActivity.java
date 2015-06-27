@@ -4,7 +4,9 @@ import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,7 +20,9 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -61,14 +65,20 @@ public class MainActivity extends ActionBarActivity {
     private SeekBar progressBar;
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
+    private ImageButton bottomLeftButton;
+    private RelativeLayout rootLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = this;
+        rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
         progressBar = (SeekBar)findViewById(R.id.progress_bar);
+        bottomLeftButton = (ImageButton)findViewById(R.id.bottom_left_button);
+        bottomLeftButton.setOnClickListener(mainControlClickListener);
+        bottomLeftButton.setOnLongClickListener(mainControlLongClickListener);
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
@@ -132,6 +142,13 @@ public class MainActivity extends ActionBarActivity {
         new Thread(loadPuppetsThread).start();
     }
     @Override
+    protected void onResume(){
+        super.onResume();
+        stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
+        progressBarFadeOut();
+        mainControlFadeOut();
+    }
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (!isFinishing()){ // Save instance data for activity restart
@@ -175,6 +192,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    // Performance Methods
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
@@ -246,6 +264,108 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    // Control Methods
+    private View.OnTouchListener mainControlTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    mainControlFadeIn();
+                    Log.d(LOG_TAG, "Main control touch down");
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    mainControlFadeOut();
+                    return true;
+            }
+            return false;
+        }
+    };
+    private View.OnClickListener mainControlClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            fadeIn.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    mainControlFadeOut();
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+            bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+            bottomLeftButton.startAnimation(fadeIn);
+        }
+    };
+    private View.OnLongClickListener mainControlLongClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+
+            ImageButton button = new ImageButton(context);
+            button.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(50, 50);
+            params.setMargins(bottomLeftButton.getLeft(), rootLayout.getHeight() - bottomLeftButton.getHeight() - 50 - 50, 0, 0);
+            button.setLayoutParams(params);
+            rootLayout.addView(button);
+            return true;
+        }
+    };
+    private void mainControlFadeOut(){
+        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_grow_fade_out);
+        fade_out.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                bottomLeftButton.setBackground(new ColorDrawable(Color.TRANSPARENT));
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        bottomLeftButton.startAnimation(fade_out);
+    }
+    private void progressBarFadeOut(){
+        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_fade_out);
+        fade_out.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                //progressBar.setBackground(new ColorDrawable(Color.TRANSPARENT));
+                progressBar.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        progressBar.startAnimation(fade_out);
+    }
+    private void mainControlFadeIn(){
+        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+        bottomLeftButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+        bottomLeftButton.startAnimation(fadeIn);
+    }
 
     // Backstage related methods
     public void GoBackstage(View v){
