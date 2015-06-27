@@ -72,10 +72,10 @@ public class PuppetShowRecorder {
     public boolean isRecording(){
         return isRecording;
     }
-    public void RecordFrame(int puppetId, int event){
+    public void RecordFrame(String puppetId, int event){
         frameSequence.add(new KeyFrame(getTimeFromStartMillis(), puppetId, event));
     }
-    public void RecordFrame(int puppetId, int event, int x, int y){
+    public void RecordFrame(String puppetId, int event, int x, int y){
         frameSequence.add(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x, y));
     }
     public void RecordStop(){
@@ -153,7 +153,7 @@ public class PuppetShowRecorder {
                     Message msg = mHandler.obtainMessage(COUNTER_UPDATE);
                     msg.sendToTarget();
                 }
-                final Puppet p = (Puppet)stage.findViewById(frame.puppetId);
+                final Puppet p = (Puppet)stage.findViewWithTag(frame.puppetId);
                 switch (frame.eventType){
                     case KeyFrame.OPEN_MOUTH_NARROW:
                         mHandler.post(new Runnable() {

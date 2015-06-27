@@ -14,7 +14,7 @@ public class KeyFrame {
 
     private final static int UNSET = -1;
 
-    public int puppetId;
+    public String puppetId;
     public int eventType;
     public long time;
     public int x = UNSET, y = UNSET;
@@ -25,12 +25,12 @@ public class KeyFrame {
         this.time = time;
         this.eventType = eventType;
     }
-    public KeyFrame(long time, int puppetId, int eventType){
+    public KeyFrame(long time, String puppetId, int eventType){
         this.time = time;
         this.puppetId = puppetId;
         this.eventType = eventType;
     }
-    public KeyFrame(long time, int puppetId, int eventType, int x, int y){
+    public KeyFrame(long time, String puppetId, int eventType, int x, int y){
         this.time = time;
         this.puppetId = puppetId;
         this.eventType = eventType;

@@ -163,6 +163,7 @@ public class MainActivity extends ActionBarActivity {
                             public void run() {
                                 p.setId(nextPuppetId++);
                                 p.setOnTouchListener(headTouchListener);
+                                p.setTag(p.getName());
                                 if (!p.isOnStage()) p.setVisibility(View.GONE);
                                 if (savedData.layoutParamses.size() > 0){
                                     p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
@@ -255,7 +256,7 @@ public class MainActivity extends ActionBarActivity {
                     moveMouth(puppet, event.getY(0), event.getY(1));
                 } else {
                     puppet.upperJaw.setRotation(0);
-                    if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.CLOSE_MOUTH);
+                    if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.CLOSE_MOUTH);
                 }
                 moveView(view, X, Y);
                 break;
@@ -267,11 +268,11 @@ public class MainActivity extends ActionBarActivity {
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
             puppet.upperJaw.setRotation(15 * puppet.getPivotDirection());
-            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_NARROW);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_NARROW);
         }
         else {
             puppet.upperJaw.setRotation(30 * puppet.getPivotDirection());
-            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.OPEN_MOUTH_MED);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_MED);
         }
     }
     private void moveView(Puppet puppet, int X, int Y){
@@ -281,7 +282,7 @@ public class MainActivity extends ActionBarActivity {
         layoutParams.topMargin = Y - dy;
         layoutParams.rightMargin = -250;
         layoutParams.bottomMargin = -250;
-        if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getId(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
+        if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
         puppet.setLayoutParams(layoutParams);
     }
 
