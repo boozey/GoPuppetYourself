@@ -70,7 +70,7 @@ public class DesignerActivity extends ActionBarActivity {
     };
     private Puppet puppet;
     private File storageDir;
-    private int stageIndex;
+    private int stageIndex = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

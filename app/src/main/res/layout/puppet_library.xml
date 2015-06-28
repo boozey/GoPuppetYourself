@@ -2,8 +2,9 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#66FFFFFF"
-    android:id="@+id/puppet_library_popup">
+    android:background="@drawable/puppet_library_background"
+    android:id="@+id/puppet_library_popup"
+    >
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,12 +14,13 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:orientation="horizontal"/>
+        android:orientation="horizontal"
+        android:visibility="gone"/>
     <ViewFlipper
         android:id="@+id/puppet_flipper"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="2"
+        android:layout_weight="3"
         android:orientation="horizontal">
 
     </ViewFlipper>
@@ -27,13 +29,15 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:orientation="horizontal"/>
+        android:orientation="horizontal"
+        android:visibility="gone"/>
 </LinearLayout>
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/ic_action_puppet_add"/>
+        android:background="@drawable/ic_action_puppet_add"
+        android:onClick="NewButtonClick"/>
 
 </RelativeLayout>

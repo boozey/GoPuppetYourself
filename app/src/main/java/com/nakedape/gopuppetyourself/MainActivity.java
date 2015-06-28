@@ -146,7 +146,10 @@ public class MainActivity extends ActionBarActivity {
         FragmentManager fm = getFragmentManager();
         savedData = (MainActivityDataFrag) fm.findFragmentByTag("data");
         if (savedData != null){ // Load the data
-            stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
+            if (savedData.currentBackground != null)
+                stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
+            else
+                stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
         }
         else { // Create a new instance to save the data
             savedData = new MainActivityDataFrag();
@@ -189,7 +192,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onResume(){
         super.onResume();
-        stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
         progressBarFadeOut();
         mainControlFadeOut();
     }
@@ -550,6 +552,7 @@ public class MainActivity extends ActionBarActivity {
         public void onClick(View view) {
             if (selectedPuppet != null) selectedPuppet.setBackground(null);
             selectedPuppet = null;
+            BackGroundButtonClick(view);
         }
     };
     private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
@@ -624,24 +627,26 @@ public class MainActivity extends ActionBarActivity {
                 gestureDetector.onTouchEvent(motionEvent);
                 if (flingRight) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_right);
-                    flipper.setInAnimation(context, R.anim.anim_scale_up_left);
+                    flipper.setInAnimation(context, R.anim.anim_scale_up_right);
                     flipper.showPrevious();
                     flingRight = false;
                 }
                 else if (flingLeft) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_left);
-                    flipper.setInAnimation(context, R.anim.anim_scale_up_right);
+                    flipper.setInAnimation(context, R.anim.anim_scale_up_left);
                     flipper.showNext();
                     flingLeft = false;
                 }
                 return true;
             }
         });
-        PopupWindow popup = new PopupWindow(layout, rootLayout.getWidth() - 20, 500);
+        int width = 600;
+        int height = 400;
+        PopupWindow popup = new PopupWindow(layout, width, height);
         popup.setFocusable(true);
         popup.setOutsideTouchable(true);
         popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        popup.showAsDropDown(stage, 10, -700);
+        popup.showAtLocation(rootLayout, Gravity.NO_GRAVITY, rootLayout.getWidth() / 2 - width / 2, rootLayout.getHeight() / 2 - height / 2);
         Log.d(LOG_TAG, "popup should be visible");
 
         // Search for puppet files on a separate thread and update UI as they're loaded
@@ -674,30 +679,6 @@ public class MainActivity extends ActionBarActivity {
         };
         new Thread(loadPuppetsThread).start();
 
-    }
-    class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
-        private static final String DEBUG_TAG = "Gestures";
-
-        @Override
-        public boolean onDown(MotionEvent event) {
-            Log.d(DEBUG_TAG,"onDown: " + event.toString());
-            return true;
-        }
-
-        @Override
-        public boolean onFling(MotionEvent event1, MotionEvent event2,
-                               float velocityX, float velocityY) {
-            Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-            flingRight = false;
-            flingLeft = false;
-            flingDown = false;
-            flingUp = false;
-            if (velocityX > 0)
-                flingRight = true;
-            else if (velocityX < 0)
-                flingLeft = true;
-            return true;
-        }
     }
 
     public void GoToPerformance(View v){
@@ -758,6 +739,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
     private void setBackGround(Uri imageUri){
+        Log.d(LOG_TAG, "set background called");
         Bitmap bitmap = null;
         try {
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
@@ -765,7 +747,32 @@ public class MainActivity extends ActionBarActivity {
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             savedData.currentBackground = bitmap;
+            Log.d(LOG_TAG, "background changed");
         }
     }
 
+    class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
+        private static final String DEBUG_TAG = "Gestures";
+
+        @Override
+        public boolean onDown(MotionEvent event) {
+            Log.d(DEBUG_TAG,"onDown: " + event.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent event1, MotionEvent event2,
+                               float velocityX, float velocityY) {
+            Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
+            flingRight = false;
+            flingLeft = false;
+            flingDown = false;
+            flingUp = false;
+            if (velocityX > 0)
+                flingRight = true;
+            else if (velocityX < 0)
+                flingLeft = true;
+            return true;
+        }
+    }
 }
