@@ -1,8 +1,11 @@
 package com.nakedape.gopuppetyourself;
 
 import android.app.FragmentManager;
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -18,6 +21,7 @@ import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.Menu;
@@ -43,16 +47,22 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private static String LOG_TAG = "GoPuppetYourself";
+
     public static final String PUPPET_INDEX = "com.nakedape.gopuppetyourself.PUPPET_INDEX";
     public static final String PUPPET_PATH = "com.nakedape.gopuppetyourself.PUPPET_PATH";
+
     private static final int REQUEST_PUPPET_GET = 4001;
     private static final int REQUEST_IMAGE_GET = 4002;
     private static final int REQUEST_EDIT = 4003;
+    private static final String PUPPETS_ON_STAGE = "com.nakedape.gopuppetyourself.PUPPETS_ON_STAGE";
+
     private Context context;
     private ViewGroup stage;
     private int dx;
@@ -61,6 +71,7 @@ public class MainActivity extends ActionBarActivity {
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
     private File storageDir;
+    private HashSet<String> puppetsOnStage;
     private PuppetShowRecorder showRecorder;
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -104,7 +115,7 @@ public class MainActivity extends ActionBarActivity {
     private boolean isPlaying = false;
     private boolean isRecording = false;
     private GestureDetectorCompat gestureDetector;
-    private boolean flingRight, flingLeft, flingUp, flingDown;
+    private boolean flingRight, flingLeft, flingUp, flingDown, longPress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,38 +168,29 @@ public class MainActivity extends ActionBarActivity {
             fm.beginTransaction().add(savedData, "data").commit();
         }
 
-        // Search for puppet files on a separate thread and update UI as they're loaded
-        Runnable loadPuppetsThread = new Runnable() {
-            @Override
-            public void run() {
-                File[] files = storageDir.listFiles(new FileFilter() {
-                    @Override
-                    public boolean accept(File file) {
-                        return file.getPath().endsWith(getString(R.string.puppet_extension));
-                    }
-                });
-                if (files.length > 0) {
-                    for (File f : files) {
-                        final Puppet p = new Puppet(context, null);
-                        Utils.ReadPuppetFromFile(p, f);
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                p.setId(nextPuppetId++);
-                                p.setOnTouchListener(headTouchListener);
-                                p.setTag(p.getName());
-                                if (!p.isOnStage()) p.setVisibility(View.GONE);
-                                if (savedData.layoutParamses.size() > 0){
-                                    p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
-                                }
-                                stage.addView(p);
-                            }
-                        });
-                    }
+        // Load puppets that are on stage
+        SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
+        puppetsOnStage = (HashSet<String>)preferences.getStringSet(PUPPETS_ON_STAGE, null);
+        if(puppetsOnStage != null) {
+            File file;
+            Object[] puppetPaths = puppetsOnStage.toArray();
+            for (Object o : puppetPaths){
+                file = new File((String)o);
+                Puppet p = new Puppet(context, null);
+                Utils.ReadPuppetFromFile(p, file);
+                p.setId(nextPuppetId++);
+                p.setOnTouchListener(headTouchListener);
+                p.setTag(p.getName());
+                if (!p.isOnStage()) p.setVisibility(View.GONE);
+                if (savedData.layoutParamses.size() > 0){
+                    p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
                 }
+                stage.addView(p);
             }
-        };
-        new Thread(loadPuppetsThread).start();
+        }
+        else {
+            puppetsOnStage = new HashSet<>();
+        }
     }
     @Override
     protected void onResume(){
@@ -420,6 +422,11 @@ public class MainActivity extends ActionBarActivity {
         });
         libraryButton.startAnimation(fadeOut);
     }
+    private void mainControlFadeIn(){
+        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+        mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+        mainControlButton.startAnimation(fadeIn);
+    }
     private void mainControlFadeOut(){
         Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_grow_fade_out);
         fade_out.setAnimationListener(new Animation.AnimationListener() {
@@ -463,11 +470,6 @@ public class MainActivity extends ActionBarActivity {
     }
     private void setViewGone(View v){
         v.setVisibility(View.GONE);
-    }
-    private void mainControlFadeIn(){
-        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
-        mainControlButton.startAnimation(fadeIn);
     }
     public void RecordClick(View v){
         if (!isRecording) {
@@ -618,7 +620,7 @@ public class MainActivity extends ActionBarActivity {
 
     // Puppet Library methods
     public void ShowPuppetLibrary(View v){
-        View layout = getLayoutInflater().inflate(R.layout.puppet_library, null);
+        final View layout = getLayoutInflater().inflate(R.layout.puppet_library, null);
         final ViewFlipper flipper = (ViewFlipper)layout.findViewById(R.id.puppet_flipper);
         final LinearLayout leftLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_left);
         final LinearLayout rightLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_right);
@@ -638,16 +640,31 @@ public class MainActivity extends ActionBarActivity {
                     flipper.showNext();
                     flingLeft = false;
                 }
+                if (longPress){
+                    longPress = false;
+                    StartLibraryDrag(flipper.getCurrentView(), (String)flipper.getCurrentView().getTag());
+                }
                 return true;
             }
         });
         int width = 600;
         int height = 400;
-        PopupWindow popup = new PopupWindow(layout, width, height);
-        popup.setFocusable(true);
-        popup.setOutsideTouchable(true);
-        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        popup.showAtLocation(rootLayout, Gravity.NO_GRAVITY, rootLayout.getWidth() / 2 - width / 2, rootLayout.getHeight() / 2 - height / 2);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(width, height);
+        params.setMargins(rootLayout.getWidth() / 2 - width / 2, rootLayout.getHeight() / 2 - height / 2, 0, 0);
+        layout.setLayoutParams(params);
+        rootLayout.addView(layout);
+        stage.setOnDragListener(new PuppetDragEventListener());
+        stage.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        rootLayout.removeView(layout);
+                        return true;
+                }
+                return false;
+            }
+        });
         Log.d(LOG_TAG, "popup should be visible");
 
         // Search for puppet files on a separate thread and update UI as they're loaded
@@ -669,7 +686,9 @@ public class MainActivity extends ActionBarActivity {
                             public void run() {
                                 if (flipper != null) {
                                     ImageView image = new ImageView(context);
-                                    image.setImageBitmap(p.getThumbnail());
+                                    image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                                    image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
+                                    image.setTag(p.getPath());
                                     flipper.addView(image);
                                     Log.d(LOG_TAG, "added puppet to library popup");
                                 }
@@ -681,6 +700,47 @@ public class MainActivity extends ActionBarActivity {
         };
         new Thread(loadPuppetsThread).start();
 
+    }
+    public void StartLibraryDrag(View v, String path){
+        ClipData.Item pathItem = new ClipData.Item(path);
+        String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
+        ClipData dragData = new ClipData("PUPPET_PATH", mime_type, pathItem);
+        View.DragShadowBuilder myShadow = new PuppetDragShadowBuilder(v);
+        v.startDrag(dragData,  // the data to be dragged
+                myShadow,  // the drag shadow builder
+                null,      // no need to use local data
+                0          // flags (not currently used, set to 0)
+        );
+    }
+    protected class PuppetDragEventListener implements View.OnDragListener {
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    ClipData.Item item = event.getClipData().getItemAt(0);
+                    String path = item.getText().toString();
+                    File f = new File(path);
+                    Puppet p = new Puppet(context, null);
+                    Utils.ReadPuppetFromFile(p, f);
+                    p.setOnTouchListener(headTouchListener);
+                    stage.addView(p);
+                    puppetsOnStage.add(path);
+                    SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+                    prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                    prefEditor.apply();
+                    return true;
+                default:
+                    return true;
+            }
+
+        }
     }
 
     public void GoToPerformance(View v){
@@ -731,6 +791,7 @@ public class MainActivity extends ActionBarActivity {
         Utils.ReadPuppetFromFile(puppet, new File(filePath));
         puppet.setOnTouchListener(backstageListener);
         stage.addView(puppet);
+        GoToPerformance(null);
         Log.d(LOG_TAG, "new puppet should be visible");
     }
     public void BackGroundButtonClick(View v){
@@ -774,7 +835,17 @@ public class MainActivity extends ActionBarActivity {
                 flingRight = true;
             else if (velocityX < 0)
                 flingLeft = true;
+            if (velocityY > 0)
+                flingUp = true;
+            else if (velocityY < 0)
+                flingDown = true;
             return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent event) {
+            Log.d(DEBUG_TAG, "onLongPress: " + event.toString());
+            longPress = true;
         }
     }
 }
