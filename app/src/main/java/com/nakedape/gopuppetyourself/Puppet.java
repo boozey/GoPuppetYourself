@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
@@ -244,6 +245,21 @@ public class Puppet extends RelativeLayout implements Serializable {
         addView(lowerJaw, params2);
         addView(upperJaw, params);
         Log.d(LOG_TAG, "LowerLeftPadding, LowerRightPadding = " + String.valueOf(lowerLeftPadding) + ", " + String.valueOf(lowerRightPadding));
+    }
+
+    public Bitmap getThumbnail(){
+        int height, width;
+        Bitmap upperJawBitmap = getUpperJawBitmap();
+        Bitmap lowerJawBitmap = getLowerJawBitmap();
+        width = lowerJawBitmap.getWidth() + getLowerLeftPadding() + getLowerRightPadding();
+        height = upperJawBitmap.getHeight() + lowerJawBitmap.getHeight();
+        Bitmap overlay = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(overlay);
+        canvas.drawBitmap(upperJawBitmap, getUpperLeftPadding(), 0, null);
+        canvas.drawBitmap(lowerJawBitmap, getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
+        float scaleFactor = 300 / height;
+        canvas.scale(width * scaleFactor, height * scaleFactor);
+        return overlay;
     }
 
     public void writeObject(ObjectOutputStream out) throws IOException {

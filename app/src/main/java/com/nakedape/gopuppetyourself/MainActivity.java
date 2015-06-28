@@ -28,6 +28,7 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.PopupWindow;
@@ -663,14 +664,15 @@ public class MainActivity extends ActionBarActivity {
                     for (File f : files) {
                         final Puppet p = new Puppet(context, null);
                         Utils.ReadPuppetFromFile(p, f);
-                        p.setScaleX(0.5f);
-                        p.setScaleY(0.5f);
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                if (flipper != null)
-                                    flipper.addView(p);
-                                Log.d(LOG_TAG, "added puppet to library popup");
+                                if (flipper != null) {
+                                    ImageView image = new ImageView(context);
+                                    image.setImageBitmap(p.getThumbnail());
+                                    flipper.addView(image);
+                                    Log.d(LOG_TAG, "added puppet to library popup");
+                                }
                             }
                         });
                     }
