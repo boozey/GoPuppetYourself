@@ -233,7 +233,7 @@ public class DesignerActivity extends ActionBarActivity {
             });
 
             // Animate disappearance of button bar and appearance of brush bar
-            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
@@ -277,7 +277,7 @@ public class DesignerActivity extends ActionBarActivity {
             final View navButton = findViewById(R.id.nav_button);
             cancelPopup();
             designer.setIsDrawMode(false);
-            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
@@ -407,7 +407,7 @@ public class DesignerActivity extends ActionBarActivity {
         final View buttonBarFinal = buttonBar;
         final View navButton = findViewById(R.id.nav_button);
         // Animate disappearance of button bar and appearance of background bar
-        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
         scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -444,7 +444,7 @@ public class DesignerActivity extends ActionBarActivity {
         final View backgroundBar = findViewById(R.id.background_button_bar);
         if (backgroundBar.getVisibility() != View.GONE) {
             final View navButton = findViewById(R.id.nav_button);
-            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
@@ -513,7 +513,7 @@ public class DesignerActivity extends ActionBarActivity {
         });
 
         // Animate disappearance of button bar and appearance of background bar
-        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
         scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -575,7 +575,7 @@ public class DesignerActivity extends ActionBarActivity {
         });
 
         // Animate disappearance of old button bar and appearance of new button bar
-        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
         scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -619,7 +619,7 @@ public class DesignerActivity extends ActionBarActivity {
         final View navButton = findViewById(R.id.nav_button);
 
         // Animate disappearance of button bar and appearance of brush bar
-        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
         scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -658,7 +658,7 @@ public class DesignerActivity extends ActionBarActivity {
         final View buttonBar = portraitButtonBar;
         if (buttonBar.getVisibility() != View.GONE) {
             final View navButton = findViewById(R.id.nav_button);
-            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down);
+            Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {

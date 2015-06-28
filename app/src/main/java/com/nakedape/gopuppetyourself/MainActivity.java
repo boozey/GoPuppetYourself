@@ -14,9 +14,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -25,10 +28,13 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 import com.Utils;
 
@@ -96,6 +102,8 @@ public class MainActivity extends ActionBarActivity {
     private boolean isSecondControlShowing = false;
     private boolean isPlaying = false;
     private boolean isRecording = false;
+    private GestureDetectorCompat gestureDetector;
+    private boolean flingRight, flingLeft, flingUp, flingDown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +122,7 @@ public class MainActivity extends ActionBarActivity {
         playButton.setVisibility(View.GONE);
         libraryButton = (ImageButton)findViewById(R.id.puppet_library_button);
         libraryButton.setVisibility(View.GONE);
+        gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
@@ -602,6 +611,95 @@ public class MainActivity extends ActionBarActivity {
             return false;
         }
     };
+
+    // Puppet Library methods
+    public void ShowPuppetLibrary(View v){
+        View layout = getLayoutInflater().inflate(R.layout.puppet_library, null);
+        final ViewFlipper flipper = (ViewFlipper)layout.findViewById(R.id.puppet_flipper);
+        final LinearLayout leftLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_left);
+        final LinearLayout rightLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_right);
+        flipper.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                gestureDetector.onTouchEvent(motionEvent);
+                if (flingRight) {
+                    flipper.setOutAnimation(context, R.anim.anim_scale_small_right);
+                    flipper.setInAnimation(context, R.anim.anim_scale_up_left);
+                    flipper.showPrevious();
+                    flingRight = false;
+                }
+                else if (flingLeft) {
+                    flipper.setOutAnimation(context, R.anim.anim_scale_small_left);
+                    flipper.setInAnimation(context, R.anim.anim_scale_up_right);
+                    flipper.showNext();
+                    flingLeft = false;
+                }
+                return true;
+            }
+        });
+        PopupWindow popup = new PopupWindow(layout, rootLayout.getWidth() - 20, 500);
+        popup.setFocusable(true);
+        popup.setOutsideTouchable(true);
+        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popup.showAsDropDown(stage, 10, -700);
+        Log.d(LOG_TAG, "popup should be visible");
+
+        // Search for puppet files on a separate thread and update UI as they're loaded
+        Runnable loadPuppetsThread = new Runnable() {
+            @Override
+            public void run() {
+                File[] files = storageDir.listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File file) {
+                        return file.getPath().endsWith(getString(R.string.puppet_extension));
+                    }
+                });
+                if (files.length > 0) {
+                    for (File f : files) {
+                        final Puppet p = new Puppet(context, null);
+                        Utils.ReadPuppetFromFile(p, f);
+                        p.setScaleX(0.5f);
+                        p.setScaleY(0.5f);
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (flipper != null)
+                                    flipper.addView(p);
+                                Log.d(LOG_TAG, "added puppet to library popup");
+                            }
+                        });
+                    }
+                }
+            }
+        };
+        new Thread(loadPuppetsThread).start();
+
+    }
+    class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
+        private static final String DEBUG_TAG = "Gestures";
+
+        @Override
+        public boolean onDown(MotionEvent event) {
+            Log.d(DEBUG_TAG,"onDown: " + event.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent event1, MotionEvent event2,
+                               float velocityX, float velocityY) {
+            Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
+            flingRight = false;
+            flingLeft = false;
+            flingDown = false;
+            flingUp = false;
+            if (velocityX > 0)
+                flingRight = true;
+            else if (velocityX < 0)
+                flingLeft = true;
+            return true;
+        }
+    }
+
     public void GoToPerformance(View v){
         stage.setOnClickListener(null);
         if (selectedPuppet != null) selectedPuppet.setBackground(null);

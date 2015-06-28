@@ -31,7 +31,8 @@
         android:layout_marginLeft="4dp"
         android:layout_marginBottom="4dp"
         android:layout_above="@id/bottom_left_button"
-        android:background="@drawable/ic_action_rec"/>
+        android:background="@drawable/ic_action_rec"
+        android:onClick="RecordClick"/>
 
     <ImageButton
         android:id="@+id/play_button"
@@ -42,7 +43,7 @@
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/record_button"
         android:background="@drawable/ic_action_av_play_arrow"
-        android:onClick="RecordClick"/>
+        android:onClick="PlayClick"/>
 
     <ImageButton
         android:id="@+id/puppet_library_button"
@@ -53,7 +54,7 @@
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/bottom_left_button"
         android:background="@drawable/ic_action_av_recent_actors"
-        android:onClick="PlayClick"/>
+        android:onClick="ShowPuppetLibrary"/>
 
     <SeekBar
         android:layout_width="match_parent"
