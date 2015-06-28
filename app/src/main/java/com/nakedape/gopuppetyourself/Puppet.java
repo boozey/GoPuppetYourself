@@ -38,7 +38,7 @@ public class Puppet extends RelativeLayout implements Serializable {
     transient private Point upperPivotPoint, lowerPivotPoint;
     transient private int orientation = 0;
     transient private Bitmap upperJawBitmap, lowerJawBitmap;
-    transient private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0;
+    transient private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0, topPadding = 0;
     transient private int upperBitmapWidth, upperBitmapHeight, lowerBitmapWidth, lowerBitmapHeight;
     transient private String name = getResources().getString(R.string.default_puppet_name);
     transient private String path = "";
@@ -58,6 +58,13 @@ public class Puppet extends RelativeLayout implements Serializable {
 
 
     // Setters and getters
+    public int getTotalWidth(){
+        return upperBitmapWidth + upperLeftPadding + upperRightPadding;
+    }
+
+    public int getTotalHeight(){
+        return topPadding + upperBitmapHeight + lowerBitmapHeight;
+    }
 
     public boolean isOnStage() {
         return onStage;
@@ -210,7 +217,6 @@ public class Puppet extends RelativeLayout implements Serializable {
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
         int lowerLeft = lowerPivotPoint.x;
         int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
-        int topPadding; // = (int)Math.sqrt(upperBitmapWidth*upperBitmapWidth + upperBitmapHeight*upperBitmapHeight) - upperBitmapHeight;
         if (orientation == PROFILE_RIGHT){
             double h = upperBitmapHeight, x = upperBitmapWidth - upperPivotPoint.x;
             double l = Math.sqrt(h*h + x*x);

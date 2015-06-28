@@ -12,7 +12,7 @@
 
     <!-- Puppet popup menu strings -->
     <string name="action_edit_puppet">Edit</string>
-    <string name="action_puppet_onstage">On stage</string>
+    <string name="action_puppet_visible">Visible in scene</string>
     <string name="action_clone_puppet">Clone</string>
-    <string name="action_delete_puppet">Delete</string>
+    <string name="action_delete_remove">Remove</string>
 </resources>

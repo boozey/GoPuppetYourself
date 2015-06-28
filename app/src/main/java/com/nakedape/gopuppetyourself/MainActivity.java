@@ -175,12 +175,14 @@ public class MainActivity extends ActionBarActivity {
             File file;
             Object[] puppetPaths = puppetsOnStage.toArray();
             for (Object o : puppetPaths){
-                file = new File((String)o);
+                String path = (String)o;
+                file = new File(path);
                 Puppet p = new Puppet(context, null);
                 Utils.ReadPuppetFromFile(p, file);
                 p.setId(nextPuppetId++);
                 p.setOnTouchListener(headTouchListener);
                 p.setTag(p.getName());
+                p.setPath(path);
                 if (!p.isOnStage()) p.setVisibility(View.GONE);
                 if (savedData.layoutParamses.size() > 0){
                     p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
@@ -576,7 +578,7 @@ public class MainActivity extends ActionBarActivity {
                 menu.inflate(R.menu.menu_puppet_edit);
                 menu.setOnMenuItemClickListener(popupMenuListener);
                 if (!selectedPuppet.isOnStage()){
-                    MenuItem item = menu.getMenu().findItem(R.id.action_puppet_onstage);
+                    MenuItem item = menu.getMenu().findItem(R.id.action_puppet_visible);
                     item.setChecked(false);
                 }
                 menu.show();
@@ -599,12 +601,15 @@ public class MainActivity extends ActionBarActivity {
                 case R.id.action_edit_puppet:
                     EditPuppet(selectedPuppet);
                     return true;
-                case R.id.action_clone_puppet:
+                case R.id.action_remove_puppet:
+                    stage.removeView(selectedPuppet);
+                    puppetsOnStage.remove(selectedPuppet.getPath());
+                    selectedPuppet = null;
+                    SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+                    prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                    prefEditor.apply();
                     return true;
-                case R.id.action_delete_puppet:
-                    DeletePuppet(selectedPuppet);
-                    return true;
-                case R.id.action_puppet_onstage:
+                case R.id.action_puppet_visible:
                     if (menuItem.isChecked()){
                         selectedPuppet.setOnStage(false);
                         menuItem.setChecked(false);
@@ -681,19 +686,21 @@ public class MainActivity extends ActionBarActivity {
                     for (File f : files) {
                         final Puppet p = new Puppet(context, null);
                         Utils.ReadPuppetFromFile(p, f);
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (flipper != null) {
-                                    ImageView image = new ImageView(context);
-                                    image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                                    image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
-                                    image.setTag(p.getPath());
-                                    flipper.addView(image);
-                                    Log.d(LOG_TAG, "added puppet to library popup");
+                        if (stage.findViewWithTag(p.getName()) == null) {
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (flipper != null) {
+                                        ImageView image = new ImageView(context);
+                                        image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                                        image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
+                                        image.setTag(p.getPath());
+                                        flipper.addView(image);
+                                        Log.d(LOG_TAG, "added puppet to library popup");
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
             }
@@ -730,6 +737,11 @@ public class MainActivity extends ActionBarActivity {
                     Puppet p = new Puppet(context, null);
                     Utils.ReadPuppetFromFile(p, f);
                     p.setOnTouchListener(headTouchListener);
+                    p.setTag(p.getName());
+                    p.setPath(path);
+                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(p.getTotalWidth(), p.getTotalHeight());
+                    params.setMargins((int)event.getX() - p.getTotalWidth() / 2, (int)event.getY() - p.getTotalHeight() / 2, 0, 0);
+                    p.setLayoutParams(params);
                     stage.addView(p);
                     puppetsOnStage.add(path);
                     SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
@@ -741,6 +753,10 @@ public class MainActivity extends ActionBarActivity {
             }
 
         }
+    }
+    public void NewButtonClick(View v){
+        Intent intent = new Intent(this, DesignerActivity.class);
+        startActivityForResult(intent, REQUEST_PUPPET_GET);
     }
 
     public void GoToPerformance(View v){
@@ -760,10 +776,6 @@ public class MainActivity extends ActionBarActivity {
             }
 
         }
-    }
-    public void NewButtonClick(View v){
-        Intent intent = new Intent(this, DesignerActivity.class);
-        startActivityForResult(intent, REQUEST_PUPPET_GET);
     }
     public void EditPuppet(Puppet p){
         Intent intent = new Intent(this, DesignerActivity.class);
