@@ -330,10 +330,18 @@ public class MainActivity extends ActionBarActivity {
                             RecordClick(view);
                         }
                         else {
-                            mainControlFadeOut();
-                            secondControlsFadeOut();
+                            libraryButton.getGlobalVisibleRect(hitRect);
+                            if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())){
+                                Log.d(LOG_TAG, "Library button pressed");
+                                secondControlsFadeOut();
+                                ShowPuppetLibrary(view);
+                            }
+                            else {
+                                secondControlsFadeOut();
+                            }
                         }
                     }
+                    mainControlFadeOut();
                     return true;
             }
             return false;
@@ -628,10 +636,7 @@ public class MainActivity extends ActionBarActivity {
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                rootLayout.removeView(layout);
-                for (int i = 0; i < stage.getChildCount(); i++){
-                    stage.getChildAt(i).setOnTouchListener(headTouchListener);
-                }
+                ClosePuppetLibrary();
             }
         });
 
@@ -719,10 +724,7 @@ public class MainActivity extends ActionBarActivity {
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        rootLayout.removeView(layout);
-                        for (int i = 0; i < stage.getChildCount(); i++){
-                            stage.getChildAt(i).setOnTouchListener(headTouchListener);
-                        }
+                        ClosePuppetLibrary();
                         return true;
                 }
                 return false;
@@ -764,6 +766,14 @@ public class MainActivity extends ActionBarActivity {
         };
         new Thread(loadPuppetsThread).start();
 
+    }
+    private void ClosePuppetLibrary(){
+        View layout = findViewById(R.id.puppet_library_popup);
+        rootLayout.removeView(layout);
+        for (int i = 0; i < stage.getChildCount(); i++){
+            stage.getChildAt(i).setOnTouchListener(headTouchListener);
+        }
+        stage.setOnTouchListener(null);
     }
     public void StartLibraryDrag(View v, String path){
         // Prevent library from receiving the drop
