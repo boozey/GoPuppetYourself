@@ -1,8 +1,11 @@
 package com.nakedape.gopuppetyourself;
 
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -20,7 +23,16 @@ public class PuppetDragShadowBuilder extends View.DragShadowBuilder {
         super(v);
 
         // Creates a draggable image that will fill the Canvas provided by the system.
-        shadow = v.getBackground();
+        if (v.getBackground() != null)
+            shadow = v.getBackground();
+        else {
+            try {
+                Puppet p = (Puppet) v;
+                shadow = new BitmapDrawable(Resources.getSystem(), p.getThumbnail());
+            } catch (Exception e) {
+                Log.e("PuppetDragShadowBuilder", "invalid cast");
+            }
+        }
     }
 
     // Defines a callback that sends the drag shadow dimensions and touch point back to the

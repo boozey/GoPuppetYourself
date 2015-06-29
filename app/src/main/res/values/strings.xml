@@ -15,4 +15,7 @@
     <string name="action_puppet_visible">Visible in scene</string>
     <string name="action_clone_puppet">Clone</string>
     <string name="action_delete_remove">Remove</string>
+
+    <!-- Puppet library strings -->
+    <string name="puppet_library_title">Puppet Library</string>
 </resources>

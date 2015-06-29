@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
@@ -254,6 +255,7 @@ public class Puppet extends RelativeLayout implements Serializable {
     }
 
     public Bitmap getThumbnail(){
+        // Combine upperjaw and lowerjaw bitmaps into one
         int height, width;
         Bitmap upperJawBitmap = getUpperJawBitmap();
         Bitmap lowerJawBitmap = getLowerJawBitmap();
@@ -263,9 +265,15 @@ public class Puppet extends RelativeLayout implements Serializable {
         Canvas canvas = new Canvas(overlay);
         canvas.drawBitmap(upperJawBitmap, getUpperLeftPadding(), 0, null);
         canvas.drawBitmap(lowerJawBitmap, getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
-        float scaleFactor = 300 / height;
-        canvas.scale(width * scaleFactor, height * scaleFactor);
-        return overlay;
+
+        // Scale down to max of 256 by 256
+        int maxHeight = 256;
+        int maxWidth = 256;
+        float scale = Math.min(((float) maxHeight / overlay.getWidth()), ((float) maxWidth / overlay.getHeight()));
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale, scale);
+
+        return Bitmap.createBitmap(overlay, 0, 0, overlay.getWidth(), overlay.getHeight(), matrix, true);
     }
 
     public void writeObject(ObjectOutputStream out) throws IOException {

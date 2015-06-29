@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,7 +22,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -33,9 +31,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -48,7 +44,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Set;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -602,12 +597,8 @@ public class MainActivity extends ActionBarActivity {
                     EditPuppet(selectedPuppet);
                     return true;
                 case R.id.action_remove_puppet:
-                    stage.removeView(selectedPuppet);
-                    puppetsOnStage.remove(selectedPuppet.getPath());
+                    RemovePuppetFromStage(selectedPuppet);
                     selectedPuppet = null;
-                    SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
-                    prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-                    prefEditor.apply();
                     return true;
                 case R.id.action_puppet_visible:
                     if (menuItem.isChecked()){
@@ -622,13 +613,30 @@ public class MainActivity extends ActionBarActivity {
             return false;
         }
     };
+    private void RemovePuppetFromStage(Puppet p){
+        stage.removeView(p);
+        puppetsOnStage.remove(p.getPath());
+        SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+        prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+        prefEditor.apply();
+    }
 
     // Puppet Library methods
     public void ShowPuppetLibrary(View v){
         final View layout = getLayoutInflater().inflate(R.layout.puppet_library, null);
+        ImageButton closeButton = (ImageButton)layout.findViewById(R.id.puppet_library_close_button);
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                rootLayout.removeView(layout);
+                for (int i = 0; i < stage.getChildCount(); i++){
+                    stage.getChildAt(i).setOnTouchListener(headTouchListener);
+                }
+            }
+        });
+
+        // Touch Listener to handle touch events in the view flipper
         final ViewFlipper flipper = (ViewFlipper)layout.findViewById(R.id.puppet_flipper);
-        final LinearLayout leftLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_left);
-        final LinearLayout rightLayout = (LinearLayout)layout.findViewById(R.id.puppet_flipper_right);
         flipper.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -638,33 +646,83 @@ public class MainActivity extends ActionBarActivity {
                     flipper.setInAnimation(context, R.anim.anim_scale_up_right);
                     flipper.showPrevious();
                     flingRight = false;
-                }
-                else if (flingLeft) {
+                } else if (flingLeft) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_left);
                     flipper.setInAnimation(context, R.anim.anim_scale_up_left);
                     flipper.showNext();
                     flingLeft = false;
                 }
-                if (longPress){
+                if (longPress) {
                     longPress = false;
-                    StartLibraryDrag(flipper.getCurrentView(), (String)flipper.getCurrentView().getTag());
+                    StartLibraryDrag(flipper.getCurrentView(), (String) flipper.getCurrentView().getTag());
                 }
                 return true;
             }
         });
-        int width = 600;
+
+        // Setup size and posistion of popup window
+        int width = Math.min(500, rootLayout.getWidth());
         int height = 400;
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(width, height);
+        layout.setMinimumHeight(height);
+        layout.setMinimumWidth(width);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(rootLayout.getWidth() / 2 - width / 2, rootLayout.getHeight() / 2 - height / 2, 0, 0);
         layout.setLayoutParams(params);
+
+        // Drag listener to catch drops inside the popup window
+        layout.setOnDragListener(new LibraryPuppetDragEventListener());
+
+        // Touch listner to allow popup window to be moved
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                final int X = (int) event.getRawX();
+                final int Y = (int) event.getRawY();
+                switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                    case MotionEvent.ACTION_DOWN:
+                        RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                        dx = X - lParams.leftMargin;
+                        dy = Y - lParams.topMargin;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        moveView(view, X, Y);
+                        break;
+                }
+                return true;
+            }
+        });
+        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+        layout.startAnimation(fadeIn);
         rootLayout.addView(layout);
-        stage.setOnDragListener(new PuppetDragEventListener());
+
+        // Drag listener to receive puppets dropped on the stage
+        stage.setOnDragListener(new StagePuppetDragEventListener());
+
+        // Touch listeners to start drag events for puppets on stage
+        for (int i = 0; i < stage.getChildCount(); i++){
+            stage.getChildAt(i).setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    switch (motionEvent.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            StartStageDrag((Puppet)view);
+                            break;
+                    }
+                    return true;
+                }
+            });
+        }
+
+        // Touch listener to close popup window when the stage is touched
         stage.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         rootLayout.removeView(layout);
+                        for (int i = 0; i < stage.getChildCount(); i++){
+                            stage.getChildAt(i).setOnTouchListener(headTouchListener);
+                        }
                         return true;
                 }
                 return false;
@@ -690,14 +748,13 @@ public class MainActivity extends ActionBarActivity {
                             mHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (flipper != null) {
-                                        ImageView image = new ImageView(context);
-                                        image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                                        image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
-                                        image.setTag(p.getPath());
-                                        flipper.addView(image);
-                                        Log.d(LOG_TAG, "added puppet to library popup");
-                                    }
+                                    ImageView image = new ImageView(context);
+                                    image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                                    image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
+                                    image.setTag(p.getPath());
+                                    flipper.addView(image);
+                                    Log.d(LOG_TAG, "added puppet to library popup");
+
                                 }
                             });
                         }
@@ -709,6 +766,10 @@ public class MainActivity extends ActionBarActivity {
 
     }
     public void StartLibraryDrag(View v, String path){
+        // Prevent library from receiving the drop
+        View library = findViewById(R.id.puppet_library_popup);
+        library.setOnDragListener(new NoDropDragListener());
+
         ClipData.Item pathItem = new ClipData.Item(path);
         String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
         ClipData dragData = new ClipData("PUPPET_PATH", mime_type, pathItem);
@@ -719,7 +780,20 @@ public class MainActivity extends ActionBarActivity {
                 0          // flags (not currently used, set to 0)
         );
     }
-    protected class PuppetDragEventListener implements View.OnDragListener {
+    public void StartStageDrag(Puppet p){
+        // Prevent stage from receiving the drop
+        stage.setOnDragListener(new NoDropDragListener());
+
+        ClipData.Item indexItem = new ClipData.Item(String.valueOf(stage.indexOfChild(p)));
+        String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
+        ClipData dragData = new ClipData("PUPPET_INDEX", mime_type, indexItem);
+        View.DragShadowBuilder myShadow = new PuppetDragShadowBuilder(p);
+        p.startDrag(dragData,  // the data to be dragged
+                myShadow,  // the drag shadow builder
+                null,      // no need to use local data
+                0);          // flags (not currently used, set to 0)
+    }
+    protected class StagePuppetDragEventListener implements View.OnDragListener {
         public boolean onDrag(View v, DragEvent event) {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
@@ -736,17 +810,32 @@ public class MainActivity extends ActionBarActivity {
                     File f = new File(path);
                     Puppet p = new Puppet(context, null);
                     Utils.ReadPuppetFromFile(p, f);
-                    p.setOnTouchListener(headTouchListener);
+                    p.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View view, MotionEvent motionEvent) {
+                            switch (motionEvent.getAction()) {
+                                case MotionEvent.ACTION_DOWN:
+                                    StartStageDrag((Puppet) view);
+                                    break;
+                            }
+                            return true;
+                        }
+                    });
                     p.setTag(p.getName());
                     p.setPath(path);
                     RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(p.getTotalWidth(), p.getTotalHeight());
-                    params.setMargins((int)event.getX() - p.getTotalWidth() / 2, (int)event.getY() - p.getTotalHeight() / 2, 0, 0);
+                    params.setMargins((int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2, -250, -250);
                     p.setLayoutParams(params);
                     stage.addView(p);
                     puppetsOnStage.add(path);
                     SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
                     prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
                     prefEditor.apply();
+                    ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
+                    flipper.removeView(flipper.getCurrentView());
+
+                    View library = findViewById(R.id.puppet_library_popup);
+                    library.setOnDragListener(new LibraryPuppetDragEventListener());
                     return true;
                 default:
                     return true;
@@ -754,6 +843,67 @@ public class MainActivity extends ActionBarActivity {
 
         }
     }
+    protected class LibraryPuppetDragEventListener implements View.OnDragListener {
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    ClipData.Item item = event.getClipData().getItemAt(0);
+                    Log.d(LOG_TAG, "Puppet drag index " + item.getText().toString());
+                    int index = Integer.parseInt(item.getText().toString());
+                    Puppet p = (Puppet)stage.getChildAt(index);
+                    ImageView image = new ImageView(context);
+                    image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
+                    image.setTag(p.getPath());
+                    ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
+                    flipper.addView(image);
+                    RemovePuppetFromStage(p);
+                    stage.setOnDragListener(new StagePuppetDragEventListener());
+                    return true;
+                default:
+                    return false;
+            }
+        }
+    }
+    protected class NoDropDragListener implements View.OnDragListener {
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    View library = findViewById(R.id.puppet_library_popup);
+                    library.setOnDragListener(new LibraryPuppetDragEventListener());
+                    stage.setOnDragListener(new StagePuppetDragEventListener());
+                    return false;
+                default:
+                    return false;
+            }
+        }
+    }
+    private void moveView(View v, int X, int Y){
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) v
+                .getLayoutParams();
+        layoutParams.leftMargin = X - dx;
+        layoutParams.topMargin = Y - dy;
+        layoutParams.rightMargin = -250;
+        layoutParams.bottomMargin = -250;
+        v.setLayoutParams(layoutParams);
+    }
+
     public void NewButtonClick(View v){
         Intent intent = new Intent(this, DesignerActivity.class);
         startActivityForResult(intent, REQUEST_PUPPET_GET);
