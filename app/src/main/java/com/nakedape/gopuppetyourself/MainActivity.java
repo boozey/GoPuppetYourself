@@ -110,7 +110,7 @@ public class MainActivity extends ActionBarActivity {
     private boolean isPlaying = false;
     private boolean isRecording = false;
     private GestureDetectorCompat gestureDetector;
-    private boolean flingRight, flingLeft, flingUp, flingDown, longPress;
+    private boolean flingRight, flingLeft, flingUp, flingDown, longPress, scrollLeft, scrollRight, scrollUp, scrollDown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -646,20 +646,26 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 gestureDetector.onTouchEvent(motionEvent);
+                if (scrollUp || scrollDown) {
+                    StartLibraryDrag(flipper.getCurrentView(), (String) flipper.getCurrentView().getTag());
+                    return true;
+                }
                 if (flingRight) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_right);
                     flipper.setInAnimation(context, R.anim.anim_scale_up_right);
                     flipper.showPrevious();
-                    flingRight = false;
-                } else if (flingLeft) {
+                    return true;
+                }
+                if (flingLeft) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_left);
                     flipper.setInAnimation(context, R.anim.anim_scale_up_left);
                     flipper.showNext();
-                    flingLeft = false;
+                    return true;
                 }
                 if (longPress) {
                     longPress = false;
                     StartLibraryDrag(flipper.getCurrentView(), (String) flipper.getCurrentView().getTag());
+                    return true;
                 }
                 return true;
             }
@@ -992,6 +998,31 @@ public class MainActivity extends ActionBarActivity {
         @Override
         public boolean onDown(MotionEvent event) {
             Log.d(DEBUG_TAG,"onDown: " + event.toString());
+            flingRight = false;
+            flingLeft = false;
+            flingDown = false;
+            flingUp = false;
+            scrollDown = false;
+            scrollUp = false;
+            scrollLeft = false;
+            scrollRight = false;
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY){
+            Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
+            if (Math.abs(distanceX) >= Math.abs(distanceY)) {
+                if (distanceX > 0)
+                    scrollRight = true;
+                else
+                    scrollLeft = true;
+            } else {
+                if (distanceY > 0)
+                    scrollDown = true;
+                else
+                    scrollUp = true;
+            }
             return true;
         }
 
@@ -999,18 +1030,20 @@ public class MainActivity extends ActionBarActivity {
         public boolean onFling(MotionEvent event1, MotionEvent event2,
                                float velocityX, float velocityY) {
             Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-            flingRight = false;
-            flingLeft = false;
-            flingDown = false;
-            flingUp = false;
-            if (velocityX > 0)
-                flingRight = true;
-            else if (velocityX < 0)
-                flingLeft = true;
-            if (velocityY > 0)
-                flingUp = true;
-            else if (velocityY < 0)
-                flingDown = true;
+            if (Math.abs(velocityX) >= Math.abs(velocityY)) {
+                Log.d(LOG_TAG, "horizontal fling");
+                if (velocityX > 0)
+                    flingRight = true;
+                else if (velocityX < 0)
+                    flingLeft = true;
+            }
+            else {
+                Log.d(LOG_TAG, "vertical fling");
+                if (velocityY > 0)
+                    flingUp = true;
+                else if (velocityY < 0)
+                    flingDown = true;
+            }
             return true;
         }
 
