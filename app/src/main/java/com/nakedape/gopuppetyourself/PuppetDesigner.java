@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -17,6 +18,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
+
 /**
  * Created by Nathan on 6/9/2015.
  */
@@ -24,6 +27,10 @@ public class PuppetDesigner extends View {
 
     private static  final String LOG_TAG = "PuppetDesigner";
 
+    public static final int SMALL_WIDTH = 512;
+    public static final int SMALL_HEIGHT = 768;
+
+    // Selection ids
     private static final int NO_SELECTION = 0;
     private static final int UPPER_JAW = 1000;
     private static final int UPPER_JAW_TOP = 1001;
@@ -39,18 +46,29 @@ public class PuppetDesigner extends View {
     private static final int LOWER_JAW_PIVOT = 2005;
     private static final int MIN_BOX_SIZE = 80;
 
+    // Undo id strings
+    private static final String UNDO_BACKGROUND = "background";
+    private static final String UNDO_DRAW = "draw";
+
     private Context context;
-    private Bitmap background, drawBitmap;
+    private Bitmap backgroundBitmap, drawBitmap, viewBitmap;
+    private ArrayList<Bitmap> backgroundUndoStack;
+    private ArrayList<Bitmap> drawUndoStack;
+    private ArrayList<String> undoStack;
     private Rect upperJawBox, lowerJawBox;
     private Point upperJawPivotPoint, lowerJawPivotPoint;
     private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
     private Path drawPath;
-    private Canvas drawCanvas, backgroundCanvas;
-    private int edgeThresh = 10, pointThresh = 30;
-    private int magicEraseThreshold = 75;
+    private Canvas drawCanvas, backgroundCanvas, viewCanvas;
+    private int edgeThresh = 20, pointThresh = 30;
+    private double colorSimilarity = 75;
+    private Path cutPath;
+    private float cutPathStrokeWidth = 75;
+    private Paint cutPathPaint;
+    private ArrayList<Point> cutPathPoints;
     private int selectionId = 0;
     private float prevX = -1, prevY = -1;
-    private boolean isMagicErase = false, showUpperJawBox = false, showLowerJawBox = false,
+    private boolean isCutPath = false, eraseInProgress = false, showUpperJawBox = false, showLowerJawBox = false,
             pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isBackgroundEraseMode = false;
 
 
@@ -59,14 +77,18 @@ public class PuppetDesigner extends View {
     public PuppetDesigner(Context context, AttributeSet attrs){
         super(context, attrs);
         this.context = context;
+        upperJawBox = new Rect(20, 20, 100, 100);
         upperJawPaint = new Paint();
         upperJawPaint.setARGB(64, 128, 0, 0);
         upperTextPaint = new Paint();
         upperTextPaint.setColor(Color.RED);
+        lowerJawBox = new Rect(120, 120, 220, 220);
         lowerJawPaint = new Paint();
         lowerJawPaint.setARGB(64, 0, 128, 0);
         lowerTextPaint = new Paint();
         lowerTextPaint.setColor(Color.GREEN);
+        upperJawPivotPoint= new Point(60, 110);
+        lowerJawPivotPoint = new Point(60, 110);
         pivotPaint1 = new Paint();
         pivotPaint1.setColor(Color.BLACK);
         pivotPaint2 = new Paint();
@@ -78,9 +100,19 @@ public class PuppetDesigner extends View {
         drawPaint.setStyle(Paint.Style.STROKE);
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
-        background = null;
-        drawBitmap = null;
+        //backgroundBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
+        //backgroundCanvas = new Canvas(backgroundBitmap);
+        viewBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
+        viewCanvas = new Canvas(viewBitmap);
+        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+        drawBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
+        drawBitmap.setHasAlpha(true);
+        drawCanvas = new Canvas(drawBitmap);
         drawPath = new Path();
+
+        backgroundUndoStack = new ArrayList<>();
+        drawUndoStack = new ArrayList<>();
+        undoStack = new ArrayList<>();
     }
 
     public int getOrientation() {
@@ -90,23 +122,28 @@ public class PuppetDesigner extends View {
         this.orientation = orientation;
     }
     public void SetNewImage(Bitmap image) {
-        background = image.copy(Bitmap.Config.ARGB_8888, true);
-        background.setHasAlpha(true);
-        backgroundCanvas = new Canvas(background);
-        drawBitmap = Bitmap.createBitmap(background.getWidth(), background.getHeight(), Bitmap.Config.ARGB_8888);
+        backgroundBitmap = image.copy(Bitmap.Config.ARGB_8888, true);
+        backgroundBitmap.setHasAlpha(true);
+        backgroundCanvas = new Canvas(backgroundBitmap);
+        drawBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         drawBitmap.setHasAlpha(true);
         drawCanvas = new Canvas(drawBitmap);
+        viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        viewCanvas = new Canvas(viewBitmap);
+        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
         Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
         Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
         upperJawBox = new Rect(0, 0, image.getWidth(), image.getHeight() / 2);
-        upperJawPivotPoint = new Point(upperJawBox.left, upperJawBox.bottom);
+        upperJawPivotPoint = new Point(upperJawBox.left + upperJawBox.width() / 2, upperJawBox.bottom);
         lowerJawBox = new Rect(0, image.getHeight() / 2, image.getWidth(), image.getHeight());
-        lowerJawPivotPoint = new Point(lowerJawBox.left, lowerJawBox.top);
+        //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
+        lowerJawPivotPoint = upperJawPivotPoint;
     }
     public Bitmap getUpperJaw(){
-        Bitmap bmOverlay = Bitmap.createBitmap(background.getWidth(), background.getHeight(), background.getConfig());
+        Bitmap bmOverlay = Bitmap.createBitmap(drawBitmap.getWidth(), drawBitmap.getHeight(), drawBitmap.getConfig());
         Canvas canvas = new Canvas(bmOverlay);
-        canvas.drawBitmap(background, new Matrix(), null);
+        if (backgroundBitmap != null)
+            canvas.drawBitmap(backgroundBitmap, new Matrix(), null);
         canvas.drawBitmap(drawBitmap, 0, 0, null);
 
         Bitmap upperJaw = null;
@@ -121,17 +158,16 @@ public class PuppetDesigner extends View {
             top = 0;
         }
 
-        if (width + left > background.getWidth()) width = background.getWidth() - left;
-        if (height + top > background.getHeight()) height = background.getHeight() - top;
-        Log.d(LOG_TAG, "left " + String.valueOf(left) + " top " + String.valueOf(top) + " right " + String.valueOf(height) + " height " + String.valueOf(height));
-        Log.d(LOG_TAG, "Actual " + " right " + String.valueOf(background.getWidth()) + " height " + String.valueOf(background.getHeight()));
+        if (width + left > drawBitmap.getWidth()) width = drawBitmap.getWidth() - left;
+        if (height + top > drawBitmap.getHeight()) height = drawBitmap.getHeight() - top;
         upperJaw = Bitmap.createBitmap(bmOverlay, left, top, width, height);
         return upperJaw.copy(Bitmap.Config.ARGB_8888, true);
     }
     public Bitmap getLowerJaw(){
-        Bitmap bmOverlay = Bitmap.createBitmap(background.getWidth(), background.getHeight(), background.getConfig());
+        Bitmap bmOverlay = Bitmap.createBitmap(drawBitmap.getWidth(), drawBitmap.getHeight(), drawBitmap.getConfig());
         Canvas canvas = new Canvas(bmOverlay);
-        canvas.drawBitmap(background, new Matrix(), null);
+        if (backgroundBitmap != null)
+            canvas.drawBitmap(backgroundBitmap, new Matrix(), null);
         canvas.drawBitmap(drawBitmap, 0, 0, null);
         Bitmap lowerJaw = null;
         int left = lowerJawBox.left, top = lowerJawBox.top,
@@ -144,8 +180,8 @@ public class PuppetDesigner extends View {
             height = height + top;
             top = 0;
         }
-        if (width + left > background.getWidth()) width = background.getWidth() - left;
-        if (height + top > background.getHeight()) height = background.getHeight() - top;
+        if (width + left > drawBitmap.getWidth()) width = drawBitmap.getWidth() - left;
+        if (height + top > drawBitmap.getHeight()) height = drawBitmap.getHeight() - top;
         lowerJaw = Bitmap.createBitmap(bmOverlay, left, top, width, height);
         return lowerJaw.copy(Bitmap.Config.ARGB_8888, true);
     }
@@ -158,20 +194,295 @@ public class PuppetDesigner extends View {
         invalidate();
     }
 
-    public void setMagicEraseMode(){
-        isMagicErase = true;
+    // Undo methods
+    private void addBackgroundUndo(){
+        undoStack.add(UNDO_BACKGROUND);
+        backgroundUndoStack.add(backgroundBitmap.copy(backgroundBitmap.getConfig(), true));
+    }
+    private void addDrawUndo(){
+        undoStack.add(UNDO_DRAW);
+        drawUndoStack.add(drawBitmap.copy(drawBitmap.getConfig(), true));
+    }
+    public boolean Undo(){
+        if (undoStack.size() > 0) {
+            String type = undoStack.get(undoStack.size() - 1);
+            undoStack.remove(undoStack.size() - 1);
+            switch (type) {
+                case UNDO_BACKGROUND:
+                    backgroundBitmap = backgroundUndoStack.get(backgroundUndoStack.size() - 1);
+                    backgroundCanvas = new Canvas(backgroundBitmap);
+                    backgroundUndoStack.remove(backgroundUndoStack.size() - 1);
+                    break;
+                case UNDO_DRAW:
+                    drawBitmap = drawUndoStack.get(drawUndoStack.size() - 1);
+                    drawUndoStack.remove(drawUndoStack.size() - 1);
+                    drawCanvas = new Canvas(drawBitmap);
+                    break;
+            }
+            invalidate();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    // Cut path methods
+    public void setCutPathMode(){
+        startCutPathFlow();
+        isCutPath = true;
         isEraseMode = false;
         invalidate();
     }
-    public void cancelMagicEraseMode(){
-        isMagicErase = false;
+    private void startCutPathFlow(){
+        cutPath = new Path();
+        cutPathPoints = new ArrayList<>(100);
+        cutPathPaint = new Paint();
+        cutPathPaint.setColor(Color.parseColor("#66FF0000"));
+        cutPathPaint.setStrokeWidth(cutPathStrokeWidth);
+        cutPathPaint.setAntiAlias(true);
+        cutPathPaint.setStyle(Paint.Style.STROKE);
+        cutPathPaint.setStrokeJoin(Paint.Join.ROUND);
+        cutPathPaint.setStrokeCap(Paint.Cap.ROUND);
+    }
+    public void cancelCutPathMode(){
+        isCutPath = false;
         invalidate();
     }
-    public boolean isMagicErase(){
-        return isMagicErase;
+    public boolean isCutPath(){
+        return isCutPath;
     }
-    public void setMagicEraseThreshold(int threshold){
-        magicEraseThreshold = threshold;
+    public void setCutPathWidth(int width){
+        cutPathStrokeWidth = width;
+        cutPathPaint.setStrokeWidth(cutPathStrokeWidth);
+    }
+    private boolean areColorsSimilar(int color1, int color2, double threshold){
+        int r0, g0, b0, r1, g1, b1;
+        r0 = (color1 >> 16) & 0xFF;
+        g0 = (color1 >> 8) & 0xFF;
+        b0 = color1 & 0xFF;
+        r1 = (color2 >> 16) & 0xFF;
+        g1 = (color2 >> 8) & 0xFF;
+        b1 = color2 & 0xFF;
+
+        return Math.sqrt((r1 - r0) * (r1 - r0) + (g1 - g0) * (g1 - g0) + (b1 - b0) * (b1 - b0)) < threshold;
+    }
+    private double getColorDiff(int color1, int color2){
+        int r0, g0, b0, r1, g1, b1;
+        r0 = (color1 >> 16) & 0xFF;
+        g0 = (color1 >> 8) & 0xFF;
+        b0 = color1 & 0xFF;
+        r1 = (color2 >> 16) & 0xFF;
+        g1 = (color2 >> 8) & 0xFF;
+        b1 = color2 & 0xFF;
+        return Math.sqrt((r1 - r0) * (r1 - r0) + (g1 - g0) * (g1 - g0) + (b1 - b0) * (b1 - b0));
+    }
+    private int getColorAverage(int[] pixels){
+        int sum = 0;
+        int difference = 0;
+        for (int i : pixels)
+            sum += i;
+        int average = sum / pixels.length;
+        for (int i : pixels)
+            difference = Math.max((int)getColorDiff(average, i), difference);
+        colorSimilarity = Math.min(difference, 75);
+        //colorSimilarity = difference;
+        Log.d(LOG_TAG, "Color similarity: " + colorSimilarity);
+        return average;
+    }
+    private int getLeftColorSliceAvg(Bitmap bitmap, int x, int y, double tanSlope, int lengthOver10){
+        int r = lengthOver10;
+        double m = -1 / tanSlope;
+        int stopValue = lengthOver10 - 8;
+        int[] colors = new int[r - stopValue];
+        int currentX, currentY;
+        double a, b;
+        for (int i = r; i > stopValue; i--){
+            a = ((double)i) / Math.sqrt(m*m + 1);
+            b = ((double)i) / Math.sqrt(1/(m*m) + 1);
+            currentX = (int)Math.round(x - b);
+            if (currentX < 0) currentX = 0;
+            else if (currentX >= bitmap.getWidth()) currentX = bitmap.getWidth() - 1;
+            currentY = (int)Math.round(y - a);
+            if (currentY < 0) currentY = 0;
+            else if (currentY >= bitmap.getHeight()) currentY = bitmap.getHeight() - 1;
+            colors[r - i] = bitmap.getPixel(currentX, currentY);
+            //backgroundBitmap.setPixel(currentX, currentY, Color.RED);
+        }
+
+        return getColorAverage(colors);
+    }
+    private int getLeftColorSliceAvgVert(Bitmap bitmap, int x, int y, int lengthOver10){
+        int[] colors = new int[Math.abs(x - (lengthOver10 - 8))];
+        int currentX;
+        if (y < 0) y = 0;
+        else if (y >= bitmap.getHeight()) y = bitmap.getHeight() - 1;
+        for (int i = 0; i < colors.length; i++){
+            currentX = x - (i+10);
+            if (currentX < 0) currentX = 0;
+            else if (currentX >= bitmap.getWidth()) currentX = bitmap.getWidth() - 1;
+            colors[i] = bitmap.getPixel(currentX, y);
+        }
+        return getColorAverage(colors);
+    }
+    private int getRightColorSliceAvgVert(Bitmap bitmap, int x, int y, int lengthOver10){
+        int[] colors = new int[Math.abs(x - (lengthOver10 - 8))];
+        int currentX;
+        if (y < 0) y = 0;
+        else if (y >= bitmap.getHeight()) y = bitmap.getHeight() - 1;
+        for (int i = 0; i < colors.length; i++){
+            currentX = x + (i+10);
+            if (currentX < 0) currentX = 0;
+            else if (currentX >= bitmap.getWidth()) currentX = bitmap.getWidth() - 1;
+            colors[i] = bitmap.getPixel(currentX, y);
+        }
+        return getColorAverage(colors);
+    }
+    private int getRightColorSliceAvg(Bitmap bitmap, int x, int y, double tanSlope, int lengthOver10){
+        int[] colors;
+        double m = -1 / tanSlope;
+        int r = lengthOver10;
+        int stopValue = lengthOver10 - 8;
+        double a, b;
+        int currentX, currentY;
+        colors = new int[r - stopValue];
+        for (int i = r; i > stopValue; i--){
+            a = ((double)i) / Math.sqrt(m*m + 1);
+            b = ((double)i) / Math.sqrt(1/(m*m) + 1);
+            currentX = (int)Math.round(x + b);
+            if (currentX < 0) currentX = 0;
+            else if (currentX >= bitmap.getWidth()) currentX = bitmap.getWidth() - 1;
+            currentY = (int)Math.round(y + a);
+            if (currentY < 0) currentY = 0;
+            else if (currentY >= bitmap.getHeight()) currentY = bitmap.getHeight() - 1;
+            colors[r - i] = bitmap.getPixel(currentX, currentY);
+            //backgroundBitmap.setPixel(currentX, currentY, Color.BLUE);
+        }
+
+        return getColorAverage(colors);
+    }
+    private int getColorAverage(Bitmap b, int x, int y, int radius){
+        if (radius == 0) return b.getPixel(x, y);
+
+        int width = radius * 2 + 1;
+        int height = radius * 2 + 1;
+        int xStart = x - radius;
+        if (xStart + width > b.getWidth()) width = b.getWidth() - xStart;
+        if (xStart < 0) xStart = 0;
+        int yStart = y - radius;
+        if (yStart + height > b.getHeight()) height = b.getHeight() - yStart;
+        if (yStart < 0) yStart = 0;
+        if (width < 0 || height < 0)
+            return -1;
+        int[] colors = new int[width * height];
+        int index = 0;
+        for (int i = xStart; i < xStart + width; i++){
+            for (int j = yStart; j < yStart + height; j++){
+                colors[index++] = b.getPixel(i, j);
+            }
+        }
+        return getColorAverage(colors);
+    }
+    private void determineCutPath(int strokeWidth){
+        cutPath.reset();
+        double m;
+        Point cutPoint, prev, current, next;
+        int leftAvg, rightAvg;
+        for (int i = 1; i < cutPathPoints.size() - 1; i++){
+            prev = cutPathPoints.get(i - 1);
+            if (i == 1) // Assume the first point in the path is good
+                cutPath.moveTo(prev.x, prev.y);
+            current = cutPathPoints.get(i);
+            next = cutPathPoints.get(i + 1);
+            if (current.x != prev.x && current.y != prev.y) {
+                if (current.x == prev.x) {
+                    cutPoint = determineCutPoint(current.x, current.y, strokeWidth + 10);
+                } else {
+                    m = 0;
+                    m = ((double)(current.y - prev.y)) / (current.x - prev.x);
+                    cutPoint = determineCutPoint(current.x, current.y, m, strokeWidth + 10);
+                }
+                cutPath.lineTo(cutPoint.x, cutPoint.y);
+            }
+        }
+    }
+    private Point determineCutPoint(int x, int y, double tanSlope, int strokeWidth){
+        int r = strokeWidth / 2;
+
+        // Determine color average left of the point
+        int leftAvg = getLeftColorSliceAvg(backgroundBitmap, x, y, tanSlope, r);
+        double leftColorThreshold = colorSimilarity;
+        // Determine color average right of the point
+        int rightAvg = getRightColorSliceAvg(backgroundBitmap, x, y, tanSlope, r);
+        double rightColorThreshold = colorSimilarity;
+
+        // Determine when color changes from the left
+        Point leftPoint;
+        double m = -1 / tanSlope; // Perpendicular slope
+        int stopValue = 1;
+        int rN = r;
+        int currentX, currentY;
+        int a, b;
+        do { // Start at the end and work to the middle
+            a = (int)Math.round((double) r / Math.sqrt(m * m + 1));
+            b = (int)Math.round((double) r / Math.sqrt(1 / (m * m) + 1));
+            currentX = x - b;
+            if (currentX < 0) currentX = 0;
+            else if(currentX >= backgroundBitmap.getWidth()) currentX = backgroundBitmap.getWidth() - 1;
+            currentY = y - a;
+            if (currentY < 0) currentY = 0;
+            else if(currentY >= backgroundBitmap.getHeight()) currentY = backgroundBitmap.getHeight() - 1;
+            rN--;
+        } while (areColorsSimilar(leftAvg, backgroundBitmap.getPixel(currentX, currentY), leftColorThreshold) && rN > stopValue);
+        leftPoint = new Point(x - b, y - a);
+
+        // Determine when color changes from the right
+        Point rightPoint;
+        rN = r;
+        do { // Start at the end and work to the middle
+            a = (int)Math.round((double) r / Math.sqrt(m * m + 1));
+            b = (int)Math.round((double) r / Math.sqrt(1 / (m * m) + 1));
+            currentX = x + b;
+            if (currentX < 0) currentX = 0;
+            else if(currentX >= backgroundBitmap.getWidth()) currentX = backgroundBitmap.getWidth() - 1;
+            currentY = y + a;
+            if (currentY < 0) currentY = 0;
+            else if(currentY >= backgroundBitmap.getHeight()) currentY = backgroundBitmap.getHeight() - 1;
+            rN--;
+        } while (areColorsSimilar(leftAvg, backgroundBitmap.getPixel(currentX, currentY), rightColorThreshold) && rN > stopValue);
+        rightPoint = new Point(x + b, y + a);
+
+        // Return midpoint of left and right
+        return new Point((leftPoint.x + rightPoint.x) / 2, (leftPoint.y + rightPoint.y) / 2);
+    }
+    private Point determineCutPoint(int x, int y, int strokeWidth){
+        int r = strokeWidth / 2;
+
+        // Determine color average left of the point
+        int leftAvg = getLeftColorSliceAvgVert(backgroundBitmap, x, y, r);
+        double leftColorThreshold = colorSimilarity;
+        // Determine color average right of the point
+        int rightAvg = getRightColorSliceAvgVert(backgroundBitmap, x, y, r);
+        double rightColorThreshold = colorSimilarity;
+
+        // Determine when color changes from the left
+        Point leftPoint;
+        int stopValue = 1;
+        int rN = r;
+        do { // Start at the end and work to the middle
+            rN--;
+        } while (areColorsSimilar(leftAvg, backgroundBitmap.getPixel(x - rN, y), leftColorThreshold) && rN > stopValue);
+        leftPoint = new Point(x - rN, y);
+
+        // Determine when color change from the right
+        Point rightPoint;
+        rN = r;
+        do { // Start at the end and work to the middle
+            rN--;
+        } while (areColorsSimilar(leftAvg, backgroundBitmap.getPixel(x + rN, y), rightColorThreshold) && rN > stopValue);
+        rightPoint = new Point(x + rN, y);
+
+        // Return midpoint of left and right
+        return new Point((leftPoint.x + rightPoint.x) / 2, (leftPoint.y + rightPoint.y) / 2);
     }
 
     public void setIsDrawMode(boolean isDrawMode) {
@@ -180,13 +491,13 @@ public class PuppetDesigner extends View {
             showLowerJawBox = false;
             showUpperJawBox = false;
             cancelBackgroundErase();
-            cancelMagicEraseMode();
+            cancelCutPathMode();
             invalidate();
         }
         else {
             this.isDrawMode = false;
             cancelBackgroundErase();
-            cancelMagicEraseMode();
+            cancelCutPathMode();
             invalidate();
         }
     }
@@ -195,9 +506,11 @@ public class PuppetDesigner extends View {
     }
 
     public void setBackgroundErase(){
-        isBackgroundEraseMode = true;
-        drawPaint.setColor(Color.TRANSPARENT);
-        drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        if (backgroundBitmap != null) {
+            isBackgroundEraseMode = true;
+            drawPaint.setColor(Color.TRANSPARENT);
+            drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        }
 
     }
     public void cancelBackgroundErase(){
@@ -228,9 +541,9 @@ public class PuppetDesigner extends View {
     public void flipHorz(){
         Matrix m = new Matrix();
         m.preScale(-1, 1);
-        Bitmap dst = Bitmap.createBitmap(background, 0, 0, background.getWidth(), background.getHeight(), m, false);
-        background = dst;
-        backgroundCanvas = new Canvas(background);
+        Bitmap dst = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
+        backgroundBitmap = dst;
+        backgroundCanvas = new Canvas(backgroundBitmap);
         invalidate();
         //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
     }
@@ -284,15 +597,40 @@ public class PuppetDesigner extends View {
     public boolean onTouchEvent(MotionEvent event){
         super.onTouchEvent(event);
         float x = event.getX(), y = event.getY();
-        if(isMagicErase){
+        if(isCutPath){
             switch (event.getAction()){
                 case MotionEvent.ACTION_DOWN:
-                    magicErase(x, y);
+                    startCutPathFlow();
+                    cutPath.moveTo(x, y);
+                    cutPathPoints.add(new Point((int)x, (int)y));
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    magicErase(x, y);
+                    cutPath.lineTo(x, y);
+                    cutPathPoints.add(new Point((int) x, (int) y));
+                    invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
+                    cutPath.lineTo(x, y);
+                    cutPathPoints.add(new Point((int) x, (int) y));
+                    cutPath.lineTo(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
+                    cutPath.setLastPoint(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
+                    invalidate();
+                    addBackgroundUndo();
+                    Log.d(LOG_TAG, "Number of cut path points = " + cutPathPoints.size());
+                    determineCutPath((int) cutPathPaint.getStrokeWidth());
+                    cutPathPaint.setColor(Color.TRANSPARENT);
+                    cutPathPaint.setStrokeWidth(1);
+                    cutPathPaint.setStyle(Paint.Style.FILL);
+                    cutPathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                    cutPath.toggleInverseFillType();
+                    backgroundCanvas.drawPath(cutPath, cutPathPaint);
+                    cutPathPaint.setMaskFilter(new BlurMaskFilter(2, BlurMaskFilter.Blur.NORMAL));
+                    cutPathPaint.setStrokeWidth(2);
+                    cutPathPaint.setStyle(Paint.Style.STROKE);
+                    cutPath.toggleInverseFillType();
+                    backgroundCanvas.drawPath(cutPath, cutPathPaint);
+                    cutPath.reset();
+                    invalidate();  // End cut path flow
                     return true;
                 default:
                     return true;
@@ -303,6 +641,7 @@ public class PuppetDesigner extends View {
                 case MotionEvent.ACTION_DOWN:
                     prevX = x;
                     prevY = y;
+                    addBackgroundUndo();
                     drawPath.moveTo(x, y);
                     invalidate();
                     return true;
@@ -326,6 +665,7 @@ public class PuppetDesigner extends View {
                 case MotionEvent.ACTION_DOWN:
                     prevX = x;
                     prevY = y;
+                    addDrawUndo();
                     drawPath.moveTo(x, y);
                     invalidate();
                     return true;
@@ -513,101 +853,302 @@ public class PuppetDesigner extends View {
         }
         invalidate();
     }
-    private void magicErase(float x, float y){
+    private void magicEraseOld2(float x, float y){
+        if (!eraseInProgress) {
+            eraseInProgress = true;
+            float strokeWidth = 4;
+            Paint erasePaint = new Paint(Color.TRANSPARENT);
+            erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            erasePaint.setAntiAlias(true);
+            erasePaint.setStrokeWidth(strokeWidth);
+            erasePaint.setStyle(Paint.Style.STROKE);
+            erasePaint.setStrokeJoin(Paint.Join.ROUND);
+            erasePaint.setStrokeCap(Paint.Cap.ROUND);
+            //erasePaint.setMaskFilter(new BlurMaskFilter(2, BlurMaskFilter.Blur.INNER));
+            Path erasePath = new Path();
+            boolean keepSearchingy = true;
+            boolean keepSearchingx = true;
+            int initPixel = getColorAverage(backgroundBitmap, (int) x, (int) y, (int) strokeWidth);
+            if (initPixel != Color.TRANSPARENT) {
+                int currentPixel;
+                erasePath.moveTo(x, y);
+                int xN, yN;
+                for (xN = (int) x; xN < backgroundBitmap.getWidth() && keepSearchingx; xN += strokeWidth) {
+                    for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN += 1) {
+                        currentPixel = backgroundBitmap.getPixel(xN, yN);
+                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
+                        if (!keepSearchingy && yN == y) keepSearchingx = false;
+                    }
+                    erasePath.lineTo(xN, yN);
+                    backgroundCanvas.drawPath(erasePath, erasePaint);
+                    keepSearchingy = true;
+                    erasePath.moveTo(xN, y - strokeWidth);
+                    for (yN = (int) (y - strokeWidth); yN >= 0 && keepSearchingy; yN -= 1) {
+                        currentPixel = backgroundBitmap.getPixel(xN, yN);
+                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
+                        if (!keepSearchingy && yN == y - strokeWidth) keepSearchingx = false;
+                    }
+                    erasePath.lineTo(xN, yN);
+                    backgroundCanvas.drawPath(erasePath, erasePaint);
+                    keepSearchingy = true;
+                    invalidate();
+                }
+                keepSearchingy = true;
+                keepSearchingx = true;
+                erasePath.moveTo(x - strokeWidth, y);
+                for (xN = (int) (x - strokeWidth - 1); xN >= 0 && keepSearchingx; xN -= strokeWidth) {
+                    for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN += 1) {
+                        currentPixel = backgroundBitmap.getPixel(xN, yN);
+                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
+                        if (!keepSearchingy && yN == y) keepSearchingx = false;
+
+                    }
+                    erasePath.lineTo(xN + 1, yN);
+                    backgroundCanvas.drawPath(erasePath, erasePaint);
+                    keepSearchingy = true;
+                    erasePath.moveTo(xN, yN - strokeWidth);
+                    for (yN = (int) (y - strokeWidth); yN >= 0 && keepSearchingy; yN -= 1) {
+                        currentPixel = backgroundBitmap.getPixel(xN, yN);
+                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
+                        if (!keepSearchingy && yN == y - strokeWidth) keepSearchingx = false;
+                    }
+                    erasePath.lineTo(xN + 1, yN);
+                    backgroundCanvas.drawPath(erasePath, erasePaint);
+                    keepSearchingy = true;
+                    invalidate();
+                }
+            }
+            eraseInProgress = false;
+        }
+    }
+    private void magicEraseOld(float x, float y) {
         boolean keepSearchingy = true;
         boolean keepSearchingx = true;
-        int rgbInit = background.getPixel((int)x, (int)y), rgbCurrent;
-        int r0, g0, b0, r1, g1, b1;
-        r0 = (rgbInit >> 16) & 0xFF;
-        g0 = (rgbInit >> 8) & 0xFF;
-        b0 = rgbInit & 0xFF;
-        Log.d(LOG_TAG, "r0=" + String.valueOf(r0) + " g0=" + String.valueOf(g0) + " b0=" + String.valueOf(b0));
+        int rgbInit = getColorAverage(backgroundBitmap, (int)x, (int)y, 4);
+        int rgbCurrent;
         int xN, yN;
-        for (xN = (int)x; xN < background.getWidth() && keepSearchingx; xN++){
-            for (yN = (int)y; yN < background.getHeight() && keepSearchingy; yN++){
-                rgbCurrent = background.getPixel(xN, yN);
-                r1 = (rgbCurrent >> 16) & 0xFF;
-                g1 = (rgbCurrent >> 8) & 0xFF;
-                b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
-                    background.setPixel(xN, yN, 0x00000000);
+        for (xN = (int) x; xN < backgroundBitmap.getWidth() && keepSearchingx; xN++) {
+            for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) {
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                if (areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT){
+                    backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
                 }
-                else {
-                    keepSearchingy = false;
-                    if (yN == y) keepSearchingx = false;
-                }
+                else keepSearchingy = false;
+                if (!keepSearchingy && yN == y) keepSearchingx = false;
             }
+
             keepSearchingy = true;
-            for (yN = (int)y - 1; yN >= 0 && keepSearchingy; yN--){
-                rgbCurrent = background.getPixel(xN, yN);
-                r1 = (rgbCurrent >> 16) & 0xFF;
-                g1 = (rgbCurrent >> 8) & 0xFF;
-                b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
-                    background.setPixel(xN, yN, 0x00000000);
+            for (yN = (int) y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) {
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                if (areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT){
+                    backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
                 }
-                else {
-                    keepSearchingy = false;
-                    if (yN == y - 1) keepSearchingx = false;
-                }
+                else keepSearchingy = false;
+                if (!keepSearchingy && yN == y - 1) keepSearchingx = false;
             }
+
             keepSearchingy = true;
             invalidate();
         }
         keepSearchingy = true;
         keepSearchingx = true;
-        for (xN = (int)x - 1; xN >= 0 && keepSearchingx; xN--){
-            for (yN = (int)y; yN < background.getHeight() && keepSearchingy; yN++){
-                rgbCurrent = background.getPixel(xN, yN);
-                r1 = (rgbCurrent >> 16) & 0xFF;
-                g1 = (rgbCurrent >> 8) & 0xFF;
-                b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
-                    background.setPixel(xN, yN, 0x00000000);
+        for (xN = (int) x - 1; xN >= 0 && keepSearchingx; xN--) {
+            for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) {
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                if (areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT){
+                    backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
                 }
-                else {
-                    keepSearchingy = false;
-                    if (yN == y) keepSearchingx = false;
-                }
+                else keepSearchingy = false;
+                if (!keepSearchingy && yN == y) keepSearchingx = false;
             }
             keepSearchingy = true;
-            for (yN = (int)y - 1; yN >= 0 && keepSearchingy; yN--){
-                rgbCurrent = background.getPixel(xN, yN);
-                r1 = (rgbCurrent >> 16) & 0xFF;
-                g1 = (rgbCurrent >> 8) & 0xFF;
-                b1 = rgbCurrent & 0xFF;
-                if (Math.sqrt((r1-r0)*(r1-r0) + (g1-g0)*(g1-g0) + (b1-b0)*(b1-b0)) < magicEraseThreshold){
-                    background.setPixel(xN, yN, 0x00000000);
+            for (yN = (int) y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) {
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                if (areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT){
+                    backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
                 }
-                else {
-                    keepSearchingy = false;
-                    if (yN == y - 1) keepSearchingx = false;
-                }
+                else keepSearchingy = false;
+                if (!keepSearchingy && yN == y - 1) keepSearchingx = false;
             }
             keepSearchingy = true;
             invalidate();
         }
+    }
+    private void magicErase(float x, float y){
+        // Variables for drawing the erase
+        float strokeWidth = 4;
+        Paint erasePaint = new Paint(Color.TRANSPARENT);
+        erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        erasePaint.setAntiAlias(true);
+        erasePaint.setStrokeWidth(strokeWidth);
+        erasePaint.setStyle(Paint.Style.STROKE);
+        erasePaint.setStrokeJoin(Paint.Join.ROUND);
+        erasePaint.setStrokeCap(Paint.Cap.ROUND);
+        erasePaint.setMaskFilter(new BlurMaskFilter(1, BlurMaskFilter.Blur.NORMAL));
+        erasePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        Path erasePath = new Path();
+
+        // Variables for loops
+        boolean keepSearchingy = true;
+        boolean keepSearchingx = true;
+        int accuracy = (int)(strokeWidth / 2);
+        int rgbInit = getColorAverage(backgroundBitmap, (int)x, (int)y, 8);
+        int rgbCurrent;
+        ArrayList<Point> upperRightpoints = new ArrayList<>();
+        ArrayList<Point> lowerRightPoints = new ArrayList<>();
+        ArrayList<Point> lowerLeftPoints = new ArrayList<>();
+        ArrayList<Point> upperLeftPoints = new ArrayList<>();
+
+        // Search clockwise
+        // 12 o'clock to 3 o'clock
+        // Right loop
+        int xN = (int)x, yN = (int)y;
+        for (xN = (int)x; xN < backgroundBitmap.getWidth() && xN > 0 && keepSearchingx; xN++) { // Starts at 12 o'clock, positive is right
+            // Up loop
+            keepSearchingy = true;
+            for (yN = (int)y; yN >= 0 && yN < backgroundBitmap.getHeight() && keepSearchingy; yN--) { // Negative is up
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                keepSearchingy = areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT;
+                if (!keepSearchingy && (Math.abs(yN - y) < accuracy)) keepSearchingx = false;
+            }
+            if (upperRightpoints.size() == 0 || yN < upperRightpoints.get(upperRightpoints.size() - 1).y || yN == 0) { // The first point at 12 o'clock
+                if (Math.abs(yN - y) > accuracy || yN == 0)
+                    upperRightpoints.add(new Point(xN, yN));
+            }
+        }
+        if (yN != y)
+            upperRightpoints.add(new Point(xN, yN)); // 3 o'clock
+        // 3 o'clock to 6 o'clock
+        // Left loop
+        keepSearchingy = true;
+        for (xN = xN; xN < backgroundBitmap.getWidth() && xN > 0 && keepSearchingx; xN--) { // Start at 3 o'clock, negative is left
+            // Down loop
+            for (yN = (int) y + 1; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) {  // Start at the next row down, Positive is down
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                keepSearchingy = areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT;
+                if (!keepSearchingy && Math.abs(yN - y) < accuracy) keepSearchingx = false;
+            }
+            if (lowerRightPoints.size() == 0 || yN > lowerRightPoints.get(lowerRightPoints.size() - 1).y || yN == backgroundBitmap.getHeight() - 1) {
+                if (Math.abs(yN - (y + 1)) > accuracy || yN == backgroundBitmap.getHeight() - 1)
+                    lowerRightPoints.add(new Point(xN, yN)); //
+            }
+        }
+        if (yN != y + 1)
+            lowerRightPoints.add(new Point((int)x, yN)); // 6 o'clock
+        // 6 o'clock to 9 o'clock
+        // Left loop
+        keepSearchingy = true;
+        for (xN = (int) x; xN >= 0 && xN < backgroundBitmap.getWidth() && keepSearchingx; xN--) { // Starts at 6 o'clock, negative is left
+            // Down loop
+            for (yN = (int)y + 1; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) { // Still next row down, Positive is down
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                keepSearchingy = areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT;
+                if (!keepSearchingy && Math.abs(yN - y) < accuracy) keepSearchingx = false;
+            }
+            if(lowerLeftPoints.size() == 0 || yN > lowerLeftPoints.get(lowerLeftPoints.size() - 1).y || yN == backgroundBitmap.getHeight() - 1) {
+                if (Math.abs(yN - (y + 1)) > accuracy || yN == backgroundBitmap.getHeight() - 1)
+                    lowerLeftPoints.add(new Point(xN, yN));
+            }
+        }
+        if (yN != y + 1)
+            lowerLeftPoints.add(new Point(xN, (int)y)); // 9 o'clock
+        // 9 o'clock to 12 o'clock
+        // Right loop
+        if (xN < 0) xN = 0;
+        for (xN = xN; xN < x && keepSearchingx; xN++) { // Starts at xN, positive is right
+            // Up loop
+            keepSearchingy = true;
+            for (yN = (int)y; yN >= 0 && yN < backgroundBitmap.getHeight() && keepSearchingy; yN--) { // Back to y, negative is up
+                rgbCurrent = backgroundBitmap.getPixel(xN, yN);
+                keepSearchingy = areColorsSimilar(rgbInit, rgbCurrent, colorSimilarity) && rgbCurrent != Color.TRANSPARENT;
+                if (!keepSearchingy && Math.abs(yN - y) < accuracy) keepSearchingx = false;
+            }
+            if (upperLeftPoints.size() == 0 || yN < upperLeftPoints.get(upperLeftPoints.size() - 1).y || yN == 0) {
+                if (Math.abs(yN - y) > accuracy || yN == 0)
+                    upperLeftPoints.add(new Point(xN, yN));
+            }
+
+        }
+
+        // Erase area defined by points
+        boolean movedToFirst = false,
+                upperRightDrawn = false, lowerRightDrawn = false,
+                lowerLeftDrawn = false, upperLeftDrawn = false;
+        if (upperRightpoints.size() > 0) {
+            erasePath.moveTo(upperRightpoints.get(0).x, upperRightpoints.get(0).y);
+            upperRightDrawn = true;
+            for (int i = 0; i < upperRightpoints.size(); i++) {
+                erasePath.lineTo(upperRightpoints.get(i).x, upperRightpoints.get(i).y);
+            }
+        }
+        if (lowerRightPoints.size() > 0) {
+            if (!upperRightDrawn){
+                erasePath.moveTo(lowerRightPoints.get(0).x, lowerRightPoints.get(0).y);
+            }
+            lowerRightDrawn = true;
+            for (int i = 0; i < lowerRightPoints.size(); i++) {
+                erasePath.lineTo(lowerRightPoints.get(i).x, lowerRightPoints.get(i).y);
+            }
+        }
+        if (lowerLeftPoints.size() > 0) {
+            if (!lowerRightDrawn){
+                if (upperRightDrawn)
+                    erasePath.lineTo(x, y);
+                else
+                    erasePath.moveTo(x, y);
+            }
+            lowerLeftDrawn = true;
+            for (int i = 0; i < lowerLeftPoints.size(); i++) {
+                erasePath.lineTo(lowerLeftPoints.get(i).x, lowerLeftPoints.get(i).y);
+            }
+        }
+        if (upperLeftPoints.size() > 0) {
+            if (!lowerLeftDrawn){
+                if (upperRightDrawn || lowerRightDrawn)
+                    erasePath.lineTo(x, y);
+                else
+                    erasePath.moveTo(upperLeftPoints.get(0).x, upperLeftPoints.get(0).y);
+            }
+            upperLeftDrawn = true;
+            for (int i = 0; i < upperLeftPoints.size() - 1; i++) {
+                erasePath.lineTo(upperLeftPoints.get(i).x, upperLeftPoints.get(i).y);
+            }
+            erasePath.setLastPoint(upperLeftPoints.get(upperLeftPoints.size() - 1).x, upperLeftPoints.get(upperLeftPoints.size() - 1).y);
+        }
+        backgroundCanvas.drawPath(erasePath, erasePaint);
+        backgroundCanvas.drawPath(erasePath, erasePaint);
+        invalidate();
 
     }
 
     @Override
-    protected void onDraw(Canvas canvas){
-        if (background != null) {
-            canvas.drawBitmap(background, 0, 0, null);
-            canvas.drawBitmap(drawBitmap, 0, 0, null);
-            canvas.drawPath(drawPath, drawPaint);
-            if (showLowerJawBox) {
-                canvas.drawRect(lowerJawBox, lowerJawPaint);
-                canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 16, pivotPaint1);
-                canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 12, pivotPaint2);
-                canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 8, pivotPaint1);
-            }
-            if (showUpperJawBox) {
-                canvas.drawRect(upperJawBox, upperJawPaint);
-                canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 16, pivotPaint1);
-                canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
-                canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
-            }
+    protected void onMeasure(int reqWidth, int reqHeight){
+
+        setMeasuredDimension(viewBitmap.getWidth(), viewBitmap.getHeight());
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        canvas.drawBitmap(viewBitmap, 0, 0, null);
+        if (backgroundBitmap != null)
+            canvas.drawBitmap(backgroundBitmap, 0, 0, null);
+        canvas.drawBitmap(drawBitmap, 0, 0, null);
+        canvas.drawPath(drawPath, drawPaint);
+        if (showLowerJawBox) {
+            canvas.drawRect(lowerJawBox, lowerJawPaint);
+            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 16, pivotPaint1);
+            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 12, pivotPaint2);
+            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 8, pivotPaint1);
+        }
+        if (showUpperJawBox) {
+            canvas.drawRect(upperJawBox, upperJawPaint);
+            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 16, pivotPaint1);
+            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
+            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
+        }
+        if (isCutPath){
+            canvas.drawPath(cutPath, cutPathPaint);
         }
     }
 }

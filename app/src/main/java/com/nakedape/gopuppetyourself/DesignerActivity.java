@@ -1,12 +1,15 @@
 package com.nakedape.gopuppetyourself;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,6 +28,7 @@ import android.widget.SeekBar;
 import com.Utils;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 
 
@@ -61,13 +65,6 @@ public class DesignerActivity extends ActionBarActivity {
     private int colorSelection = R.id.black;
     private int paletteBrushSize = BRUSH_SIZE_M;
     private ImageButton showBoxButton;
-    private View.OnLongClickListener showBoxButtonLongClick = new View.OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View view) {
-            SwitchOrientation(view);
-            return true;
-        }
-    };
     private Puppet puppet;
     private File storageDir;
     private int stageIndex = -1;
@@ -112,7 +109,7 @@ public class DesignerActivity extends ActionBarActivity {
             editText.setText(puppet.getName());
         }
         else {
-            launchGetPicIntent();
+            ShowGetNewImagePopup();
         }
     }
 
@@ -141,12 +138,34 @@ public class DesignerActivity extends ActionBarActivity {
     @Override
      protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
-            //Bitmap thumbnail = data.getParcelableExtra("data");
             Uri fullPhotoUri = data.getData();
+            CloseGetNewImagePopup(null);
             NewPuppet(fullPhotoUri);
         }
     }
 
+    private void ShowGetNewImagePopup(){
+        View layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
+        int width = Math.min(600, rootLayout.getWidth());
+        int height = 400;
+        layout.setMinimumHeight(height);
+        layout.setMinimumWidth(width);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)layout.getLayoutParams();
+        if (params == null){
+            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.addRule(RelativeLayout.CENTER_IN_PARENT, designer.getId());
+        }
+        layout.setLayoutParams(params);
+        rootLayout.addView(layout);
+
+    }
+    public void CloseGetNewImagePopup(View v){
+        View layout = findViewById(R.id.new_image_popup);
+        rootLayout.removeView(layout);
+    }
+    public void NewLibraryImageClick(View v){
+        launchGetPicIntent();
+    }
     private void launchGetPicIntent(){
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
@@ -158,29 +177,77 @@ public class DesignerActivity extends ActionBarActivity {
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
         try {
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-        } catch (IOException e){}
+            final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
+            Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
+            cursor.moveToFirst();
+            int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
+            Log.d(LOG_TAG, "image width = " + width);
+            int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
+            Log.d(LOG_TAG, "image width = " + height);
+            if (width > designer.getWidth() || height > designer.getHeight()){
+                double scale = Math.min(((float) designer.getWidth() / width), ((float) designer.getHeight() / height));
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(designer.getWidth() * scale), (int)(designer.getHeight() * scale));
+                Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(designer.getWidth() * scale));
+            }
+            else {
+                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            }
+        } catch (IOException e){e.printStackTrace();}
         if (bitmap != null){
             designer.SetNewImage(bitmap);
+            designer.invalidate();
+            Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
         }
     }
 
     public void Save(View v){
-        Intent data = new Intent();
         EditText text = (EditText)findViewById(R.id.puppet_name);
+        String newName = text.getText().toString();
+        if (newName.length() <= 0){
+            newName = "Unnamed";
+        }
+        final String name = newName;
+        // Check if the puppet name has changed and prompt if a puppet already has that name
+        File[] files = storageDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getName().equals(name + getString(R.string.puppet_extension)) || file.getName().equals(name);
+            }
+        });
+        if (files.length > 0){
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setMessage(R.string.alert_dialog_message);
+            builder.setTitle(R.string.alert_dialog_title);
+            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.dismiss();
+                }
+            });
+            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    FinishAndSave(name);
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        else {
+            FinishAndSave(name);
+        }
+
+    }
+    private void FinishAndSave(String puppetName){
         // Create puppet
         puppet = new Puppet(context, null);
-        if (text.getText().length() > 0){
-            puppet.setName(text.getText().toString());
-        } else {
-            puppet.setName(getString(R.string.default_puppet_name));
-        }
         puppet.setOrientation(designer.getOrientation());
         puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         // Save puppet to storage directory
         File saveFile = new File(storageDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
         String filePath = Utils.WritePuppetToFile(puppet, saveFile);
         // Pass file name back to MainActivity
+        Intent data = new Intent();
         data.putExtra(MainActivity.PUPPET_PATH, filePath);
         Log.d(LOG_TAG, "Saved to " + filePath);
         // Pass index back in case this was an edit
@@ -188,6 +255,11 @@ public class DesignerActivity extends ActionBarActivity {
 
         setResult(MainActivity.RESULT_OK, data);
         finish();
+    }
+
+    // Undo methods
+    public void UndoButtonClick(View v){
+        designer.Undo();
     }
 
     // Draw menu methods
@@ -315,7 +387,7 @@ public class DesignerActivity extends ActionBarActivity {
             popup = layoutInflater.inflate(R.layout.palette_popup, viewGroup);
 
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.addRule(RelativeLayout.ABOVE, R.id.button_bar);
+            params.addRule(RelativeLayout.BELOW, R.id.button_bar);
             popup.setLayoutParams(params);
             rootLayout.addView(popup);
         }
@@ -332,7 +404,7 @@ public class DesignerActivity extends ActionBarActivity {
     }
     public void ColorSelect(View v){
         designer.setEraseMode(false);
-        designer.cancelMagicEraseMode();
+        designer.cancelCutPathMode();
         designer.cancelBackgroundErase();
         colorSelection = v.getId();
         switch (colorSelection){
@@ -398,7 +470,7 @@ public class DesignerActivity extends ActionBarActivity {
             buttonBar = mainButtonBar;
         else if (magicEraseButtonBar.getVisibility() == View.VISIBLE) {
             buttonBar = magicEraseButtonBar;
-            designer.cancelMagicEraseMode();
+            designer.cancelCutPathMode();
         }
         else if (eraseBackgroundButtonBar.getVisibility() == View.VISIBLE) {
             buttonBar = eraseBackgroundButtonBar;
@@ -560,7 +632,7 @@ public class DesignerActivity extends ActionBarActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 thresholdText.setText(String.valueOf(i));
-                designer.setMagicEraseThreshold(i);
+                designer.setCutPathWidth(i);
             }
 
             @Override
@@ -584,7 +656,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                designer.setMagicEraseMode();
+                designer.setCutPathMode();
                 buttonBar.setVisibility(View.GONE);
                 View newButtonBar = findViewById(R.id.magic_erase_bar);
                 newButtonBar.setVisibility(View.VISIBLE);
