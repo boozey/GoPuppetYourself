@@ -106,6 +106,7 @@ public class MainActivity extends ActionBarActivity {
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
     private ImageButton mainControlButton, recordButton, playButton, libraryButton;
+    private PopupMenu puppetMenu;
     private RelativeLayout rootLayout;
     private boolean isControlPressed = false;
     private boolean isSecondControlShowing = false;
@@ -252,7 +253,7 @@ public class MainActivity extends ActionBarActivity {
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            return HandlePerformanceTouch((Puppet)view, event);
+            return HandlePerformanceTouch((Puppet) view, event);
         }
     };
     private boolean HandlePerformanceTouch(Puppet view, MotionEvent event){
@@ -317,6 +318,7 @@ public class MainActivity extends ActionBarActivity {
         switch (motionEvent.getAction()){
             case MotionEvent.ACTION_DOWN:
                 GoBackstage(view);
+                isControlPressed = true;
                 mainControlFadeIn();
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -355,6 +357,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                 }
                 mainControlFadeOut();
+                isControlPressed = false;
                 return true;
         }
         return false;
@@ -561,57 +564,33 @@ public class MainActivity extends ActionBarActivity {
             stage.getChildAt(i).setVisibility(View.VISIBLE);
         }
     }
+    public void GoToPerformance(View v){
+        stage.setOnClickListener(null);
+        if (puppetMenu != null) puppetMenu.dismiss();
+        if (selectedPuppet != null) selectedPuppet.setBackground(null);
+        isBackstage = false;
+        Puppet p;
+        for (int i = 0; i < stage.getChildCount(); i++){
+            p = (Puppet)stage.getChildAt(i);
+            if (p.isOnStage()) {
+                p.setOnClickListener(null);
+                p.setOnLongClickListener(null);
+                p.setOnTouchListener(headTouchListener);
+            }
+            else {
+                p.setVisibility(View.GONE);
+            }
+
+        }
+    }
+
     private View.OnTouchListener backstageListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
             return HandleBackstageTouch((Puppet)view, event);
         }
     };
-    private View.OnClickListener backgroundClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if (selectedPuppet != null) selectedPuppet.setBackground(null);
-            selectedPuppet = null;
-            BackGroundButtonClick(view);
-        }
-    };
-    private View.OnTouchListener scaleListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            //gestureDetector.onTouchEvent(motionEvent);
-            switch (motionEvent.getAction()){
-                case MotionEvent.ACTION_DOWN:
-                    if (motionEvent.getPointerCount() > 1) {
-                        x1Start = motionEvent.getX(0);
-                        y1Start = motionEvent.getY(0);
-                        x2Start = motionEvent.getX(1);
-                        x2Start = motionEvent.getY(1);
-                    }
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    if (motionEvent.getPointerCount() > 1) {
-                        view.setScaleX(getScaleFactor(motionEvent.getX(0), motionEvent.getY(0), motionEvent.getX(1), motionEvent.getY(1)));
-                        view.setScaleY(view.getScaleX());
-                    }
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    view.setOnTouchListener(headTouchListener);
-                    return true;
-            }
-            return true;
-        }
-    };
-    private float getScaleFactor(float x1, float y1, float x2, float y2){
-        float dXInit = x2Start - x1Start;
-        float dYInit = y2Start - y1Start;
-        float dX = x2 - x1;
-        float dY = y2 - y1;
-        scrollAmount = (float)(Math.sqrt(dX*dX + dY*dY) - Math.sqrt(dXInit*dXInit + dYInit*dYInit));
-        float scaleFactor =  1 + scrollAmount / metrics.densityDpi;
-        scaleFactor = Math.min(scaleFactor, 5);
-        Log.d(LOG_TAG, "Scale factor = " + scaleFactor);
-        return scaleFactor;
-    }
+
     private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
         Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
@@ -627,14 +606,14 @@ public class MainActivity extends ActionBarActivity {
                 if (selectedPuppet != null) selectedPuppet.setBackground(null);
                 selectedPuppet = (Puppet)view;
                 selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
-                PopupMenu menu = new PopupMenu(context, selectedPuppet);
-                menu.inflate(R.menu.menu_puppet_edit);
-                menu.setOnMenuItemClickListener(popupMenuListener);
+                puppetMenu = new PopupMenu(context, selectedPuppet);
+                puppetMenu.inflate(R.menu.menu_puppet_edit);
+                puppetMenu.setOnMenuItemClickListener(popupMenuListener);
                 if (!selectedPuppet.isOnStage()){
-                    MenuItem item = menu.getMenu().findItem(R.id.action_puppet_visible);
+                    MenuItem item = puppetMenu.getMenu().findItem(R.id.action_puppet_visible);
                     item.setChecked(false);
                 }
-                menu.show();
+                puppetMenu.show();
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
                 break;
@@ -647,43 +626,143 @@ public class MainActivity extends ActionBarActivity {
         stage.invalidate();
         return true;
     }
+
+    private View.OnClickListener backgroundClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            if (selectedPuppet != null) selectedPuppet.setBackground(null);
+            selectedPuppet = null;
+            BackGroundButtonClick(view);
+        }
+    };
+    public void BackGroundButtonClick(View v){
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent, REQUEST_IMAGE_GET);
+        }
+    } // Called from background click listener in backstage mode
+    private void setBackGround(Uri imageUri){
+        Log.d(LOG_TAG, "set background called");
+        Bitmap bitmap = null;
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+        } catch (IOException e){Toast.makeText(this, "Error loading backgournd", Toast.LENGTH_SHORT).show();}
+        if (bitmap != null){
+            stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+            savedData.currentBackground = bitmap;
+            Log.d(LOG_TAG, "background changed");
+        }
+    } // Called from activity result
+
+    // Scale puppet listener and methods
+    private View.OnTouchListener scaleListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            return handleScaleTouch(view, motionEvent);
+        }
+    };
+    private boolean handleScaleTouch(View view, MotionEvent motionEvent){
+        int pointerCount = motionEvent.getPointerCount();
+        switch (motionEvent.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:
+                x1Start = motionEvent.getX();
+                y1Start = motionEvent.getY();
+                return true;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                    x1Start = motionEvent.getX(pointerCount - 1);
+                    x2Start = motionEvent.getX(pointerCount - 2);
+                    y1Start = motionEvent.getY(pointerCount - 1);
+                    y2Start = motionEvent.getY(pointerCount - 2);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (pointerCount > 1) {
+                    selectedPuppet.setScaleX(getScaleFactor(motionEvent.getX(pointerCount - 1), motionEvent.getY(pointerCount - 1),
+                            motionEvent.getX(pointerCount - 2), motionEvent.getY(pointerCount - 2)));
+                    selectedPuppet.setScaleY(Math.copySign(selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                return true;
+        }
+        return true;
+    }
+    private float getScaleFactor(float x1, float y1, float x2, float y2){
+        float dXInit = x2Start - x1Start;
+        float dYInit = y2Start - y1Start;
+        float startDistance = (float)Math.sqrt(dXInit*dXInit + dYInit*dYInit); // Distance between two pointers to start
+        float dX = x2 - x1;
+        float dY = y2 - y1;
+        float currentDistance = (float)Math.sqrt(dX*dX + dY*dY); // Current distance between two pointers
+        float scaleAmount = currentDistance - startDistance; // Neg = shrink, pos = grow
+        float scaleFactor =  Math.abs(lastScaleFactor) + scaleAmount / metrics.densityDpi;
+        // Make sure scale factor is reasonable between 1/5 and 5
+        scaleFactor = Math.max(scaleFactor, 0.2f);
+        scaleFactor = Math.min(scaleFactor, 5);
+        // Set the sign to what it was originally to keep left/right orientation the same
+        scaleFactor = Math.copySign(scaleFactor, lastScaleFactor);
+        return scaleFactor;
+    }
+
+    // Popup menu methods
     private PopupMenu.OnMenuItemClickListener popupMenuListener = new PopupMenu.OnMenuItemClickListener() {
         @Override
         public boolean onMenuItemClick(MenuItem menuItem) {
-            switch (menuItem.getItemId()){
-                case R.id.action_edit_puppet:
-                    EditPuppet(selectedPuppet);
-                    return true;
-                case R.id.action_remove_puppet:
-                    RemovePuppetFromStage(selectedPuppet);
-                    selectedPuppet = null;
-                    return true;
-                case R.id.action_puppet_visible:
-                    if (menuItem.isChecked()){
-                        selectedPuppet.setOnStage(false);
-                        menuItem.setChecked(false);
-                    }
-                    else {
-                        selectedPuppet.setOnStage(true);
-                        menuItem.setChecked(true);
-                    }
-                    return true;
-                case R.id.action_puppet_scale:
-                    selectedPuppet.setOnTouchListener(scaleListener);
-                    return true;
-                case R.id.action_puppet_flip_horz:
-                    selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
-                    return true;
-            }
-            return false;
+            return handlePopupClick(menuItem);
         }
     };
+    private boolean handlePopupClick(MenuItem menuItem){
+        switch (menuItem.getItemId()){
+            case R.id.action_edit_puppet:
+                EditPuppet(selectedPuppet);
+                return true;
+            case R.id.action_remove_puppet:
+                RemovePuppetFromStage(selectedPuppet);
+                selectedPuppet = null;
+                return true;
+            case R.id.action_puppet_visible:
+                if (menuItem.isChecked()){
+                    selectedPuppet.setOnStage(false);
+                    menuItem.setChecked(false);
+                }
+                else {
+                    selectedPuppet.setOnStage(true);
+                    menuItem.setChecked(true);
+                }
+                return true;
+            case R.id.action_puppet_scale:
+                selectedPuppet.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent motionEvent) {
+                        return false;
+                    }
+                });
+                lastScaleFactor = selectedPuppet.getScaleX();
+                stage.setOnTouchListener(scaleListener);
+                return true;
+            case R.id.action_puppet_flip_horz:
+                selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                return true;
+        }
+        return false;
+    }
     private void RemovePuppetFromStage(Puppet p){
         stage.removeView(p);
         puppetsOnStage.remove(p.getPath());
         SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
         prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
         prefEditor.apply();
+    }
+    public void EditPuppet(Puppet p){
+        Intent intent = new Intent(this, DesignerActivity.class);
+        for (int i = 0; i < stage.getChildCount(); i++){
+            if (stage.getChildAt(i).equals(p)) {
+                intent.putExtra(PUPPET_INDEX, i);
+                Log.d(LOG_TAG, "index = " + i);
+            }
+        }
+        intent.putExtra(PUPPET_PATH, p.getPath());
+        startActivityForResult(intent, REQUEST_EDIT);
     }
 
     // Puppet Library methods
@@ -976,46 +1055,9 @@ public class MainActivity extends ActionBarActivity {
         layoutParams.bottomMargin = -250;
         v.setLayoutParams(layoutParams);
     }
-
     public void NewButtonClick(View v){
         Intent intent = new Intent(this, DesignerActivity.class);
         startActivityForResult(intent, REQUEST_PUPPET_GET);
-    }
-
-    public void GoToPerformance(View v){
-        stage.setOnClickListener(null);
-        if (selectedPuppet != null) selectedPuppet.setBackground(null);
-        isBackstage = false;
-        Puppet p;
-        for (int i = 0; i < stage.getChildCount(); i++){
-            p = (Puppet)stage.getChildAt(i);
-            if (p.isOnStage()) {
-                p.setOnClickListener(null);
-                p.setOnLongClickListener(null);
-                p.setOnTouchListener(headTouchListener);
-            }
-            else {
-                p.setVisibility(View.GONE);
-            }
-
-        }
-    }
-    public void EditPuppet(Puppet p){
-        Intent intent = new Intent(this, DesignerActivity.class);
-        for (int i = 0; i < stage.getChildCount(); i++){
-            if (stage.getChildAt(i).equals(p)) {
-                intent.putExtra(PUPPET_INDEX, i);
-                Log.d(LOG_TAG, "index = " + i);
-            }
-        }
-        intent.putExtra(PUPPET_PATH, p.getPath());
-        startActivityForResult(intent, REQUEST_EDIT);
-    }
-    private void DeletePuppet(Puppet p){
-        stage.removeView(p);
-        File puppetFile = new File(p.getPath());
-        if (puppetFile.isFile())
-            if (!puppetFile.delete()) Log.e(LOG_TAG, "error deleting puppet file");
     }
     private void SetupNewPuppet(Intent data){
         String filePath = data.getStringExtra(PUPPET_PATH);
@@ -1028,25 +1070,12 @@ public class MainActivity extends ActionBarActivity {
         stage.addView(puppet);
         GoToPerformance(null);
         Log.d(LOG_TAG, "new puppet should be visible");
-    }
-    public void BackGroundButtonClick(View v){
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(intent, REQUEST_IMAGE_GET);
-        }
-    }
-    private void setBackGround(Uri imageUri){
-        Log.d(LOG_TAG, "set background called");
-        Bitmap bitmap = null;
-        try {
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-        } catch (IOException e){Toast.makeText(this, "Error loading backgournd", Toast.LENGTH_SHORT).show();}
-        if (bitmap != null){
-            stage.setBackground(new BitmapDrawable(getResources(), bitmap));
-            savedData.currentBackground = bitmap;
-            Log.d(LOG_TAG, "background changed");
-        }
+    } // Called from activity result
+    private void DeletePuppet(Puppet p){
+        stage.removeView(p);
+        File puppetFile = new File(p.getPath());
+        if (puppetFile.isFile())
+            if (!puppetFile.delete()) Log.e(LOG_TAG, "error deleting puppet file");
     }
 
     class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
