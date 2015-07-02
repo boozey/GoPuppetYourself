@@ -43,11 +43,6 @@ public class DesignerActivity extends ActionBarActivity {
     private static final String LOG_TAG = "DesignerActivity";
     private static final int REQUEST_IMAGE_GET = 4001;
     private static final int REQUEST_IMAGE_CAPTURE = 4002;
-    public static final String UPPER_JAW = "com.nakedape.gopuppetyourself.UPPER_JAW";
-    public static final String LOWER_JAW = "com.nakedape.gopuppetyourself.LOWER_JAW";
-    public static final String UPPER_PIVOT = "com.nakedape.gopuppetyourself.UPPER_PIVOT";
-    public static final String LOWER_PIVOT = "com.nakedape.gopuppetyourself.LOWER_PIVOT";
-    public static final String PROFILE_ORIENTATION = "com.nakedape.gopuppetyourself.PROFILE_ORIENTATION";
     private static final int BRUSH_SIZE_S = 6;
     private static final int BRUSH_SIZE_M = 12;
     private static final int BRUSH_SIZE_L = 18;
@@ -164,7 +159,7 @@ public class DesignerActivity extends ActionBarActivity {
         layout.setMinimumWidth(width);
         RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)layout.getLayoutParams();
         if (params == null){
-            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.CENTER_IN_PARENT, designer.getId());
         }
         layout.setLayoutParams(params);

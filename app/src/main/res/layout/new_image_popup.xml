@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_below="@id/puppet_name"
+    android:orientation="vertical" android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
     android:background="@drawable/puppet_library_background"
     android:id="@+id/new_image_popup">
     <LinearLayout
@@ -24,21 +24,38 @@
             android:background="@drawable/ic_action_navigation_close"
             android:onClick="CloseGetNewImagePopup"/>
     </LinearLayout>
-    <Button
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Camera"
-        android:id="@+id/camera_button"
-        android:onClick="NewCameraImageClick" />
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/ic_image_camera"/>
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Camera"
+            android:textColor="@color/white"
+            android:layout_gravity="start"
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:id="@+id/camera_button"
+            android:onClick="NewCameraImageClick" />
+    </LinearLayout>
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Photo Gallery"
+        android:textColor="@color/white"
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
         android:id="@+id/gallery_button"
         android:onClick="NewGalleryImageClick" />
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        style="@style/Base.Widget.AppCompat.Button.Borderless"
         android:text="Blank Image"
         android:id="@+id/blank_image_button" />
 </LinearLayout>

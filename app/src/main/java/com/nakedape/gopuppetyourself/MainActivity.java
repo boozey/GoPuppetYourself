@@ -19,6 +19,7 @@ import android.provider.MediaStore;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.GestureDetector;
@@ -62,6 +63,7 @@ public class MainActivity extends ActionBarActivity {
     private ViewGroup stage;
     private int dx;
     private int dy;
+    private float prevX, prevY, x1Start, y1Start, x2Start, y2Start;
     private Puppet selectedPuppet;
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
@@ -109,8 +111,14 @@ public class MainActivity extends ActionBarActivity {
     private boolean isSecondControlShowing = false;
     private boolean isPlaying = false;
     private boolean isRecording = false;
+    private float lastScaleFactor = 1;
+    private boolean scaleUp, scaleDown;
+    private DisplayMetrics metrics;
+
+    // Gesture fields
     private GestureDetectorCompat gestureDetector;
     private boolean flingRight, flingLeft, flingUp, flingDown, longPress, scrollLeft, scrollRight, scrollUp, scrollDown;
+    private float scrollAmount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +138,7 @@ public class MainActivity extends ActionBarActivity {
         libraryButton = (ImageButton)findViewById(R.id.puppet_library_button);
         libraryButton.setVisibility(View.GONE);
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
+        metrics = getResources().getDisplayMetrics();
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
@@ -301,52 +310,55 @@ public class MainActivity extends ActionBarActivity {
     private View.OnTouchListener mainControlTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            switch (motionEvent.getAction()){
-                case MotionEvent.ACTION_DOWN:
-                    GoBackstage(view);
-                    mainControlFadeIn();
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    secondControlsFadeIn();
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    GoToPerformance(view);
-                    if (isPlaying){
-                        StopPlay();
-                        return true;
-                    }
-                    Rect hitRect = new Rect();
-                    playButton.getGlobalVisibleRect(hitRect);
-                    if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())) {
-                        Log.d(LOG_TAG, "Play button pressed");
-                        secondControlsFadeOut();
-                        PlayClick(view);
-                    }
-                    else {
-                        recordButton.getGlobalVisibleRect(hitRect);
-                        if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                            Log.d(LOG_TAG, "Record button pressed");
-                            secondControlsFadeOut();
-                            RecordClick(view);
-                        }
-                        else {
-                            libraryButton.getGlobalVisibleRect(hitRect);
-                            if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())){
-                                Log.d(LOG_TAG, "Library button pressed");
-                                secondControlsFadeOut();
-                                ShowPuppetLibrary(view);
-                            }
-                            else {
-                                secondControlsFadeOut();
-                            }
-                        }
-                    }
-                    mainControlFadeOut();
-                    return true;
-            }
-            return false;
+            return handleMainControlTouch(view, motionEvent);
         }
     };
+    private boolean handleMainControlTouch(View view, MotionEvent motionEvent){
+        switch (motionEvent.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                GoBackstage(view);
+                mainControlFadeIn();
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                secondControlsFadeIn();
+                return true;
+            case MotionEvent.ACTION_UP:
+                GoToPerformance(view);
+                if (isPlaying){
+                    StopPlay();
+                    return true;
+                }
+                Rect hitRect = new Rect();
+                playButton.getGlobalVisibleRect(hitRect);
+                if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())) {
+                    Log.d(LOG_TAG, "Play button pressed");
+                    secondControlsFadeOut();
+                    PlayClick(view);
+                }
+                else {
+                    recordButton.getGlobalVisibleRect(hitRect);
+                    if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
+                        Log.d(LOG_TAG, "Record button pressed");
+                        secondControlsFadeOut();
+                        RecordClick(view);
+                    }
+                    else {
+                        libraryButton.getGlobalVisibleRect(hitRect);
+                        if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())){
+                            Log.d(LOG_TAG, "Library button pressed");
+                            secondControlsFadeOut();
+                            ShowPuppetLibrary(view);
+                        }
+                        else {
+                            secondControlsFadeOut();
+                        }
+                    }
+                }
+                mainControlFadeOut();
+                return true;
+        }
+        return false;
+    }
     private void secondControlsFadeIn(){
         if (!isSecondControlShowing) {
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
@@ -563,6 +575,43 @@ public class MainActivity extends ActionBarActivity {
             BackGroundButtonClick(view);
         }
     };
+    private View.OnTouchListener scaleListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            //gestureDetector.onTouchEvent(motionEvent);
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    if (motionEvent.getPointerCount() > 1) {
+                        x1Start = motionEvent.getX(0);
+                        y1Start = motionEvent.getY(0);
+                        x2Start = motionEvent.getX(1);
+                        x2Start = motionEvent.getY(1);
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    if (motionEvent.getPointerCount() > 1) {
+                        view.setScaleX(getScaleFactor(motionEvent.getX(0), motionEvent.getY(0), motionEvent.getX(1), motionEvent.getY(1)));
+                        view.setScaleY(view.getScaleX());
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    view.setOnTouchListener(headTouchListener);
+                    return true;
+            }
+            return true;
+        }
+    };
+    private float getScaleFactor(float x1, float y1, float x2, float y2){
+        float dXInit = x2Start - x1Start;
+        float dYInit = y2Start - y1Start;
+        float dX = x2 - x1;
+        float dY = y2 - y1;
+        scrollAmount = (float)(Math.sqrt(dX*dX + dY*dY) - Math.sqrt(dXInit*dXInit + dYInit*dYInit));
+        float scaleFactor =  1 + scrollAmount / metrics.densityDpi;
+        scaleFactor = Math.min(scaleFactor, 5);
+        Log.d(LOG_TAG, "Scale factor = " + scaleFactor);
+        return scaleFactor;
+    }
     private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
         Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
@@ -572,6 +621,7 @@ public class MainActivity extends ActionBarActivity {
                 RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
                 dx = X - lParams.leftMargin;
                 dy = Y - lParams.topMargin;
+                lastScaleFactor = view.getScaleX();
                 break;
             case MotionEvent.ACTION_UP:
                 if (selectedPuppet != null) selectedPuppet.setBackground(null);
@@ -617,6 +667,13 @@ public class MainActivity extends ActionBarActivity {
                         selectedPuppet.setOnStage(true);
                         menuItem.setChecked(true);
                     }
+                    return true;
+                case R.id.action_puppet_scale:
+                    selectedPuppet.setOnTouchListener(scaleListener);
+                    return true;
+                case R.id.action_puppet_flip_horz:
+                    selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                    return true;
             }
             return false;
         }
@@ -1006,6 +1063,8 @@ public class MainActivity extends ActionBarActivity {
             scrollUp = false;
             scrollLeft = false;
             scrollRight = false;
+            scaleDown = false;
+            scaleUp = false;
             return true;
         }
 
@@ -1023,6 +1082,13 @@ public class MainActivity extends ActionBarActivity {
                 else
                     scrollUp = true;
             }
+            float dX = e2.getRawX() - e1.getRawX();
+            float dY = e2.getRawY() - e1.getRawY();
+            scrollAmount = (float)Math.sqrt(dX*dX + dY*dY);
+            if (dX < 0 && dY < 0) {
+                scrollAmount = -scrollAmount;
+            }
+            Log.d(LOG_TAG, "scroll amount = " + scrollAmount);
             return true;
         }
 

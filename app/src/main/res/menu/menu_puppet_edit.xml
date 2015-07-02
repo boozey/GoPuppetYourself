@@ -6,6 +6,10 @@
         android:title="@string/action_puppet_visible"
         android:checkable="true"
         android:checked="true" />
+    <item android:id="@+id/action_puppet_scale"
+        android:title="@string/action_scale" />
+    <item android:id="@+id/action_puppet_flip_horz"
+        android:title="@string/action_flip_horz"/>
     <item android:id="@+id/action_remove_puppet"
         android:title="@string/action_delete_remove" />
 
