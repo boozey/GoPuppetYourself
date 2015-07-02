@@ -595,7 +595,7 @@ public class PuppetDesigner extends View {
     // Touch related methods
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        super.onTouchEvent(event);
+        //super.onTouchEvent(event);
         float x = event.getX(), y = event.getY();
         if(isCutPath){
             switch (event.getAction()){
@@ -1134,7 +1134,6 @@ public class PuppetDesigner extends View {
         if (backgroundBitmap != null)
             canvas.drawBitmap(backgroundBitmap, 0, 0, null);
         canvas.drawBitmap(drawBitmap, 0, 0, null);
-        canvas.drawPath(drawPath, drawPaint);
         if (showLowerJawBox) {
             canvas.drawRect(lowerJawBox, lowerJawPaint);
             //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 16, pivotPaint1);

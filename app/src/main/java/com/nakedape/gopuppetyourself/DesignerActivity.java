@@ -234,7 +234,7 @@ public class DesignerActivity extends ActionBarActivity {
             dialog.show();
         }
         else {
-            FinishAndSave(name);
+            FinishAndSave(newName);
         }
 
     }
@@ -390,6 +390,7 @@ public class DesignerActivity extends ActionBarActivity {
             params.addRule(RelativeLayout.BELOW, R.id.button_bar);
             popup.setLayoutParams(params);
             rootLayout.addView(popup);
+            popup.requestFocus();
         }
         else {
             cancelPopup();
@@ -406,60 +407,79 @@ public class DesignerActivity extends ActionBarActivity {
         designer.setEraseMode(false);
         designer.cancelCutPathMode();
         designer.cancelBackgroundErase();
+        ImageButton brushSize = (ImageButton)findViewById(R.id.brush_size);
         colorSelection = v.getId();
         switch (colorSelection){
             case R.id.black:
                 designer.setColor(getResources().getColor(R.color.black));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.black_oval));
                 break;
             case R.id.blue:
                 designer.setColor(getResources().getColor(R.color.blue));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.blue_oval));
                 break;
             case R.id.brown:
                 designer.setColor(getResources().getColor(R.color.brown));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.brown_oval));
                 break;
             case R.id.green:
                 designer.setColor(getResources().getColor(R.color.green));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.green_oval));
                 break;
             case R.id.light_blue:
                 designer.setColor(getResources().getColor(R.color.light_blue));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.light_blue_oval));
                 break;
             case R.id.light_brown:
                 designer.setColor(getResources().getColor(R.color.light_brown));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.light_brown_oval));
                 break;
             case R.id.light_green:
                 designer.setColor(getResources().getColor(R.color.light_green));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.light_green_oval));
                 break;
             case R.id.orange:
                 designer.setColor(getResources().getColor(R.color.orange));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.orange_oval));
                 break;
             case R.id.pink:
                 designer.setColor(getResources().getColor(R.color.pink));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.pink_oval));
                 break;
             case R.id.red:
                 designer.setColor(getResources().getColor(R.color.red));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.red_oval));
                 break;
             case R.id.violet:
                 designer.setColor(getResources().getColor(R.color.violet));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.violet_oval));
                 break;
             case R.id.white:
                 designer.setColor(getResources().getColor(R.color.white));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.white_oval));
                 break;
             case R.id.yellow:
                 designer.setColor(getResources().getColor(R.color.yellow));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.yellow_oval));
                 break;
             case R.id.indigo:
                 designer.setColor(getResources().getColor(R.color.indigo));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.indigo_oval));
                 break;
             case R.id.light_grey:
                 designer.setColor(getResources().getColor(R.color.light_grey));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.light_grey_oval));
                 break;
             case R.id.dark_grey:
                 designer.setColor(getResources().getColor(R.color.dark_grey));
+                brushSize.setBackground(getResources().getDrawable(R.drawable.dark_grey_oval));
                 break;
             case R.id.eraser:
                 designer.setEraseMode(true);
+                brushSize.setBackground(getResources().getDrawable(R.drawable.dashed_oval));
                 break;
         }
+        cancelPopup();
     }
 
     // Background menu methods
@@ -772,25 +792,6 @@ public class DesignerActivity extends ActionBarActivity {
         findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
         findViewById(R.id.portrait_right_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
         designer.setOrientation(Puppet.PROFILE_LEFT);
-    }
-    public void ShowBoxes(View v){
-        if (v.isSelected()){
-            v.setSelected(false);
-            designer.setIsDrawMode(true);
-        }
-        else {
-            v.setSelected(true);
-            designer.setIsDrawMode(false);
-        }
-    }
-    public void SwitchOrientation(View v){
-        if (designer.getOrientation() == Puppet.PROFILE_RIGHT){
-            designer.setOrientation(Puppet.PROFILE_LEFT);
-
-        }
-        else {
-            designer.setOrientation(Puppet.PROFILE_RIGHT);
-        }
     }
 
 }

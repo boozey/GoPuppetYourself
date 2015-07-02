@@ -4,5 +4,5 @@
         android:state_selected="true"/>
     <item android:drawable="@drawable/palette_brush_size_selected"
         android:state_pressed="true"/>
-    <item android:drawable="@drawable/palatte_brush_size_bg" />
+    <item android:drawable="@drawable/black_oval" />
 </selector>

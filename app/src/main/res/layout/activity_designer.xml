@@ -88,7 +88,7 @@
                 android:layout_toEndOf="@id/palette_button"
                 android:layout_toRightOf="@id/palette_button"
                 android:id="@+id/brush_size"
-                android:background="@drawable/palette_brush_size"
+                android:background="@drawable/black_oval"
                 android:layout_margin="2dp"/>
             <SeekBar
                 android:layout_width="200dp"
@@ -173,7 +173,7 @@
                 android:id="@+id/erase_brush_slider"/>
         </RelativeLayout>
 
-        <!-- Magic Erase Bar Layout -->
+        <!-- Cut Path Bar Layout -->
         <RelativeLayout
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
@@ -235,6 +235,8 @@
             android:onClick="Save"/>
 
     </LinearLayout>
+
+    <!-- Puppet Designer Layout -->
     <FrameLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
