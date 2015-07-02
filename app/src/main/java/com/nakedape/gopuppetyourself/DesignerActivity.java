@@ -3,9 +3,12 @@ package com.nakedape.gopuppetyourself;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -19,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -30,12 +34,15 @@ import com.Utils;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class DesignerActivity extends ActionBarActivity {
 
     private static final String LOG_TAG = "DesignerActivity";
     private static final int REQUEST_IMAGE_GET = 4001;
+    private static final int REQUEST_IMAGE_CAPTURE = 4002;
     public static final String UPPER_JAW = "com.nakedape.gopuppetyourself.UPPER_JAW";
     public static final String LOWER_JAW = "com.nakedape.gopuppetyourself.LOWER_JAW";
     public static final String UPPER_PIVOT = "com.nakedape.gopuppetyourself.UPPER_PIVOT";
@@ -68,6 +75,7 @@ public class DesignerActivity extends ActionBarActivity {
     private Puppet puppet;
     private File storageDir;
     private int stageIndex = -1;
+    private String cameraCapturePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,6 +150,10 @@ public class DesignerActivity extends ActionBarActivity {
             CloseGetNewImagePopup(null);
             NewPuppet(fullPhotoUri);
         }
+        else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
+            CloseGetNewImagePopup(null);
+            NewPuppet();
+        }
     }
 
     private void ShowGetNewImagePopup(){
@@ -152,10 +164,14 @@ public class DesignerActivity extends ActionBarActivity {
         layout.setMinimumWidth(width);
         RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)layout.getLayoutParams();
         if (params == null){
-            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             params.addRule(RelativeLayout.CENTER_IN_PARENT, designer.getId());
         }
         layout.setLayoutParams(params);
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+            Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
+            cameraButton.setVisibility(View.GONE);
+        }
         rootLayout.addView(layout);
 
     }
@@ -163,7 +179,7 @@ public class DesignerActivity extends ActionBarActivity {
         View layout = findViewById(R.id.new_image_popup);
         rootLayout.removeView(layout);
     }
-    public void NewLibraryImageClick(View v){
+    public void NewGalleryImageClick(View v){
         launchGetPicIntent();
     }
     private void launchGetPicIntent(){
@@ -173,6 +189,46 @@ public class DesignerActivity extends ActionBarActivity {
             startActivityForResult(intent, REQUEST_IMAGE_GET);
         }
     }
+    public void NewCameraImageClick(View v){
+        launchCameraIntent();
+    }
+    private void launchCameraIntent(){
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Ensure that there's a camera activity to handle the intent
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error occurred while creating the File
+                ex.printStackTrace();
+            }
+            // Continue only if the File was successfully created
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+                        Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
+        }
+    }
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        cameraCapturePath = image.getAbsolutePath();
+        return image;
+    }
+
 
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
@@ -194,6 +250,32 @@ public class DesignerActivity extends ActionBarActivity {
             }
         } catch (IOException e){e.printStackTrace();}
         if (bitmap != null){
+            designer.SetNewImage(bitmap);
+            designer.invalidate();
+            Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
+        }
+    }
+    private void NewPuppet(){
+        // Get the dimensions of the View
+        int targetW = (int)designer.getWidth();
+        int targetH = (int)designer.getHeight();
+
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(cameraCapturePath, bmOptions);
+        int photoW = bmOptions.outWidth;
+        int photoH = bmOptions.outHeight;
+
+        // Determine how much to scale down the image
+        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
+
+        // Decode the image file into a Bitmap sized to fill the View
+        bmOptions.inJustDecodeBounds = false;
+        bmOptions.inSampleSize = scaleFactor;
+
+        Bitmap bitmap = BitmapFactory.decodeFile(cameraCapturePath, bmOptions);
+        if (bitmap != null) {
             designer.SetNewImage(bitmap);
             designer.invalidate();
             Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));

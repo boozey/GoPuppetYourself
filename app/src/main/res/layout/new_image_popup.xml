@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:layout_below="@id/puppet_name"
     android:background="@drawable/puppet_library_background"
     android:id="@+id/new_image_popup">
@@ -27,7 +27,18 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Button"
-        android:id="@+id/button"
-        android:onClick="NewLibraryImageClick" />
+        android:text="Camera"
+        android:id="@+id/camera_button"
+        android:onClick="NewCameraImageClick" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Photo Gallery"
+        android:id="@+id/gallery_button"
+        android:onClick="NewGalleryImageClick" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Blank Image"
+        android:id="@+id/blank_image_button" />
 </LinearLayout>
