@@ -214,29 +214,45 @@ public class Puppet extends RelativeLayout implements Serializable {
     // Public methods
     public void applyLayoutParams(){
         removeAllViews();
+        int leftClipPadding = 0, rightClipPadding = 0;
         int upperLeft = upperPivotPoint.x;
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
         int lowerLeft = lowerPivotPoint.x;
         int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
         if (orientation == PROFILE_RIGHT){
+            // Calculate top padding
             double h = upperBitmapHeight, x = upperBitmapWidth - upperPivotPoint.x;
             double l = Math.sqrt(h*h + x*x);
             double theta = Math.atan(h/x);
             topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
             Log.d(LOG_TAG, "h = " + h + " x = " + x + " l = " + l + " theta = " + theta + " top = " + topPadding);
+            // Calculate left padding
+            x = upperPivotPoint.x; // Set x value to distance from left
+            leftClipPadding = (int)(Math.sqrt(h*h + x*x) * Math.cos(Math.atan(h/x) - 30*Math.PI/180) - x);
         }
         else{
+            // Calculate top padding
             double h = upperBitmapHeight, x = upperPivotPoint.x;
             double l = Math.sqrt(h*h + x*x);
             double theta = Math.atan(h/x);
             topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
             Log.d(LOG_TAG, "h = " + h + " x = " + x + " l = " + l + " theta = " + theta + " top = " + topPadding);
+            // Calculate right padding
+            x = upperBitmapWidth - upperPivotPoint.x; // Set x value to distance from right
+            leftClipPadding = (int)(Math.sqrt(h*h + x*x) * Math.cos(Math.atan(h/x) - 30*Math.PI/180) - x);
         }
 
+        // Decide which sides need padding to keep images aligned
         if (upperLeft > lowerLeft) lowerLeftPadding = upperLeft - lowerLeft;
         else upperLeftPadding = lowerLeft - upperLeft;
         if (upperRight > lowerRight) lowerRightPadding = upperRight - lowerRight;
         else upperRightPadding = lowerRight - upperRight;
+
+        // Set final upper and lower padding, minimum of zero
+        upperLeftPadding += Math.max(leftClipPadding, 0);
+        lowerLeftPadding += Math.max(leftClipPadding, 0);
+        upperRightPadding += Math.max(rightClipPadding, 0);
+        lowerRightPadding += Math.max(rightClipPadding, 0);
 
         RelativeLayout.LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(upperLeftPadding, topPadding, upperRightPadding, 0);
