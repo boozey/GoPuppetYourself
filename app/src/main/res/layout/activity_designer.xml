@@ -173,7 +173,7 @@
                 android:id="@+id/erase_brush_slider"/>
         </RelativeLayout>
 
-        <!-- Cut Path Bar Layout -->
+        <!-- Magic Erase Bar Layout -->
         <RelativeLayout
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
@@ -195,8 +195,8 @@
                 android:layout_toEndOf="@id/threshold_text"
                 android:layout_toRightOf="@id/threshold_text"
                 android:id="@+id/magic_erase_slider"
-                android:progress="75"
-                android:max="300"/>
+                android:progress="50"
+                android:max="100"/>
         </RelativeLayout>
 
         <!-- Portrait Adjustment Bar Layout-->

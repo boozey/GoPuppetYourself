@@ -567,7 +567,7 @@ public class DesignerActivity extends ActionBarActivity {
             buttonBar = mainButtonBar;
         else if (magicEraseButtonBar.getVisibility() == View.VISIBLE) {
             buttonBar = magicEraseButtonBar;
-            designer.cancelCutPathMode();
+            designer.setMagicEraseMode(false);
         }
         else if (eraseBackgroundButtonBar.getVisibility() == View.VISIBLE) {
             buttonBar = eraseBackgroundButtonBar;
@@ -729,7 +729,7 @@ public class DesignerActivity extends ActionBarActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 thresholdText.setText(String.valueOf(i));
-                designer.setCutPathWidth(i);
+                designer.setColorSimilaritySensitivity(0.5 + (double)i / 100);
             }
 
             @Override
@@ -753,7 +753,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                designer.setCutPathMode();
+                designer.setMagicEraseMode(true);
                 buttonBar.setVisibility(View.GONE);
                 View newButtonBar = findViewById(R.id.magic_erase_bar);
                 newButtonBar.setVisibility(View.VISIBLE);
