@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -649,8 +650,22 @@ public class MainActivity extends ActionBarActivity {
         Log.d(LOG_TAG, "set background called");
         Bitmap bitmap = null;
         try {
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-        } catch (IOException e){Toast.makeText(this, "Error loading backgournd", Toast.LENGTH_SHORT).show();}
+            final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
+            Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
+            cursor.moveToFirst();
+            int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
+            Log.d(LOG_TAG, "image width = " + width);
+            int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
+            Log.d(LOG_TAG, "image width = " + height);
+            if (width > stage.getWidth() || height > stage.getHeight()){
+                double scale = Math.min(((float) stage.getWidth() / width), ((float) stage.getHeight() / height));
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(stage.getWidth() * scale), (int)(stage.getHeight() * scale));
+                Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(stage.getWidth() * scale));
+            }
+            else {
+                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+            }
+        } catch (IOException e){Toast.makeText(this, "Error loading background", Toast.LENGTH_SHORT).show();}
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             savedData.currentBackground = bitmap;
