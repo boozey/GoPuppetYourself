@@ -588,7 +588,7 @@ public class PuppetDesigner extends View {
         y = Math.max(0, y);
         boolean keepSearchingy = true;
         boolean keepSearchingx = true;
-        int rgbInit = getColorAverage(backgroundBitmap, (int)x, (int)y, 6);
+        int rgbInit = getColorAverage(backgroundBitmap, x, y, 2);
         double threshold = colorSimilarity * colorSimilaritySensitivity;
         Log.d(LOG_TAG, "Magic Erase Threshold = " + threshold);
         int rgbCurrent, rgbPrevX;
@@ -634,7 +634,6 @@ public class PuppetDesigner extends View {
                     keepSearchingx = false;
                 }
             }
-            prevX = xN;
             keepSearchingy = true;
             invalidate();
         }
@@ -835,7 +834,7 @@ public class PuppetDesigner extends View {
         g1 = (color2 >> 8) & 0xFF;
         b1 = color2 & 0xFF;
 
-        return Math.sqrt((r1 - r0) * (r1 - r0) + (g1 - g0) * (g1 - g0) + (b1 - b0) * (b1 - b0)) < threshold;
+        return Math.sqrt((r1 - r0) * (r1 - r0) + (g1 - g0) * (g1 - g0) + (b1 - b0) * (b1 - b0)) <= threshold;
     }
     private double getColorDiff(int color1, int color2){
         int r0, g0, b0, r1, g1, b1;
