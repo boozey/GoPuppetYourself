@@ -13,10 +13,13 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.Xfermode;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.Utils;
 
 import java.util.ArrayList;
 
@@ -46,6 +49,17 @@ public class PuppetDesigner extends View {
     private static final int LOWER_JAW_PIVOT = 2005;
     private static final int MIN_BOX_SIZE = 80;
 
+    // Mode strings
+    public static final String MODE_SELECT = "select";
+    public static final String MODE_DRAW = "draw";
+    public static final String MODE_DRAW_ERASE = "erase";
+    public static final String MODE_BACKGROUND_ERASE = "bg_erase";
+    public static final String MODE_MAGIC_ERASE = "magic_erase";
+    public static final String MODE_CUT_PATH = "cut_path";
+    public static final String MODE_HEAL = "heal";
+    public static final String MODE_NO_TOUCH = "no_touch";
+    public String designerMode = MODE_SELECT;
+
     // Undo id strings
     private static final String UNDO_BACKGROUND = "background";
     private static final String UNDO_DRAW = "draw";
@@ -64,7 +78,7 @@ public class PuppetDesigner extends View {
     private double colorSimilarity = 75;
     private Path cutPath;
     private float cutPathStrokeWidth = 75;
-    private double colorSimilaritySensitivity = 0.75;
+    private double colorSimilaritySensitivity = 1.0;
     private Paint cutPathPaint;
     private ArrayList<Point> cutPathPoints;
     private int selectionId = 0;
@@ -116,6 +130,13 @@ public class PuppetDesigner extends View {
         undoStack = new ArrayList<>();
     }
 
+    public String getMode(){
+        return designerMode;
+    }
+    public void setMode(String mode){
+        designerMode = mode;
+    }
+
     public int getOrientation() {
         return orientation;
     }
@@ -163,11 +184,43 @@ public class PuppetDesigner extends View {
             return false;
     }
 
+    // Heal methods
+    public void setHealMode(boolean isHealMode){
+        designerMode = MODE_HEAL;
+    }
+    private void Heal(int x, int y){
+        if (backgroundUndoStack.size() > 0){
+            int r = (int)drawPaint.getStrokeWidth() / 2;
+            for (int xN = x - r; x >= 0 && x < backgroundUndoStack.get(0).getWidth() && xN <= x + r; xN++){
+                for (int yN = y - r; y >= 0 && y < backgroundUndoStack.get(0).getHeight() && yN <= y + r; yN++){
+                    if (Math.pow(xN - x, 2) + Math.pow(yN - y, 2) <= r*r) {
+                        int pixel = backgroundUndoStack.get(0).getPixel(xN, yN);
+                        backgroundBitmap.setPixel(xN, yN, pixel);
+                    }
+                }
+            }
+            invalidate();
+        }
+    }
+    private boolean handleHealTouch(MotionEvent event){
+        int x = (int)event.getX(), y = (int)event.getY();
+        switch (event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                addBackgroundUndo();
+                Heal(x, y);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                Heal(x, y);
+                return true;
+            default:
+                return true;
+        }
+    }
+
     // Cut path methods
     public void setCutPathMode(){
+        designerMode = MODE_CUT_PATH;
         startCutPathFlow();
-        isCutPath = true;
-        isEraseMode = false;
         invalidate();
     }
     private void startCutPathFlow(){
@@ -499,7 +552,7 @@ public class PuppetDesigner extends View {
 
     // Magic erase methods
     public void setMagicEraseMode(boolean isMagicEraseMode){
-        this.isMagicEraseMode = isMagicEraseMode;
+        designerMode = MODE_MAGIC_ERASE;
     }
     private boolean handleMagicEraseTouch(MotionEvent event){
         switch (event.getAction()){
@@ -514,74 +567,6 @@ public class PuppetDesigner extends View {
                 return false;
         }
     }
-    private void magicEraseOld2(float x, float y){
-        if (!eraseInProgress) {
-            eraseInProgress = true;
-            float strokeWidth = 4;
-            Paint erasePaint = new Paint(Color.TRANSPARENT);
-            erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            erasePaint.setAntiAlias(true);
-            erasePaint.setStrokeWidth(strokeWidth);
-            erasePaint.setStyle(Paint.Style.STROKE);
-            erasePaint.setStrokeJoin(Paint.Join.ROUND);
-            erasePaint.setStrokeCap(Paint.Cap.ROUND);
-            //erasePaint.setMaskFilter(new BlurMaskFilter(2, BlurMaskFilter.Blur.INNER));
-            Path erasePath = new Path();
-            boolean keepSearchingy = true;
-            boolean keepSearchingx = true;
-            int initPixel = getColorAverage(backgroundBitmap, (int) x, (int) y, (int) strokeWidth);
-            if (initPixel != Color.TRANSPARENT) {
-                int currentPixel;
-                erasePath.moveTo(x, y);
-                int xN, yN;
-                for (xN = (int) x; xN < backgroundBitmap.getWidth() && keepSearchingx; xN += strokeWidth) {
-                    for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN += 1) {
-                        currentPixel = backgroundBitmap.getPixel(xN, yN);
-                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
-                        if (!keepSearchingy && yN == y) keepSearchingx = false;
-                    }
-                    erasePath.lineTo(xN, yN);
-                    backgroundCanvas.drawPath(erasePath, erasePaint);
-                    keepSearchingy = true;
-                    erasePath.moveTo(xN, y - strokeWidth);
-                    for (yN = (int) (y - strokeWidth); yN >= 0 && keepSearchingy; yN -= 1) {
-                        currentPixel = backgroundBitmap.getPixel(xN, yN);
-                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
-                        if (!keepSearchingy && yN == y - strokeWidth) keepSearchingx = false;
-                    }
-                    erasePath.lineTo(xN, yN);
-                    backgroundCanvas.drawPath(erasePath, erasePaint);
-                    keepSearchingy = true;
-                    invalidate();
-                }
-                keepSearchingy = true;
-                keepSearchingx = true;
-                erasePath.moveTo(x - strokeWidth, y);
-                for (xN = (int) (x - strokeWidth - 1); xN >= 0 && keepSearchingx; xN -= strokeWidth) {
-                    for (yN = (int) y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN += 1) {
-                        currentPixel = backgroundBitmap.getPixel(xN, yN);
-                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
-                        if (!keepSearchingy && yN == y) keepSearchingx = false;
-
-                    }
-                    erasePath.lineTo(xN + 1, yN);
-                    backgroundCanvas.drawPath(erasePath, erasePaint);
-                    keepSearchingy = true;
-                    erasePath.moveTo(xN, yN - strokeWidth);
-                    for (yN = (int) (y - strokeWidth); yN >= 0 && keepSearchingy; yN -= 1) {
-                        currentPixel = backgroundBitmap.getPixel(xN, yN);
-                        keepSearchingy = areColorsSimilar(initPixel, currentPixel, colorSimilarity) && currentPixel != Color.TRANSPARENT;
-                        if (!keepSearchingy && yN == y - strokeWidth) keepSearchingx = false;
-                    }
-                    erasePath.lineTo(xN + 1, yN);
-                    backgroundCanvas.drawPath(erasePath, erasePaint);
-                    keepSearchingy = true;
-                    invalidate();
-                }
-            }
-            eraseInProgress = false;
-        }
-    }
     private void magicErase(int x, int y) {
         x = Math.min(x, backgroundBitmap.getWidth() - 1);
         x = Math.max(0, x);
@@ -590,18 +575,24 @@ public class PuppetDesigner extends View {
         boolean keepSearchingy = true;
         boolean keepSearchingx = true;
         int rgbInit = getColorAverage(backgroundBitmap, (int)x, (int)y, 6);
-        double threshold = colorSimilarity;
+        double threshold = colorSimilarity * colorSimilaritySensitivity;
         Log.d(LOG_TAG, "Magic Erase Threshold = " + threshold);
         int rgbCurrent, rgbPrevX;
         int xN, yN, prevX = x;
         for (xN = x; xN < backgroundBitmap.getWidth() && keepSearchingx; xN++) { // Search to the right
             for (yN = y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) { // Search down
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
-                if (areColorsSimilar(rgbInit, rgbCurrent, threshold)){
-                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
+                if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
-                    if (areColorsSimilar(rgbInit, rgbPrevX, colorSimilarity)) // Check to see if the previous x pixel was mistakenly skipped
-                        backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
+                    prevX = Utils.getInBounds(xN - 1, x, backgroundBitmap.getWidth() - 1); // Work backwards to check for missed pixels
+                    do {
+                        rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
+                        if (rgbPrevX != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold)){
+                            backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
+                        } else keepSearchingx = false;
+                        prevX--;
+                    } while (keepSearchingx && prevX > x);
+                    keepSearchingx = true;
                 }
                 else keepSearchingy = false;
                 if (!keepSearchingy && yN == y) {
@@ -610,13 +601,19 @@ public class PuppetDesigner extends View {
             }
 
             keepSearchingy = true;
-            for (yN = y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) { // Search up
+            for (yN = y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) { // Search up, start at y - 1 since y has been checked
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
-                if (areColorsSimilar(rgbInit, rgbCurrent, threshold)){
-                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
+                if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
-                    if (areColorsSimilar(rgbInit, rgbPrevX, colorSimilarity))
-                        backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
+                    prevX = Utils.getInBounds(xN - 1, x, backgroundBitmap.getWidth() - 1);
+                    do {
+                        rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
+                        if (rgbPrevX!= Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold)){
+                            backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
+                        } else keepSearchingx = false;
+                        prevX--;
+                    } while (keepSearchingx && prevX > x);
+                    keepSearchingx = true;
                 }
                 else keepSearchingy = false;
                 if (!keepSearchingy && yN == y - 1){
@@ -630,13 +627,13 @@ public class PuppetDesigner extends View {
         keepSearchingy = true;
         keepSearchingx = true;
         prevX = x - 1;
-        for (xN = x - 1; xN >= 0 && keepSearchingx; xN--) { // Search left
+        for (xN = x - 1; xN >= 0 && keepSearchingx; xN--) { // Search left, start at x - 1 since x has been checked
             for (yN = y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) {
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
-                if (areColorsSimilar(rgbInit, rgbCurrent, threshold)){
+                if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
                     rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
-                    if (areColorsSimilar(rgbInit, rgbPrevX, colorSimilarity))
+                    if (rgbPrevX != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold))
                         backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
                 }
                 else keepSearchingy = false;
@@ -647,10 +644,10 @@ public class PuppetDesigner extends View {
             keepSearchingy = true;
             for (yN = y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) {
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
-                if (areColorsSimilar(rgbInit, rgbCurrent, threshold)){
+                if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
                     rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
-                    if (areColorsSimilar(rgbInit, rgbPrevX, colorSimilarity))
+                    if (rgbPrevX != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold))
                         backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
                 }
                 else keepSearchingy = false;
@@ -838,14 +835,25 @@ public class PuppetDesigner extends View {
     }
     private int getColorAverage(int[] pixels){
         int sum = 0;
-        int difference = 0;
-        for (int i : pixels)
-            sum += i;
-        int average = sum / pixels.length;
+        double difference = 0;
+        int trueSize = 0;
+        int average;
         for (int i : pixels) {
-            difference += getColorDiff(average, i);
+            if (i != Color.TRANSPARENT) {
+                sum += i;
+                trueSize++;
+            }
         }
-        colorSimilarity = Math.min(difference / pixels.length, 275);
+        if (trueSize > 0)
+             average = sum / trueSize;
+        else
+            return 0;
+
+        for (int i : pixels) {
+            if (i != Color.TRANSPARENT)
+                difference = Math.max(difference, getColorDiff(average, i));
+        }
+        colorSimilarity = difference;
         Log.d(LOG_TAG, "Color similarity: " + colorSimilarity);
         return average;
     }
@@ -873,21 +881,9 @@ public class PuppetDesigner extends View {
         return getColorAverage(colors);
     }
 
+    // Draw mode methods
     public void setIsDrawMode(boolean isDrawMode) {
-        if (isDrawMode) {
-            this.isDrawMode = true;
-            showLowerJawBox = false;
-            showUpperJawBox = false;
-            cancelBackgroundErase();
-            cancelCutPathMode();
-            invalidate();
-        }
-        else {
-            this.isDrawMode = false;
-            cancelBackgroundErase();
-            cancelCutPathMode();
-            invalidate();
-        }
+        designerMode = MODE_DRAW;
     }
     public boolean isDrawMode() {
         return isDrawMode;
@@ -931,10 +927,24 @@ public class PuppetDesigner extends View {
                 return true;
         }
     }
+    public void setColor(int color){
+        drawPaint.setColor(color);
+    }
+    public void setStrokeWidth(float width){
+        drawPaint.setStrokeWidth(width);
+    }
 
+    public void setEraseMode(boolean erase){
+        designerMode = MODE_DRAW_ERASE;
+        drawPaint.setColor(Color.TRANSPARENT);
+        drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+    }
+    public boolean isEraseMode(){return isEraseMode;}
+
+    // Background erase methods
     public void setBackgroundErase(){
         if (backgroundBitmap != null) {
-            isBackgroundEraseMode = true;
+            designerMode = MODE_BACKGROUND_ERASE;
             drawPaint.setColor(Color.TRANSPARENT);
             drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
@@ -968,26 +978,6 @@ public class PuppetDesigner extends View {
             default:
                 return true;
         }
-    }
-
-    public void setColor(int color){
-        drawPaint.setColor(color);
-    }
-    public void setEraseMode(boolean erase){
-        if (erase) {
-            setIsDrawMode(true);
-            isEraseMode = true;
-            drawPaint.setColor(Color.TRANSPARENT);
-            drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        }
-        else {
-            isEraseMode = false;
-            drawPaint.setXfermode(null);
-        }
-    }
-    public boolean isEraseMode(){return isEraseMode;}
-    public void setStrokeWidth(float width){
-        drawPaint.setStrokeWidth(width);
     }
 
     public void flipHorz(){
@@ -1109,45 +1099,32 @@ public class PuppetDesigner extends View {
         invalidate();
     }
 
-    // Touch related methods
-    @Override
-    public boolean onTouchEvent(MotionEvent event){
-        //super.onTouchEvent(event);
+    // Selection mode methods
+    public void setSelectionMode(boolean isSelectionMode){
+        designerMode = MODE_SELECT;
+    }
+    private boolean handleSelectionTouch(MotionEvent event){
         float x = event.getX(), y = event.getY();
-        if(isCutPath){
-            return handleCutPathTouch(event);
-        }
-        else if(isBackgroundEraseMode){
-            return handleBackgroundEraseTouch(event);
-        }
-        else if (isDrawMode){
-            return handleDrawTouch(event);
-        }
-        else if (isMagicEraseMode){
-            return handleMagicEraseTouch(event);
-        }
-        else {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                prevX = x;
+                prevY = y;
+                setSelectionId(x, y);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (selectionId == NO_SELECTION) {
                     prevX = x;
                     prevY = y;
                     setSelectionId(x, y);
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    if (selectionId == NO_SELECTION) {
-                        prevX = x;
-                        prevY = y;
-                        setSelectionId(x, y);
-                    } else
-                        moveSelection((int)prevX, (int)prevY, (int)event.getX(), (int)event.getY());
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    checkForSnap();
-                    selectionId = NO_SELECTION;
-                    return true;
-                default:
-                    return true;
-            }
+                } else
+                    moveSelection((int)prevX, (int)prevY, (int)event.getX(), (int)event.getY());
+                return true;
+            case MotionEvent.ACTION_UP:
+                checkForSnap();
+                selectionId = NO_SELECTION;
+                return true;
+            default:
+                return true;
         }
     }
     private void checkForSnap(){
@@ -1164,24 +1141,24 @@ public class PuppetDesigner extends View {
         }
     }
     private void setSelectionId(float x, float y){
-            if (upperJawBox.contains((int) x, (int) y)) {
-                selectionId = UPPER_JAW;
-                if (Math.abs(y - upperJawBox.top) < edgeThresh) selectionId = UPPER_JAW_TOP;
-                if (Math.abs(y - upperJawBox.bottom) < edgeThresh) selectionId = UPPER_JAW_BOTTOM;
-                if (Math.abs(x - upperJawBox.left) < edgeThresh) selectionId = UPPER_JAW_LEFT;
-                if (Math.abs(x - upperJawBox.right) < edgeThresh) selectionId = UPPER_JAW_RIGHT;
-            }
-            if (Math.abs(x - upperJawPivotPoint.x) < pointThresh && Math.abs(y - upperJawPivotPoint.y) < pointThresh)
-                selectionId = UPPER_JAW_PIVOT;
-            if (lowerJawBox.contains((int) x, (int) y)) {
-                selectionId = LOWER_JAW;
-                if (Math.abs(y - lowerJawBox.top) < edgeThresh) selectionId = LOWER_JAW_TOP;
-                if (Math.abs(y - lowerJawBox.bottom) < edgeThresh) selectionId = LOWER_JAW_BOTTOM;
-                if (Math.abs(x - lowerJawBox.left) < edgeThresh) selectionId = LOWER_JAW_LEFT;
-                if (Math.abs(x - lowerJawBox.right) < edgeThresh) selectionId = LOWER_JAW_RIGHT;
-            }
-            if (Math.abs(x - lowerJawPivotPoint.x) < pointThresh && Math.abs(y - lowerJawPivotPoint.y) < pointThresh)
-                selectionId = LOWER_JAW_PIVOT;
+        if (upperJawBox.contains((int) x, (int) y)) {
+            selectionId = UPPER_JAW;
+            if (Math.abs(y - upperJawBox.top) < edgeThresh) selectionId = UPPER_JAW_TOP;
+            if (Math.abs(y - upperJawBox.bottom) < edgeThresh) selectionId = UPPER_JAW_BOTTOM;
+            if (Math.abs(x - upperJawBox.left) < edgeThresh) selectionId = UPPER_JAW_LEFT;
+            if (Math.abs(x - upperJawBox.right) < edgeThresh) selectionId = UPPER_JAW_RIGHT;
+        }
+        if (Math.abs(x - upperJawPivotPoint.x) < pointThresh && Math.abs(y - upperJawPivotPoint.y) < pointThresh)
+            selectionId = UPPER_JAW_PIVOT;
+        if (lowerJawBox.contains((int) x, (int) y)) {
+            selectionId = LOWER_JAW;
+            if (Math.abs(y - lowerJawBox.top) < edgeThresh) selectionId = LOWER_JAW_TOP;
+            if (Math.abs(y - lowerJawBox.bottom) < edgeThresh) selectionId = LOWER_JAW_BOTTOM;
+            if (Math.abs(x - lowerJawBox.left) < edgeThresh) selectionId = LOWER_JAW_LEFT;
+            if (Math.abs(x - lowerJawBox.right) < edgeThresh) selectionId = LOWER_JAW_RIGHT;
+        }
+        if (Math.abs(x - lowerJawPivotPoint.x) < pointThresh && Math.abs(y - lowerJawPivotPoint.y) < pointThresh)
+            selectionId = LOWER_JAW_PIVOT;
     }
     private void moveSelection(int x1, int y1, int x2, int y2){
         int dx = x2 - x1, dy = y2 - y1;
@@ -1282,6 +1259,30 @@ public class PuppetDesigner extends View {
         invalidate();
     }
 
+    // Class overrides
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        //super.onTouchEvent(event);
+        switch (designerMode){
+            case MODE_SELECT:
+                return handleSelectionTouch(event);
+            case MODE_DRAW:
+                return handleDrawTouch(event);
+            case MODE_DRAW_ERASE:
+                return handleDrawTouch(event);
+            case MODE_BACKGROUND_ERASE:
+                return handleBackgroundEraseTouch(event);
+            case MODE_MAGIC_ERASE:
+                return handleMagicEraseTouch(event);
+            case MODE_CUT_PATH:
+                return handleCutPathTouch(event);
+            case MODE_HEAL:
+                return handleHealTouch(event);
+            default:
+                return false;
+        }
+    }
+
     @Override
     protected void onMeasure(int reqWidth, int reqHeight){
 
@@ -1306,7 +1307,7 @@ public class PuppetDesigner extends View {
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
         }
-        if (isCutPath){
+        if (designerMode == MODE_CUT_PATH){
             canvas.drawPath(cutPath, cutPathPaint);
         }
     }

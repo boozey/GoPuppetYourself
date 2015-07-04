@@ -263,7 +263,7 @@ public class DesignerActivity extends ActionBarActivity {
         int photoH = bmOptions.outHeight;
 
         // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
+        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
 
         // Decode the image file into a Bitmap sized to fill the View
         bmOptions.inJustDecodeBounds = false;
@@ -353,6 +353,7 @@ public class DesignerActivity extends ActionBarActivity {
             // Set brush view to current value
             final View view = findViewById(R.id.brush_size);
             designer.setStrokeWidth((float) paletteBrushSize);
+            designer.setColor(getResources().getColor(R.color.black));
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)view.getLayoutParams();
             params.width = paletteBrushSize;
             params.height = paletteBrushSize;
@@ -425,7 +426,7 @@ public class DesignerActivity extends ActionBarActivity {
         if (brushBar.getVisibility() != View.GONE) {
             final View navButton = findViewById(R.id.nav_button);
             cancelPopup();
-            designer.setIsDrawMode(false);
+            designer.setSelectionMode(true);
             Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
             scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
                 @Override
@@ -729,7 +730,7 @@ public class DesignerActivity extends ActionBarActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 thresholdText.setText(String.valueOf(i));
-                designer.setColorSimilaritySensitivity(0.5 + (double)i / 100);
+                designer.setColorSimilaritySensitivity(0.5 + (double) i / 100);
             }
 
             @Override
@@ -780,6 +781,24 @@ public class DesignerActivity extends ActionBarActivity {
     }
     public void FlipHorzClick(View v){
         designer.flipHorz();
+    }
+    public void CutPathClick(View v){
+        if (designer.getMode() == PuppetDesigner.MODE_CUT_PATH){
+            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
+            v.setBackground(getResources().getDrawable(R.drawable.ic_action_cut));
+        } else{
+            designer.setCutPathMode();
+            v.setBackground(getResources().getDrawable(R.drawable.ic_action_cut_selected));
+        }
+    }
+    public void HealClick(View v){
+        if (designer.getMode() == PuppetDesigner.MODE_HEAL){
+            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
+            v.setBackground(getResources().getDrawable(R.drawable.ic_action_image_healing));
+        } else {
+            designer.setHealMode(true);
+            v.setBackground(getResources().getDrawable(R.drawable.ic_action_image_healing_selected));
+        }
     }
 
     // Portrait adjustment methods

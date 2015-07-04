@@ -146,6 +146,10 @@ public class Utils {
         return BitmapFactory.decodeStream(inputStream, null, options);
     }
 
+    public static int getInBounds(int value, int min, int max){
+        value = Math.max(min, value);
+        return Math.min(value, max);
+    }
 
 
 
