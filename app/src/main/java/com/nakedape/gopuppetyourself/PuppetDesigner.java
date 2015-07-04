@@ -13,7 +13,9 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.Shader;
 import android.graphics.Xfermode;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -92,18 +94,14 @@ public class PuppetDesigner extends View {
     public PuppetDesigner(Context context, AttributeSet attrs){
         super(context, attrs);
         this.context = context;
+        // Setup initial paint properties
         upperJawBox = new Rect(20, 20, 100, 100);
         upperJawPaint = new Paint();
         upperJawPaint.setARGB(64, 128, 0, 0);
         upperTextPaint = new Paint();
         upperTextPaint.setColor(Color.RED);
-        lowerJawBox = new Rect(120, 120, 220, 220);
-        lowerJawPaint = new Paint();
-        lowerJawPaint.setARGB(64, 0, 128, 0);
         lowerTextPaint = new Paint();
         lowerTextPaint.setColor(Color.GREEN);
-        upperJawPivotPoint= new Point(60, 110);
-        lowerJawPivotPoint = new Point(60, 110);
         pivotPaint1 = new Paint();
         pivotPaint1.setColor(Color.BLACK);
         pivotPaint2 = new Paint();
@@ -115,15 +113,29 @@ public class PuppetDesigner extends View {
         drawPaint.setStyle(Paint.Style.STROKE);
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
-        //backgroundBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
-        //backgroundCanvas = new Canvas(backgroundBitmap);
+
+        // Setup view with tiled background
         viewBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
         viewCanvas = new Canvas(viewBitmap);
         viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        tile.setBounds(viewCanvas.getClipBounds());
+        tile.draw(viewCanvas);
+
+        // Setup blank drawing canvas
         drawBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
         drawBitmap.setHasAlpha(true);
         drawCanvas = new Canvas(drawBitmap);
         drawPath = new Path();
+
+        // Set initial positions of jaw boxes
+        lowerJawBox = new Rect(120, 120, 220, 220);
+        lowerJawPaint = new Paint();
+        lowerJawPaint.setARGB(64, 0, 128, 0);
+        upperJawPivotPoint= new Point(60, 110);
+        lowerJawPivotPoint = new Point(60, 110);
 
         backgroundUndoStack = new ArrayList<>();
         drawUndoStack = new ArrayList<>();
@@ -1060,6 +1072,11 @@ public class PuppetDesigner extends View {
         viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         viewCanvas = new Canvas(viewBitmap);
         viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        tile.setBounds(viewCanvas.getClipBounds());
+        tile.draw(viewCanvas);
         Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
         Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
         upperJawBox = new Rect(0, 0, image.getWidth(), image.getHeight() / 2);
