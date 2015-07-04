@@ -4,6 +4,7 @@ import android.app.FragmentManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -19,6 +20,7 @@ import android.provider.MediaStore;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
@@ -35,6 +37,7 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
@@ -790,12 +793,16 @@ public class MainActivity extends ActionBarActivity {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_right);
                     flipper.setInAnimation(context, R.anim.anim_scale_up_right);
                     flipper.showPrevious();
+                    TextView nameText = (TextView)findViewById(R.id.puppet_name_textview);
+                    nameText.setText((String)flipper.getCurrentView().getTag());
                     return true;
                 }
                 if (flingLeft) {
                     flipper.setOutAnimation(context, R.anim.anim_scale_small_left);
                     flipper.setInAnimation(context, R.anim.anim_scale_up_left);
                     flipper.showNext();
+                    TextView nameText = (TextView)findViewById(R.id.puppet_name_textview);
+                    nameText.setText((String) flipper.getCurrentView().getTag());
                     return true;
                 }
                 if (longPress) {
@@ -895,8 +902,12 @@ public class MainActivity extends ActionBarActivity {
                                     ImageView image = new ImageView(context);
                                     image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                                     image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
-                                    image.setTag(p.getPath());
+                                    image.setTag(p.getName());
                                     flipper.addView(image);
+                                    if (flipper.getChildCount() == 1){
+                                        TextView nameText = (TextView)findViewById(R.id.puppet_name_textview);
+                                        nameText.setText(p.getName());
+                                    }
                                     Log.d(LOG_TAG, "added puppet to library popup");
 
                                 }
@@ -922,7 +933,7 @@ public class MainActivity extends ActionBarActivity {
         View library = findViewById(R.id.puppet_library_popup);
         library.setOnDragListener(new NoDropDragListener());
 
-        ClipData.Item pathItem = new ClipData.Item(path);
+        ClipData.Item pathItem = new ClipData.Item(storageDir.getPath() + "//" + path + getResources().getString(R.string.puppet_extension));
         String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
         ClipData dragData = new ClipData("PUPPET_PATH", mime_type, pathItem);
         View.DragShadowBuilder myShadow = new PuppetDragShadowBuilder(v);
@@ -985,7 +996,8 @@ public class MainActivity extends ActionBarActivity {
                     prefEditor.apply();
                     ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
                     flipper.removeView(flipper.getCurrentView());
-
+                    TextView nameText = (TextView)findViewById(R.id.puppet_name_textview);
+                    nameText.setText((String)flipper.getCurrentView().getTag());
                     View library = findViewById(R.id.puppet_library_popup);
                     library.setOnDragListener(new LibraryPuppetDragEventListener());
                     return true;
@@ -1014,7 +1026,7 @@ public class MainActivity extends ActionBarActivity {
                     ImageView image = new ImageView(context);
                     image.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                     image.setBackground(new BitmapDrawable(getResources(), p.getThumbnail()));
-                    image.setTag(p.getPath());
+                    image.setTag(p.getName());
                     ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
                     flipper.addView(image);
                     RemovePuppetFromStage(p);
@@ -1060,6 +1072,7 @@ public class MainActivity extends ActionBarActivity {
         startActivityForResult(intent, REQUEST_PUPPET_GET);
     }
     private void SetupNewPuppet(Intent data){
+        ClosePuppetLibrary();
         String filePath = data.getStringExtra(PUPPET_PATH);
         int index = data.getIntExtra(PUPPET_INDEX, -1);
         if (index > -1) stage.removeViewAt(index);
@@ -1071,11 +1084,29 @@ public class MainActivity extends ActionBarActivity {
         GoToPerformance(null);
         Log.d(LOG_TAG, "new puppet should be visible");
     } // Called from activity result
-    private void DeletePuppet(Puppet p){
-        stage.removeView(p);
-        File puppetFile = new File(p.getPath());
-        if (puppetFile.isFile())
-            if (!puppetFile.delete()) Log.e(LOG_TAG, "error deleting puppet file");
+    public void DeletePuppet(View v){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setMessage(R.string.alert_dialog_message_delete);
+        builder.setTitle(R.string.alert_dialog_title_delete);
+        builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+        builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
+                View selection = flipper.getCurrentView();
+                flipper.removeView(selection);
+                File puppetFile = new File(storageDir.getPath() + "//" + (String)selection.getTag() + getResources().getString(R.string.puppet_extension) );
+                if (puppetFile.isFile())
+                    if (!puppetFile.delete()) Log.e(LOG_TAG, "error deleting puppet file");
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     class MyGestureListener extends GestureDetector.SimpleOnGestureListener {

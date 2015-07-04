@@ -293,8 +293,8 @@ public class DesignerActivity extends ActionBarActivity {
         });
         if (files.length > 0){
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setMessage(R.string.alert_dialog_message);
-            builder.setTitle(R.string.alert_dialog_title);
+            builder.setMessage(R.string.alert_dialog_message_overwrite);
+            builder.setTitle(R.string.alert_dialog_title_overwrite);
             builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
@@ -320,6 +320,7 @@ public class DesignerActivity extends ActionBarActivity {
         puppet = new Puppet(context, null);
         puppet.setOrientation(designer.getOrientation());
         puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
+        puppet.setName(puppetName);
         // Save puppet to storage directory
         File saveFile = new File(storageDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
         String filePath = Utils.WritePuppetToFile(puppet, saveFile);
@@ -818,6 +819,7 @@ public class DesignerActivity extends ActionBarActivity {
             public void onAnimationEnd(Animation animation) {
                 designer.setShowLowerJawBox(true);
                 designer.setShowUpperJawBox(true);
+                designer.setSelectionMode(true);
                 buttonBar.setVisibility(View.GONE);
                 View newButtonBar = portraitButtonBar;
                 newButtonBar.setVisibility(View.VISIBLE);

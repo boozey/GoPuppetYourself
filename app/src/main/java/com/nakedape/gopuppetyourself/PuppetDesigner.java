@@ -189,6 +189,8 @@ public class PuppetDesigner extends View {
         designerMode = MODE_HEAL;
     }
     private void Heal(int x, int y){
+        x = Utils.getInBounds(x, 0, backgroundBitmap.getWidth() - 1);
+        y = Utils.getInBounds(y, 0, backgroundBitmap.getHeight() - 1);
         if (backgroundUndoStack.size() > 0){
             int r = (int)drawPaint.getStrokeWidth() / 2;
             for (int xN = x - r; x >= 0 && x < backgroundUndoStack.get(0).getWidth() && xN <= x + r; xN++){
@@ -1307,7 +1309,7 @@ public class PuppetDesigner extends View {
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
         }
-        if (designerMode == MODE_CUT_PATH){
+        if (designerMode.equals(MODE_CUT_PATH)){
             canvas.drawPath(cutPath, cutPathPaint);
         }
     }

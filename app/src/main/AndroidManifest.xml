@@ -22,7 +22,8 @@
         </activity>
         <activity
             android:name=".DesignerActivity"
-            android:label="@string/title_activity_designer" >
+            android:label="@string/title_activity_designer"
+            android:screenOrientation="portrait">
         </activity>
     </application>
 
