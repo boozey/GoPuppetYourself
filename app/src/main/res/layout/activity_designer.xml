@@ -25,7 +25,8 @@
             android:layout_gravity="center_vertical"
             android:id="@+id/nav_button"
             android:background="@drawable/ic_action_navigation_menu"
-            android:visibility="visible"/>
+            android:visibility="visible"
+            android:onClick="ControlButtonClick"/>
 
         <!-- Main Button Bar Layout -->
         <RelativeLayout

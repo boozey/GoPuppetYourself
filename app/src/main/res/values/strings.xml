@@ -29,4 +29,5 @@
     <string name="alert_dialog_message_overwrite">A puppet already exists with this name.  Do you want to overwrite it?</string>
     <string name="puppet_name_hint">Name this puppet</string>
     <string name="get_new_image_popup_title">Get new image</string>
+    <string name="action_new_image">New background</string>
 </resources>

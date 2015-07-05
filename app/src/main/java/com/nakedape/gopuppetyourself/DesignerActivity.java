@@ -154,7 +154,7 @@ public class DesignerActivity extends ActionBarActivity {
 
     private void ShowGetNewImagePopup(){
         View layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
-        int width = Math.min(600, rootLayout.getWidth());
+        int width = 200;
         int height = 400;
         layout.setMinimumHeight(height);
         layout.setMinimumWidth(width);
@@ -336,6 +336,11 @@ public class DesignerActivity extends ActionBarActivity {
         finish();
     }
 
+    // Root control button methods
+    public void ControlButtonClick(View v){
+        ShowGetNewImagePopup();
+    }
+
     // Undo methods
     public void UndoButtonClick(View v){
         designer.Undo();
@@ -399,6 +404,9 @@ public class DesignerActivity extends ActionBarActivity {
                     View brushBar = findViewById(R.id.brush_bar);
                     brushBar.setVisibility(View.VISIBLE);
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                    navButton.setVisibility(View.VISIBLE);
+                    Animation anim = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                    navButton.startAnimation(anim);
                     navButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -414,9 +422,9 @@ public class DesignerActivity extends ActionBarActivity {
 
                 }
             });
-            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
             buttonBar.startAnimation(scaleDownLeft);
-            navButton.startAnimation(spinOut);
+            Animation anim = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
+            navButton.startAnimation(anim);
         }
         else {
             showPalette();
@@ -441,6 +449,8 @@ public class DesignerActivity extends ActionBarActivity {
                     brushBar.setVisibility(View.GONE);
                     View navButton = findViewById(R.id.nav_button);
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                    navButton.startAnimation(fadeIn);
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
@@ -452,8 +462,8 @@ public class DesignerActivity extends ActionBarActivity {
 
                 }
             });
-            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
-            navButton.startAnimation(spinOut);
+            Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
+            navButton.startAnimation(fadeOut);
             brushBar.startAnimation(scaleDownLeft);
         }
     }
@@ -591,8 +601,10 @@ public class DesignerActivity extends ActionBarActivity {
                 if (buttonBarFinal != null) buttonBarFinal.setVisibility(View.GONE);
                 View backgroundBar = findViewById(R.id.background_button_bar);
                 backgroundBar.setVisibility(View.VISIBLE);
-                View navButton = findViewById(R.id.nav_button);
                 navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setVisibility(View.VISIBLE);
+                Animation anim = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                navButton.startAnimation(anim);
                 navButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -608,7 +620,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             }
         });
-        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
         navButton.startAnimation(spinOut);
         if (buttonBarFinal != null) buttonBarFinal.startAnimation(scaleDownLeft);
     }
@@ -628,6 +640,8 @@ public class DesignerActivity extends ActionBarActivity {
                     backgroundBar.setVisibility(View.GONE);
                     View navButton = findViewById(R.id.nav_button);
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                    navButton.startAnimation(fadeIn);
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
@@ -715,7 +729,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             }
         });
-        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
         navButton.startAnimation(spinOut);
         buttonBar.startAnimation(scaleDownLeft);
 
@@ -849,6 +863,8 @@ public class DesignerActivity extends ActionBarActivity {
                 newButtonBar.setVisibility(View.VISIBLE);
                 View navButton = findViewById(R.id.nav_button);
                 navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                navButton.startAnimation(fadeIn);
                 navButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -864,7 +880,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             }
         });
-        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
         navButton.startAnimation(spinOut);
         buttonBar.startAnimation(scaleDownLeft);
     }
@@ -891,6 +907,8 @@ public class DesignerActivity extends ActionBarActivity {
                 View newButtonBar = portraitButtonBar;
                 newButtonBar.setVisibility(View.VISIBLE);
                 navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                navButton.startAnimation(fadeIn);
                 navButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -906,7 +924,7 @@ public class DesignerActivity extends ActionBarActivity {
 
             }
         });
-        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
         buttonBar.startAnimation(scaleDownLeft);
         navButton.startAnimation(spinOut);
 
@@ -924,15 +942,17 @@ public class DesignerActivity extends ActionBarActivity {
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    designer.setShowLowerJawBox(false);
-                    designer.setShowUpperJawBox(false);
                     buttonBar.setVisibility(View.GONE);
                     View navButton = findViewById(R.id.nav_button);
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
+                    Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
+                    navButton.startAnimation(fadeIn);
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
                     buttonBar.startAnimation(scaleUpRight);
+                    designer.setShowLowerJawBox(false);
+                    designer.setShowUpperJawBox(false);
                 }
 
                 @Override
@@ -940,7 +960,7 @@ public class DesignerActivity extends ActionBarActivity {
 
                 }
             });
-            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+            Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
             navButton.startAnimation(spinOut);
             buttonBar.startAnimation(scaleDownLeft);
         }
