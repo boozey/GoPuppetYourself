@@ -14,8 +14,8 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Shader;
-import android.graphics.Xfermode;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -23,6 +23,7 @@ import android.view.View;
 
 import com.Utils;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -67,7 +68,8 @@ public class PuppetDesigner extends View {
     private static final String UNDO_DRAW = "draw";
 
     private Context context;
-    private Bitmap backgroundBitmap, drawBitmap, viewBitmap;
+    private Bitmap backgroundBitmap, backgroundOriginal, drawBitmap, viewBitmap;
+    private File cacheDir;
     private ArrayList<Bitmap> backgroundUndoStack;
     private ArrayList<Bitmap> drawUndoStack;
     private ArrayList<String> undoStack;
@@ -137,7 +139,14 @@ public class PuppetDesigner extends View {
         upperJawPivotPoint= new Point(viewBitmap.getWidth() / 2, viewBitmap.getHeight() / 2);
         lowerJawPivotPoint = upperJawPivotPoint;
 
-        backgroundUndoStack = new ArrayList<>();
+        // Prepare cache directory for access
+        if (Utils.isExternalStorageWritable()){
+            cacheDir = context.getExternalCacheDir();
+        }
+        else {
+            cacheDir = context.getCacheDir();
+        }
+        backgroundUndoStack = new ArrayList<>(5);
         drawUndoStack = new ArrayList<>();
         undoStack = new ArrayList<>();
     }
@@ -169,11 +178,22 @@ public class PuppetDesigner extends View {
         if (backgroundBitmap != null) {
             undoStack.add(UNDO_BACKGROUND);
             backgroundUndoStack.add(backgroundBitmap.copy(backgroundBitmap.getConfig(), true));
+            Runtime runtime = Runtime.getRuntime();
+            if (3 * backgroundBitmap.getByteCount() + runtime.totalMemory() >= runtime.maxMemory()) {
+                backgroundUndoStack.remove(0);
+                Log.d(LOG_TAG, "Memory low, removing undo level");
+            }
+            Log.d(LOG_TAG, "add undo, undo stack size: " + backgroundUndoStack.size());
         }
     }
     private void addDrawUndo(){
         undoStack.add(UNDO_DRAW);
         drawUndoStack.add(drawBitmap.copy(drawBitmap.getConfig(), true));
+        Runtime runtime = Runtime.getRuntime();
+        if (3 * drawBitmap.getByteCount() + runtime.totalMemory() >= runtime.maxMemory()) {
+            drawUndoStack.remove(0);
+            Log.d(LOG_TAG, "Memory low, removing undo level");
+        }
     }
     public boolean Undo(){
         if (undoStack.size() > 0) {
@@ -181,14 +201,18 @@ public class PuppetDesigner extends View {
             undoStack.remove(undoStack.size() - 1);
             switch (type) {
                 case UNDO_BACKGROUND:
-                    backgroundBitmap = backgroundUndoStack.get(backgroundUndoStack.size() - 1);
-                    backgroundCanvas = new Canvas(backgroundBitmap);
-                    backgroundUndoStack.remove(backgroundUndoStack.size() - 1);
+                    if (backgroundUndoStack.size() > 0) {
+                        backgroundBitmap = backgroundUndoStack.get(backgroundUndoStack.size() - 1);
+                        backgroundCanvas = new Canvas(backgroundBitmap);
+                        backgroundUndoStack.remove(backgroundUndoStack.size() - 1);
+                    }
                     break;
                 case UNDO_DRAW:
-                    drawBitmap = drawUndoStack.get(drawUndoStack.size() - 1);
-                    drawUndoStack.remove(drawUndoStack.size() - 1);
-                    drawCanvas = new Canvas(drawBitmap);
+                    if (drawUndoStack.size() > 0) {
+                        drawBitmap = drawUndoStack.get(drawUndoStack.size() - 1);
+                        drawUndoStack.remove(drawUndoStack.size() - 1);
+                        drawCanvas = new Canvas(drawBitmap);
+                    }
                     break;
             }
             invalidate();
@@ -197,13 +221,16 @@ public class PuppetDesigner extends View {
         else
             return false;
     }
+    public boolean canUndo(){
+        return undoStack.size() > 0;
+    }
 
     // Heal methods
     public void setHealMode(boolean isHealMode){
         designerMode = MODE_HEAL;
     }
     private void Heal(int x, int y){
-        if (backgroundBitmap != null) {
+        /*if (backgroundBitmap != null) {
             x = Utils.getInBounds(x, 0, backgroundBitmap.getWidth() - 1);
             y = Utils.getInBounds(y, 0, backgroundBitmap.getHeight() - 1);
             if (backgroundUndoStack.size() > 0) {
@@ -221,7 +248,7 @@ public class PuppetDesigner extends View {
                 }
                 invalidate();
             }
-        }
+        }*/
     }
     private boolean handleHealTouch(MotionEvent event){
         int x = (int)event.getX(), y = (int)event.getY();
@@ -1074,6 +1101,7 @@ public class PuppetDesigner extends View {
         backgroundBitmap = image.copy(Bitmap.Config.ARGB_8888, true);
         backgroundBitmap.setHasAlpha(true);
         backgroundCanvas = new Canvas(backgroundBitmap);
+        backgroundOriginal = backgroundBitmap.copy(Bitmap.Config.ARGB_8888, true);
         drawBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         drawBitmap.setHasAlpha(true);
         drawCanvas = new Canvas(drawBitmap);
