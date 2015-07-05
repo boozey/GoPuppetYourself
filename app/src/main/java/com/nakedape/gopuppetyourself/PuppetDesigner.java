@@ -95,7 +95,8 @@ public class PuppetDesigner extends View {
         super(context, attrs);
         this.context = context;
         // Setup initial paint properties
-        upperJawBox = new Rect(20, 20, 100, 100);
+        lowerJawPaint = new Paint();
+        lowerJawPaint.setARGB(64, 0, 128, 0);
         upperJawPaint = new Paint();
         upperJawPaint.setARGB(64, 128, 0, 0);
         upperTextPaint = new Paint();
@@ -131,11 +132,10 @@ public class PuppetDesigner extends View {
         drawPath = new Path();
 
         // Set initial positions of jaw boxes
-        lowerJawBox = new Rect(120, 120, 220, 220);
-        lowerJawPaint = new Paint();
-        lowerJawPaint.setARGB(64, 0, 128, 0);
-        upperJawPivotPoint= new Point(60, 110);
-        lowerJawPivotPoint = new Point(60, 110);
+        upperJawBox = new Rect(40, 40, viewBitmap.getWidth() - 40, viewBitmap.getHeight() / 2);
+        lowerJawBox = new Rect(40, viewBitmap.getHeight() / 2, viewBitmap.getWidth() - 40, viewBitmap.getHeight() - 40);
+        upperJawPivotPoint= new Point(viewBitmap.getWidth() / 2, viewBitmap.getHeight() / 2);
+        lowerJawPivotPoint = upperJawPivotPoint;
 
         backgroundUndoStack = new ArrayList<>();
         drawUndoStack = new ArrayList<>();
@@ -1084,9 +1084,10 @@ public class PuppetDesigner extends View {
         tile.draw(viewCanvas);
         Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
         Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
-        upperJawBox = new Rect(0, 0, image.getWidth(), image.getHeight() / 2);
-        upperJawPivotPoint = new Point(upperJawBox.left + upperJawBox.width() / 2, upperJawBox.bottom);
-        lowerJawBox = new Rect(0, image.getHeight() / 2, image.getWidth(), image.getHeight());
+        int padding = (int)(Math.min(image.getHeight(), image.getWidth()) * 0.1);
+        upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
+        upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
+        lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
     }
