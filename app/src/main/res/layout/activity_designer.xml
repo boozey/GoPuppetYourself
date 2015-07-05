@@ -217,6 +217,34 @@
                 android:max="100"/>
         </RelativeLayout>
 
+        <!-- Heal button bar -->
+        <RelativeLayout
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/heal_button_bar"
+            android:visibility="gone">
+            <ImageButton
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:layout_centerVertical="true"
+                android:id="@+id/heal_brush_size"
+                android:background="@drawable/ic_action_erase_background"
+                android:layout_margin="2dp"/>
+            <SeekBar
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/heal_brush_size"
+                android:layout_toRightOf="@id/heal_brush_size"
+                android:id="@+id/heal_brush_slider"/>
+        </RelativeLayout>
+
         <!-- Portrait Adjustment Bar Layout-->
         <LinearLayout
             android:layout_width="0dp"

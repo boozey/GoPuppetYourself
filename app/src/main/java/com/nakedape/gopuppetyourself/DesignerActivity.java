@@ -48,7 +48,7 @@ public class DesignerActivity extends ActionBarActivity {
     private static final int BRUSH_SIZE_L = 18;
     private static final int MAX_BRUSH_SIZE = 64;
 
-    private View mainButtonBar, backgroundButtonBar, eraseBackgroundButtonBar, magicEraseButtonBar, portraitButtonBar;
+    private View mainButtonBar, backgroundButtonBar, eraseBackgroundButtonBar, magicEraseButtonBar, portraitButtonBar, healButtonBar;
     private PuppetDesigner designer;
     private Context context = this;
     private View popup;
@@ -83,6 +83,7 @@ public class DesignerActivity extends ActionBarActivity {
         eraseBackgroundButtonBar = findViewById(R.id.bg_erase_bar);
         magicEraseButtonBar = findViewById(R.id.magic_erase_bar);
         portraitButtonBar = findViewById(R.id.portrait_bar);
+        healButtonBar = findViewById(R.id.heal_button_bar);
 
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
@@ -793,13 +794,79 @@ public class DesignerActivity extends ActionBarActivity {
         }
     }
     public void HealClick(View v){
-        if (designer.getMode() == PuppetDesigner.MODE_HEAL){
-            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
-            v.setBackground(getResources().getDrawable(R.drawable.ic_action_image_healing));
-        } else {
-            designer.setHealMode(true);
-            v.setBackground(getResources().getDrawable(R.drawable.ic_action_image_healing_selected));
-        }
+        // Hide background bar and show background erase bar
+        final View buttonBar = backgroundButtonBar;
+        final View navButton = findViewById(R.id.nav_button);
+        // Set slider to current value
+        SeekBar slider = (SeekBar)findViewById(R.id.erase_brush_slider);
+        slider.setMax(MAX_BRUSH_SIZE);
+        slider.setProgress(paletteBrushSize);
+
+        // Set brush view to current value
+        final View view = findViewById(R.id.erase_brush_size);
+        designer.setStrokeWidth((float) paletteBrushSize);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)view.getLayoutParams();
+        params.width = paletteBrushSize;
+        params.height = paletteBrushSize;
+        view.setLayoutParams(params);
+
+        // Listener to update brush view and palatteBrushSize
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                paletteBrushSize = i;
+                designer.setStrokeWidth((float) paletteBrushSize);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) view.getLayoutParams();
+                params.width = i;
+                params.height = i;
+                view.setLayoutParams(params);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        // Animate disappearance of button bar and appearance of background bar
+        Animation scaleDownLeft = AnimationUtils.loadAnimation(this, R.anim.anim_scale_down_to_left);
+        scaleDownLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                designer.setMode(PuppetDesigner.MODE_HEAL);
+                buttonBar.setVisibility(View.GONE);
+                View newButtonBar = eraseBackgroundButtonBar;
+                newButtonBar.setVisibility(View.VISIBLE);
+                View navButton = findViewById(R.id.nav_button);
+                navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_arrow_back));
+                navButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        BackgroundButtonClick(view);
+                    }
+                });
+                Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
+                newButtonBar.startAnimation(scaleUpRight);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_spin_ccw);
+        navButton.startAnimation(spinOut);
+        buttonBar.startAnimation(scaleDownLeft);
     }
 
     // Portrait adjustment methods
