@@ -166,8 +166,10 @@ public class PuppetDesigner extends View {
 
     // Undo methods
     private void addBackgroundUndo(){
-        undoStack.add(UNDO_BACKGROUND);
-        backgroundUndoStack.add(backgroundBitmap.copy(backgroundBitmap.getConfig(), true));
+        if (backgroundBitmap != null) {
+            undoStack.add(UNDO_BACKGROUND);
+            backgroundUndoStack.add(backgroundBitmap.copy(backgroundBitmap.getConfig(), true));
+        }
     }
     private void addDrawUndo(){
         undoStack.add(UNDO_DRAW);
