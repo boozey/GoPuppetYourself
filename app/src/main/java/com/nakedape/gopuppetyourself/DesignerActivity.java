@@ -511,6 +511,7 @@ public class DesignerActivity extends ActionBarActivity {
             rootLayout.removeView(popup);
             popup = null;
             designer.setOnTouchListener(null);
+            designer.setIsDrawMode(true);
         }
     }
     public void ColorSelect(View v){

@@ -941,12 +941,12 @@ public class PuppetDesigner extends View {
             case MotionEvent.ACTION_DOWN:
                 prevX = x;
                 prevY = y;
-                addDrawUndo();
                 drawPath.moveTo(x, y);
                 invalidate();
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (prevX <= 0 || prevY <= 0){
+                if (prevX < 0 || prevY < 0){
+                    addDrawUndo();
                     prevX = x;
                     prevY = y;
                     drawPath.moveTo(x, y);
@@ -958,12 +958,14 @@ public class PuppetDesigner extends View {
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
-                if (prevX <= 0 || prevY <= 0){
+                if (prevX < 0 || prevY < 0){
                     prevX = x;
                     prevY = y;
                     drawPath.moveTo(x, y);
                 }
                 else {
+                    prevX = -1;
+                    prevY = -1;
                     drawCanvas.drawPath(drawPath, drawPaint);
                     drawPath.reset();
                     selectionId = NO_SELECTION;
