@@ -230,25 +230,23 @@ public class PuppetDesigner extends View {
         designerMode = MODE_HEAL;
     }
     private void Heal(int x, int y){
-        /*if (backgroundBitmap != null) {
+        if (backgroundBitmap != null && backgroundOriginal != null) {
             x = Utils.getInBounds(x, 0, backgroundBitmap.getWidth() - 1);
             y = Utils.getInBounds(y, 0, backgroundBitmap.getHeight() - 1);
-            if (backgroundUndoStack.size() > 0) {
-                int r = (int) drawPaint.getStrokeWidth() / 2;
-                for (int xN = x - r; x >= 0 && x < backgroundUndoStack.get(0).getWidth() && xN <= x + r; xN++) {
-                    for (int yN = y - r; y >= 0 && y < backgroundUndoStack.get(0).getHeight() && yN <= y + r; yN++) {
-                        if (xN >= 0 && xN < backgroundUndoStack.get(0).getWidth() &&
-                                yN >= 0 && yN < backgroundUndoStack.get(0).getHeight() &&
-                                Math.pow(xN - x, 2) + Math.pow(yN - y, 2) <= r * r)
-                        {
-                            int pixel = backgroundUndoStack.get(0).getPixel(xN, yN);
-                            backgroundBitmap.setPixel(xN, yN, pixel);
-                        }
+            int r = (int) drawPaint.getStrokeWidth() / 2;
+            for (int xN = x - r; x >= 0 && x < backgroundOriginal.getWidth() && xN <= x + r; xN++) {
+                for (int yN = y - r; y >= 0 && y < backgroundOriginal.getHeight() && yN <= y + r; yN++) {
+                    if (xN >= 0 && xN < backgroundOriginal.getWidth() &&
+                            yN >= 0 && yN < backgroundOriginal.getHeight() &&
+                            Math.pow(xN - x, 2) + Math.pow(yN - y, 2) <= r * r) {
+                        int pixel = backgroundOriginal.getPixel(xN, yN);
+                        backgroundBitmap.setPixel(xN, yN, pixel);
                     }
                 }
-                invalidate();
             }
-        }*/
+            invalidate();
+
+        }
     }
     private boolean handleHealTouch(MotionEvent event){
         int x = (int)event.getX(), y = (int)event.getY();
