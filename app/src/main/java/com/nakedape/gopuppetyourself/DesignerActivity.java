@@ -154,28 +154,32 @@ public class DesignerActivity extends ActionBarActivity {
     }
 
     private void ShowGetNewImagePopup(){
-        View layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
-        int width = 200;
-        int height = 400;
-        layout.setMinimumHeight(height);
-        layout.setMinimumWidth(width);
-        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)layout.getLayoutParams();
-        if (params == null){
-            params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.addRule(RelativeLayout.CENTER_IN_PARENT, designer.getId());
+        View layout = findViewById(R.id.new_image_popup);
+        if (layout == null) {
+            layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
+            int width = 200;
+            int height = 400;
+            layout.setMinimumHeight(height);
+            layout.setMinimumWidth(width);
+            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+            if (params == null) {
+                params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.addRule(RelativeLayout.CENTER_IN_PARENT, designer.getId());
+            }
+            layout.setLayoutParams(params);
+            if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+                Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
+                cameraButton.setVisibility(View.GONE);
+            }
+            rootLayout.addView(layout);
+            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            if (rootLayout.getWidth() == 0)
+                fadeIn.setStartOffset(300);
+            layout.startAnimation(fadeIn);
         }
-        layout.setLayoutParams(params);
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-            Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
-            cameraButton.setVisibility(View.GONE);
-        }
-        rootLayout.addView(layout);
-        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        if (rootLayout.getWidth() == 0)
-            fadeIn.setStartOffset(300);
-        layout.startAnimation(fadeIn);
 
     }
+
     public void CloseGetNewImagePopup(View v){
         View layout = findViewById(R.id.new_image_popup);
         rootLayout.removeView(layout);
