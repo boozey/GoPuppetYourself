@@ -300,6 +300,8 @@ public class Puppet extends RelativeLayout implements Serializable {
         out.writeInt(upperPivotPoint.y);
         out.writeInt(lowerPivotPoint.x);
         out.writeInt(lowerPivotPoint.y);
+        out.writeFloat(getScaleX());
+        out.writeFloat(getScaleY());
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         upperJawBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
@@ -321,6 +323,8 @@ public class Puppet extends RelativeLayout implements Serializable {
         onStage = in.readBoolean();
         upperPivotPoint = new Point(in.readInt(), in.readInt());
         lowerPivotPoint = new Point(in.readInt(), in.readInt());
+        setScaleX(in.readFloat());
+        setScaleY(in.readFloat());
 
         byte[] bytes = new byte[in.readInt()];
         in.readFully(bytes);

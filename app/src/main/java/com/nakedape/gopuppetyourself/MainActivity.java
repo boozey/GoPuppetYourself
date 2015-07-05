@@ -62,6 +62,9 @@ public class MainActivity extends ActionBarActivity {
     private static final int REQUEST_IMAGE_GET = 4002;
     private static final int REQUEST_EDIT = 4003;
     private static final String PUPPETS_ON_STAGE = "com.nakedape.gopuppetyourself.PUPPETS_ON_STAGE";
+    private static final String BACKGROUND_PATH = "com.nakedape.gopuppetyourself.BACKGROUND_PATH";
+    private static final String BACKGROUND_WIDTH = "com.nakedape.gopuppetyourself.BACKGROUND_WIDTH";
+    private static final String BACKGROUND_HEIGHT = "com.nakedape.gopuppetyourself.BACKGROUND_HEIGHT";
 
     private Context context;
     private ViewGroup stage;
@@ -129,7 +132,9 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // Initialize fields and get handles for UI elements
         context = this;
+        metrics = getResources().getDisplayMetrics();
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
         progressBar = (SeekBar)findViewById(R.id.progress_bar);
@@ -143,7 +148,6 @@ public class MainActivity extends ActionBarActivity {
         libraryButton = (ImageButton)findViewById(R.id.puppet_library_button);
         libraryButton.setVisibility(View.GONE);
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
-        metrics = getResources().getDisplayMetrics();
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(stage);
@@ -172,7 +176,7 @@ public class MainActivity extends ActionBarActivity {
             else
                 stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
         }
-        else { // Create a new instance to save the data
+        else { // Create a new data fragment instance to save the data
             savedData = new MainActivityDataFrag();
             fm.beginTransaction().add(savedData, "data").commit();
         }
@@ -201,6 +205,15 @@ public class MainActivity extends ActionBarActivity {
         }
         else {
             puppetsOnStage = new HashSet<>();
+        }
+
+        // Set background
+        String uriPath = preferences.getString(BACKGROUND_PATH, null);
+        if (uriPath != null){
+            int width = preferences.getInt(BACKGROUND_WIDTH, 600);
+            int height = preferences.getInt(BACKGROUND_HEIGHT, 400);
+            setBackGround(Uri.parse(uriPath), (float)width, (float)height);
+            Log.d(LOG_TAG, "background set, path: " + Uri.parse(uriPath));
         }
     }
     @Override
@@ -246,7 +259,7 @@ public class MainActivity extends ActionBarActivity {
         }
         else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK){
             Uri imageUri = data.getData();
-            setBackGround(imageUri);
+            setBackGround(imageUri, stage.getWidth(), stage.getHeight());
         }
         else if (requestCode == REQUEST_EDIT && resultCode == RESULT_OK){
             SetupNewPuppet(data);
@@ -646,7 +659,7 @@ public class MainActivity extends ActionBarActivity {
             startActivityForResult(intent, REQUEST_IMAGE_GET);
         }
     } // Called from background click listener in backstage mode
-    private void setBackGround(Uri imageUri){
+    private void setBackGround(Uri imageUri, float reqWidth, float reqHeight){
         Log.d(LOG_TAG, "set background called");
         Bitmap bitmap = null;
         try {
@@ -658,8 +671,9 @@ public class MainActivity extends ActionBarActivity {
             int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
             Log.d(LOG_TAG, "image width = " + height);
             if (width > stage.getWidth() || height > stage.getHeight()){
-                double scale = Math.min(((float) stage.getWidth() / width), ((float) stage.getHeight() / height));
-                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(stage.getWidth() * scale), (int)(stage.getHeight() * scale));
+                double scale = Math.min(reqWidth / width, reqHeight / height);
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(reqWidth * scale), (int)(reqHeight * scale));
+                Log.d(LOG_TAG, "Scaled factor = " + String.valueOf(scale));
                 Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(stage.getWidth() * scale));
             }
             else {
@@ -669,7 +683,12 @@ public class MainActivity extends ActionBarActivity {
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             savedData.currentBackground = bitmap;
-            Log.d(LOG_TAG, "background changed");
+            SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+            prefEditor.putString(BACKGROUND_PATH, imageUri.toString());
+            prefEditor.putInt(BACKGROUND_WIDTH, bitmap.getWidth());
+            prefEditor.putInt(BACKGROUND_HEIGHT, bitmap.getHeight());
+            prefEditor.apply();
+            Log.d(LOG_TAG, "background changed, path: " + imageUri.toString());
         }
     } // Called from activity result
 
@@ -701,6 +720,7 @@ public class MainActivity extends ActionBarActivity {
                 }
                 return true;
             case MotionEvent.ACTION_UP:
+                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;
         }
         return true;
@@ -760,6 +780,7 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             case R.id.action_puppet_flip_horz:
                 selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;
         }
         return false;
@@ -1011,8 +1032,12 @@ public class MainActivity extends ActionBarActivity {
                     prefEditor.apply();
                     ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
                     flipper.removeView(flipper.getCurrentView());
-                    TextView nameText = (TextView)findViewById(R.id.puppet_name_textview);
-                    nameText.setText((String)flipper.getCurrentView().getTag());
+                    TextView nameText = (TextView) findViewById(R.id.puppet_name_textview);
+                    if (flipper.getChildCount() > 0) {
+                        nameText.setText((String)flipper.getCurrentView().getTag());
+                    } else {
+                        nameText.setText("");
+                    }
                     View library = findViewById(R.id.puppet_library_popup);
                     library.setOnDragListener(new LibraryPuppetDragEventListener());
                     return true;
@@ -1044,6 +1069,9 @@ public class MainActivity extends ActionBarActivity {
                     image.setTag(p.getName());
                     ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
                     flipper.addView(image);
+                    flipper.setDisplayedChild(flipper.getChildCount() - 1);
+                    TextView nameView = (TextView)findViewById(R.id.puppet_name_textview);
+                    nameView.setText(p.getName());
                     RemovePuppetFromStage(p);
                     stage.setOnDragListener(new StagePuppetDragEventListener());
                     return true;
@@ -1095,6 +1123,10 @@ public class MainActivity extends ActionBarActivity {
         Puppet puppet = new Puppet(context, null);
         Utils.ReadPuppetFromFile(puppet, new File(filePath));
         puppet.setOnTouchListener(backstageListener);
+        puppetsOnStage.add(puppet.getPath());
+        SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+        prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+        prefEditor.apply();
         stage.addView(puppet);
         GoToPerformance(null);
         Log.d(LOG_TAG, "new puppet should be visible");
