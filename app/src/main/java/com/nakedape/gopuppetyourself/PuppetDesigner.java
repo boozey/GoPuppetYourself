@@ -76,7 +76,7 @@ public class PuppetDesigner extends View {
     private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
     private Path drawPath;
     private Canvas drawCanvas, backgroundCanvas, viewCanvas;
-    private int edgeThresh = 20, pointThresh = 30;
+    private int edgeThresh = 30, pointThresh = 30;
     private double colorSimilarity = 75;
     private Path cutPath;
     private float cutPathStrokeWidth = 75;
@@ -210,7 +210,10 @@ public class PuppetDesigner extends View {
                 int r = (int) drawPaint.getStrokeWidth() / 2;
                 for (int xN = x - r; x >= 0 && x < backgroundUndoStack.get(0).getWidth() && xN <= x + r; xN++) {
                     for (int yN = y - r; y >= 0 && y < backgroundUndoStack.get(0).getHeight() && yN <= y + r; yN++) {
-                        if (Math.pow(xN - x, 2) + Math.pow(yN - y, 2) <= r * r) {
+                        if (xN >= 0 && xN < backgroundUndoStack.get(0).getWidth() &&
+                                yN >= 0 && yN < backgroundUndoStack.get(0).getHeight() &&
+                                Math.pow(xN - x, 2) + Math.pow(yN - y, 2) <= r * r)
+                        {
                             int pixel = backgroundUndoStack.get(0).getPixel(xN, yN);
                             backgroundBitmap.setPixel(xN, yN, pixel);
                         }
@@ -1222,7 +1225,9 @@ public class PuppetDesigner extends View {
                 upperJawBox.right = x2;
                 break;
             case UPPER_JAW_PIVOT:
-                upperJawPivotPoint.offset(x2 - x1, 0);
+                upperJawPivotPoint.offset(x2 - x1, y2 - y1);
+                upperJawBox.bottom = upperJawPivotPoint.y;
+                lowerJawBox.top = upperJawPivotPoint.y;
                 /*if (pivotsSnapped){
                     lowerJawPivotPoint.offset(x2- x1, 0);
                 }*/
@@ -1256,7 +1261,11 @@ public class PuppetDesigner extends View {
                 lowerJawBox.right = x2;
                 break;
             case LOWER_JAW_PIVOT:
-                lowerJawPivotPoint.offset(dx, 0);
+                upperJawPivotPoint.offset(x2 - x1, y2 - y1);
+                upperJawBox.bottom = upperJawPivotPoint.y;
+                lowerJawBox.top = upperJawPivotPoint.y;
+                lowerJawPivotPoint = upperJawPivotPoint;
+                /*lowerJawPivotPoint.offset(dx, 0);
                 /*
                 if (pivotsSnapped){
                     upperJawPivotPoint.offset(dx, 0);
