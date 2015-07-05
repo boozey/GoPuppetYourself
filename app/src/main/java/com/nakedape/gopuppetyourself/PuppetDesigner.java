@@ -996,13 +996,15 @@ public class PuppetDesigner extends View {
     }
 
     public void flipHorz(){
-        Matrix m = new Matrix();
-        m.preScale(-1, 1);
-        Bitmap dst = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
-        backgroundBitmap = dst;
-        backgroundCanvas = new Canvas(backgroundBitmap);
-        invalidate();
-        //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
+        if (backgroundBitmap != null) {
+            Matrix m = new Matrix();
+            m.preScale(-1, 1);
+            Bitmap dst = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
+            backgroundBitmap = dst;
+            backgroundCanvas = new Canvas(backgroundBitmap);
+            invalidate();
+            //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
+        }
     }
 
     // Methods for getting and setting the puppet
