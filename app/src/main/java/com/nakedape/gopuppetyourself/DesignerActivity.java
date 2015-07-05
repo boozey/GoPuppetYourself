@@ -28,6 +28,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.Utils;
 
@@ -232,23 +233,32 @@ public class DesignerActivity extends ActionBarActivity {
 
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
+        int width, height;
         try {
-            final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
-            Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
-            cursor.moveToFirst();
-            int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
-            Log.d(LOG_TAG, "image width = " + width);
-            int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
-            Log.d(LOG_TAG, "image width = " + height);
-            if (width > designer.getWidth() || height > designer.getHeight()){
-                double scale = Math.min(((float) designer.getWidth() / width), ((float) designer.getHeight() / height));
-                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(designer.getWidth() * scale), (int)(designer.getHeight() * scale));
-                Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(designer.getWidth() * scale));
+            try {
+                final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
+                Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
+                cursor.moveToFirst();
+                width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
+                Log.d(LOG_TAG, "image width = " + width);
+                height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
+                Log.d(LOG_TAG, "image width = " + height);
+                if (width > designer.getWidth() || height > designer.getHeight()){
+                    double scale = Math.min(((float) designer.getWidth() / width), ((float) designer.getHeight() / height));
+                    bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(designer.getWidth() * scale), (int)(designer.getHeight() * scale));
+                    Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(designer.getWidth() * scale));
+                }
+                else {
+                    bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                e.printStackTrace();
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, designer.getWidth(), designer.getHeight());
             }
-            else {
-                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-            }
-        } catch (IOException e){e.printStackTrace();}
+        } catch (IOException e){
+            e.printStackTrace();
+            Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
+        }
         if (bitmap != null){
             designer.SetNewImage(bitmap);
             designer.invalidate();

@@ -663,23 +663,30 @@ public class MainActivity extends ActionBarActivity {
         Log.d(LOG_TAG, "set background called");
         Bitmap bitmap = null;
         try {
-            final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
-            Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
-            cursor.moveToFirst();
-            int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
-            Log.d(LOG_TAG, "image width = " + width);
-            int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
-            Log.d(LOG_TAG, "image width = " + height);
-            if (width > stage.getWidth() || height > stage.getHeight()){
-                double scale = Math.min(reqWidth / width, reqHeight / height);
-                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(reqWidth * scale), (int)(reqHeight * scale));
-                Log.d(LOG_TAG, "Scaled factor = " + String.valueOf(scale));
-                Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(stage.getWidth() * scale));
+            try {
+                final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
+                Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
+                cursor.moveToFirst();
+                int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
+                Log.d(LOG_TAG, "image width = " + width);
+                int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
+                Log.d(LOG_TAG, "image width = " + height);
+                if (width > stage.getWidth() || height > stage.getHeight()) {
+                    double scale = Math.min(reqWidth / width, reqHeight / height);
+                    bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int) (reqWidth * scale), (int) (reqHeight * scale));
+                    Log.d(LOG_TAG, "Scaled factor = " + String.valueOf(scale));
+                    Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(stage.getWidth() * scale));
+                } else {
+                    bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+                }
+            } catch (IllegalArgumentException | NullPointerException e) {
+                e.printStackTrace();
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, stage.getWidth(), stage.getHeight());
             }
-            else {
-                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-            }
-        } catch (IOException e){Toast.makeText(this, "Error loading background", Toast.LENGTH_SHORT).show();}
+        } catch (IOException e){
+        e.printStackTrace();
+        Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
+    }
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             savedData.currentBackground = bitmap;
