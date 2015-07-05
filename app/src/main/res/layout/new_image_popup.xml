@@ -43,6 +43,15 @@
             android:id="@+id/camera_button"
             android:onClick="NewCameraImageClick" />
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:background="@drawable/ic_gallery"/>
     <Button
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -51,6 +60,16 @@
         style="@style/Base.Widget.AppCompat.Button.Borderless"
         android:id="@+id/gallery_button"
         android:onClick="NewGalleryImageClick" />
+        </LinearLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/ic_file_new"/>
     <Button
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -58,4 +77,5 @@
         style="@style/Base.Widget.AppCompat.Button.Borderless"
         android:text="Blank Image"
         android:id="@+id/blank_image_button" />
+        </LinearLayout>
 </LinearLayout>

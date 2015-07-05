@@ -85,8 +85,8 @@ public class PuppetDesigner extends View {
     private ArrayList<Point> cutPathPoints;
     private int selectionId = 0;
     private float prevX = -1, prevY = -1;
-    private boolean isCutPath = false, eraseInProgress = false, showUpperJawBox = false, showLowerJawBox = false,
-            pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isBackgroundEraseMode = false, isMagicEraseMode = false;
+    private boolean isCutPath = false, showUpperJawBox = false, showLowerJawBox = false,
+            pivotsSnapped = true, isDrawMode = false, isEraseMode = false;
 
 
     private int orientation = Puppet.PROFILE_RIGHT;
@@ -971,7 +971,7 @@ public class PuppetDesigner extends View {
 
     }
     public void cancelBackgroundErase(){
-        isBackgroundEraseMode = false;
+        designerMode = MODE_SELECT;
         drawPaint.setXfermode(null);
     }
     private boolean handleBackgroundEraseTouch(MotionEvent event){

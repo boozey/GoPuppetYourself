@@ -169,6 +169,10 @@ public class DesignerActivity extends ActionBarActivity {
             cameraButton.setVisibility(View.GONE);
         }
         rootLayout.addView(layout);
+        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+        if (rootLayout.getWidth() == 0)
+            fadeIn.setStartOffset(300);
+        layout.startAnimation(fadeIn);
 
     }
     public void CloseGetNewImagePopup(View v){
@@ -451,6 +455,12 @@ public class DesignerActivity extends ActionBarActivity {
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
                     Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
                     navButton.startAnimation(fadeIn);
+                    navButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            ControlButtonClick(view);
+                        }
+                    });
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
@@ -642,6 +652,12 @@ public class DesignerActivity extends ActionBarActivity {
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
                     Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
                     navButton.startAnimation(fadeIn);
+                    navButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            ControlButtonClick(view);
+                        }
+                    });
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
@@ -947,6 +963,12 @@ public class DesignerActivity extends ActionBarActivity {
                     navButton.setBackground(getResources().getDrawable(R.drawable.ic_action_navigation_menu));
                     Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in_spin);
                     navButton.startAnimation(fadeIn);
+                    navButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            ControlButtonClick(view);
+                        }
+                    });
                     View buttonBar = findViewById(R.id.main_buttons);
                     buttonBar.setVisibility(View.VISIBLE);
                     Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
