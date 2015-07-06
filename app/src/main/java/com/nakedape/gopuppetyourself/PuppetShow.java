@@ -23,13 +23,11 @@ import java.util.ArrayList;
 public class PuppetShow implements Serializable {
     transient private static final String LOG_TAG = "PuppetShow";
     transient private ViewGroup stage;
-    //private ArrayList<Puppet> puppets;
     private ArrayList<byte[]> puppets;
     private ArrayList<Bitmap> backgrounds;
     private ArrayList<KeyFrame> frameSequence;
     public float[] initialXs, initialYs;
     public float[] initialScales;
-    public boolean[] initialVisibilities;
     private int orientation;
 
     public PuppetShow(){
@@ -48,8 +46,6 @@ public class PuppetShow implements Serializable {
         }
         initialXs = new float[stage.getChildCount()];
         initialYs = new float[stage.getChildCount()];
-        initialScales = new float[stage.getChildCount()];
-        initialVisibilities = new boolean[stage.getChildCount()];
         Puppet p;
         for (int i = 0; i < stage.getChildCount(); i++) {
             p = (Puppet) stage.getChildAt(i);
@@ -58,8 +54,6 @@ public class PuppetShow implements Serializable {
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) p.getLayoutParams();
             initialXs[i] = (float) params.leftMargin / stage.getWidth();
             initialYs[i] = (float) params.topMargin / stage.getHeight();
-            initialScales[i] = p.getScaleX();
-            initialVisibilities[i] = p.isOnStage();
         }
     }
 
@@ -82,6 +76,9 @@ public class PuppetShow implements Serializable {
         backgrounds.add(bitmap);
     }
     public Bitmap getBackground(int index){ return backgrounds.get(0);}
+    public int backgroundCount(){
+        return backgrounds.size();
+    }
 
     public void setFrameSequence(ArrayList<KeyFrame> frames){
         frameSequence = frames;

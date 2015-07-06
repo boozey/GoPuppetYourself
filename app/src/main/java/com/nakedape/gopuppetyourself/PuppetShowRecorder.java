@@ -46,10 +46,6 @@ public class PuppetShowRecorder {
         mHandler = handler;
     }
 
-    public void setFrameSequence(ArrayList<KeyFrame> framesSequence){
-        this.frameSequence = framesSequence;
-    }
-
     // Recording flow
     public void prepareToRecord(){
         puppetShow = new PuppetShow(stage);
@@ -61,7 +57,7 @@ public class PuppetShowRecorder {
         //frameSequence = new ArrayList<>();
         //frameSequence.add(new KeyFrame(0, KeyFrame.START));
         if (isReady) {
-            puppetShow.addFrame(KeyFrame.getStartFrame());
+            puppetShow.addFrame(getStartFrame());
             startMillis = SystemClock.elapsedRealtime();
             showLength = -1;
 
@@ -94,6 +90,27 @@ public class PuppetShowRecorder {
         puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x / width, y / height));
         Log.d(LOG_TAG, "Puppet movement: " + x / width + ", " + y / height);
     } // Record a keyframe event with movement
+    public void RecordFrame(KeyFrame frame){
+        puppetShow.addFrame(frame);
+    }
+    public KeyFrame getStartFrame(){
+        return new KeyFrame(0, KeyFrame.START);
+    }
+    public KeyFrame getOpenMouthFrame(String puppetId, int degrees){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.OPEN_MOUTH_DEGREES, degrees);
+    }
+    public KeyFrame getCloseMouthFrame(String puppetId){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.CLOSE_MOUTH);
+    }
+    public KeyFrame getMoveFrame(String puppetId, int x, int y){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.MOVEMENT, x / width, y / height);
+    }
+    public KeyFrame getScaleFrame(String puppetId, float xScale, float yScale){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.SET_SCALE, xScale, yScale);
+    }
+    public KeyFrame getVisiblilityFrame(String puppetId, boolean visible){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.VISIBILITY, visible);
+    }
     public void RecordStop(){
         if (isRecording()) {
             showLength = getTimeFromStartMillis();
@@ -138,28 +155,17 @@ public class PuppetShowRecorder {
             width = stage.getWidth();
             height = stage.getHeight();
             // Remove any puppets that are on the stage
-            for (int i = 0; i < stage.getChildCount(); i++){
-                stage.removeViewAt(i);
-            }
+            stage.removeAllViews();
             // Set the first background
-            stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(0)));
+            if (puppetShow.backgroundCount() > 0)
+                stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(0)));
             // Add the puppets to the stage for the show and set initial properties
             Puppet p;
             for (int i = 0; i < puppetShow.getPuppets().size(); i++){
                 p = puppetShow.getPuppet(i);
                 RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                params.setMargins((int)(puppetShow.initialXs[i] * width), (int)(puppetShow.initialYs[i] * height), 0, 0);
+                params.setMargins((int) (puppetShow.initialXs[i] * width), (int) (puppetShow.initialYs[i] * height), 0, 0);
                 p.setLayoutParams(params);
-                if (puppetShow.initialVisibilities[i]) {
-                    p.setOnStage(true);
-                    p.setVisibility(View.VISIBLE);
-                }
-                else {
-                    p.setOnStage(false);
-                    p.setVisibility(View.GONE);
-                }
-                p.setScaleX(puppetShow.initialScales[i]);
-                p.setScaleY(Math.abs(puppetShow.initialScales[i]));
                 p.setTag(p.getName());
                 stage.addView(p);
                 Log.d(LOG_TAG, "Puppet added, visibility = " + p.isOnStage());
@@ -218,19 +224,11 @@ public class PuppetShowRecorder {
                 }
                 final Puppet p = (Puppet)stage.findViewWithTag(frame.puppetId);
                 switch (frame.eventType){
-                    case KeyFrame.OPEN_MOUTH_NARROW:
+                    case KeyFrame.OPEN_MOUTH_DEGREES:
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                p.OpenMouth(15);
-                            }
-                        });
-                        break;
-                    case KeyFrame.OPEN_MOUTH_MED:
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                p.OpenMouth(30);
+                                p.OpenMouth(frame.integer);
                             }
                         });
                         break;
@@ -256,7 +254,33 @@ public class PuppetShowRecorder {
                             }
                         });
                         break;
+                    case KeyFrame.SET_SCALE:
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                p.setScaleX(frame.x);
+                                p.setScaleY(frame.y);
+                            }
+                        });
+                        break;
+                    case KeyFrame.VISIBILITY:
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (frame.visible)
+                                    p.setVisibility(View.VISIBLE);
+                                else
+                                    p.setVisibility(View.GONE);
+                            }
+                        });
+                        break;
                     case KeyFrame.END:
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                stage.removeAllViews();
+                            }
+                        });
                         Message msg = mHandler.obtainMessage(COUNTER_END);
                         msg.sendToTarget();
                         Log.d(LOG_TAG, "Show end time: " + frame.time);
@@ -265,6 +289,12 @@ public class PuppetShowRecorder {
 
                 }
             }
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    stage.removeAllViews();
+                }
+            });
             Message msg = mHandler.obtainMessage(COUNTER_END);
             msg.sendToTarget();
 

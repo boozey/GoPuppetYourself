@@ -325,11 +325,11 @@ public class MainActivity extends ActionBarActivity {
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
             puppet.OpenMouth(15);
-            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_NARROW);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 15));
         }
         else {
             puppet.OpenMouth(30);
-            if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_MED);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 30));
         }
     }
     private void moveView(Puppet puppet, int X, int Y){
@@ -793,6 +793,8 @@ public class MainActivity extends ActionBarActivity {
                 }
                 return true;
             case MotionEvent.ACTION_UP:
+                if (isRecording)
+                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;
         }
@@ -833,10 +835,14 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             case R.id.action_puppet_visible:
                 if (menuItem.isChecked()){
+                    if (isRecording)
+                        showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), false));
                     selectedPuppet.setOnStage(false);
                     menuItem.setChecked(false);
                 }
                 else {
+                    if (isRecording)
+                        showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), true));
                     selectedPuppet.setOnStage(true);
                     menuItem.setChecked(true);
                 }
@@ -852,6 +858,8 @@ public class MainActivity extends ActionBarActivity {
                 stage.setOnTouchListener(scaleListener);
                 return true;
             case R.id.action_puppet_flip_horz:
+                if (isRecording)
+                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;

@@ -9,12 +9,10 @@ public class KeyFrame implements Serializable {
     public final static int START = 1000;
     public final static int MOVEMENT = 1001;
     public final static int CLOSE_MOUTH = 1002;
-    public final static int OPEN_MOUTH_NARROW = 1003;
-    public final static int OPEN_MOUTH_MED = 1004;
-    public final static int OPEN_MOUTH_WIDE = 1005;
-    public final static int OPEN_MOUTH_DEGREES = 1006;
-    public final static int SET_SCALE = 1007;
-    public final static int VISIBILITY = 1008;
+    public final static int OPEN_MOUTH_DEGREES = 1003;
+    public final static int SET_SCALE = 1004;
+    public final static int VISIBILITY = 1005;
+    public final static int SET_BACKGROUND = 1006;
     public final static int END = 9000;
 
     private final static int UNSET = -1;
@@ -24,7 +22,7 @@ public class KeyFrame implements Serializable {
     public long time;
     public float x = UNSET, y = UNSET;
     public boolean visible = true;
-    public int degrees;
+    public int integer;
 
 
     public KeyFrame(){
@@ -46,11 +44,11 @@ public class KeyFrame implements Serializable {
         this.x = x;
         this.y = y;
     }
-    public KeyFrame(long time, String puppetId, int eventType, int degrees){
+    public KeyFrame(long time, String puppetId, int eventType, int integer){
         this.time = time;
         this.puppetId = puppetId;
         this. eventType = eventType;
-        this.degrees = degrees;
+        this.integer = integer;
     }
     public KeyFrame(long time, String puppetId, int eventType, boolean visible){
         this.time = time;
