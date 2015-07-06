@@ -76,6 +76,7 @@ public class PuppetDesigner extends View {
     private Rect upperJawBox, lowerJawBox;
     private Point upperJawPivotPoint, lowerJawPivotPoint;
     private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
+    private int drawColor;
     private Path drawPath;
     private Canvas drawCanvas, backgroundCanvas, viewCanvas;
     private int edgeThresh = 30, pointThresh = 30;
@@ -937,6 +938,7 @@ public class PuppetDesigner extends View {
         float x = event.getX(), y = event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                addDrawUndo();
                 prevX = x;
                 prevY = y;
                 drawPath.moveTo(x, y);
@@ -976,6 +978,7 @@ public class PuppetDesigner extends View {
     }
     public void setColor(int color){
         drawPaint.setColor(color);
+        drawColor = color;
     }
     public void setStrokeWidth(float width){
         drawPaint.setStrokeWidth(width);

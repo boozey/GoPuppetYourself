@@ -171,15 +171,21 @@ public class DesignerActivity extends ActionBarActivity {
                 Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
                 cameraButton.setVisibility(View.GONE);
             }
+            //Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_pop_in);
+            //if (rootLayout.getWidth() == 0)
+            //    fadeIn.setStartOffset(300);
+            layout.setAlpha(0f);
+            layout.setScaleX(0.5f);
+            layout.setScaleY(0.5f);
             rootLayout.addView(layout);
-            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            if (rootLayout.getWidth() == 0)
-                fadeIn.setStartOffset(300);
-            layout.startAnimation(fadeIn);
+            layout.animate().alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(200);
+            //layout.startAnimation(fadeIn);
         }
 
     }
-
     public void CloseGetNewImagePopup(View v){
         View layout = findViewById(R.id.new_image_popup);
         rootLayout.removeView(layout);
@@ -378,7 +384,6 @@ public class DesignerActivity extends ActionBarActivity {
             // Set brush view to current value
             final View view = findViewById(R.id.brush_size);
             designer.setStrokeWidth((float) paletteBrushSize);
-            designer.setColor(getResources().getColor(R.color.black));
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)view.getLayoutParams();
             params.width = paletteBrushSize;
             params.height = paletteBrushSize;
