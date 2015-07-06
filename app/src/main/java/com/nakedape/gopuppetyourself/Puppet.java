@@ -62,7 +62,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public int getTotalWidth(){
         return upperBitmapWidth + upperLeftPadding + upperRightPadding;
     }
-
     public int getTotalHeight(){
         return topPadding + upperBitmapHeight + lowerBitmapHeight;
     }
@@ -70,7 +69,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public boolean isOnStage() {
         return onStage;
     }
-
     public void setOnStage(boolean onStage) {
         this.onStage = onStage;
     }
@@ -78,7 +76,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public String getPath() {
         return path;
     }
-
     public void setPath(String path) {
         this.path = path;
     }
@@ -86,7 +83,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -94,7 +90,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public Bitmap getUpperJawBitmap() {
         return upperJawBitmap;
     }
-
     public Bitmap getLowerJawBitmap() {
         return lowerJawBitmap;
     }
@@ -102,7 +97,6 @@ public class Puppet extends RelativeLayout implements Serializable {
     public int getUpperLeftPadding() {
         return upperLeftPadding;
     }
-
     public int getUpperRightPadding() {
         return upperRightPadding;
     }
@@ -110,55 +104,23 @@ public class Puppet extends RelativeLayout implements Serializable {
     public int getLowerLeftPadding() {
         return lowerLeftPadding;
     }
-
     public int getLowerRightPadding() {
         return lowerRightPadding;
-    }
-
-    public int getUpperBitmapWidth() {
-        return upperBitmapWidth;
-    }
-
-    public int getUpperBitmapHeight() {
-        return upperBitmapHeight;
-    }
-
-    public int getLowerBitmapWidth() {
-        return lowerBitmapWidth;
-    }
-
-    public int getLowerBitmapHeight() {
-        return lowerBitmapHeight;
-    }
-
-    public Point getUpperPivotPoint() {
-        return upperPivotPoint;
-    }
-
-    public void setUpperPivotPoint(Point upperPivotPoint) {
-        this.upperPivotPoint = upperPivotPoint;
     }
 
     public Point getLowerPivotPoint() {
         return lowerPivotPoint;
     }
-
     public void setLowerPivotPoint(Point lowerPivotPoint) {
         this.lowerPivotPoint = lowerPivotPoint;
     }
 
-    public void setUpperJawImage(ImageView upperJaw){this.upperJaw = upperJaw;}
-
-    public ImageView getUpperJaw(){return upperJaw;}
-
-    public void setLowerJawImage(ImageView lowerJaw){this.lowerJaw = lowerJaw;}
-
-    public ImageView getLowerJaw(){return lowerJaw;}
+    public ImageView getUpperJawView(){return upperJaw;}
+    public ImageView getLowerJawView(){return lowerJaw;}
 
     public int getOrientation() {
         return orientation;
     }
-
     public void setOrientation(int orientation) {
         this.orientation = orientation;
     }
@@ -193,22 +155,6 @@ public class Puppet extends RelativeLayout implements Serializable {
         lowerBitmapHeight = bitmap.getHeight();
         lowerBitmapWidth = bitmap.getWidth();
         lowerJaw.setBackground(new BitmapDrawable(getResources(), bitmap));
-    }
-
-    public PuppetData getData(String path){
-        PuppetData data = new PuppetData();
-        data.setOrientation(this.orientation);
-        data.setLowerPivotPointx(this.lowerPivotPoint.x);
-        data.setLowerPivotPointy(this.lowerPivotPoint.y);
-        data.setUpperPivotPointx(this.upperPivotPoint.x);
-        data.setUpperPivotPointy(this.upperPivotPoint.y);
-        data.setLowerLeftPadding(lowerLeftPadding);
-        data.setLowerRightPadding(lowerRightPadding);
-        data.setUpperLeftPadding(upperLeftPadding);
-        data.setUpperRightPadding(upperRightPadding);
-        data.setLowerJawBitmapPath(Utils.WriteImage(lowerJawBitmap, path + File.pathSeparator + "lowerJaw"));
-        data.setUpperJawBitmapPath(Utils.WriteImage(upperJawBitmap, path + File.pathSeparator + "upperJaw"));
-        return data;
     }
 
     // Public methods
@@ -316,7 +262,6 @@ public class Puppet extends RelativeLayout implements Serializable {
         out.write(stream.toByteArray());
 
     }
-
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
         name = (String)in.readObject();
         orientation = in.readInt();
