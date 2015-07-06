@@ -26,6 +26,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -263,6 +264,21 @@ public class MainActivity extends ActionBarActivity {
         }
         else if (requestCode == REQUEST_EDIT && resultCode == RESULT_OK){
             SetupNewPuppet(data);
+        }
+    }
+    @Override
+    public boolean onKeyDown(int keycode, KeyEvent e){
+        switch (keycode){
+            case KeyEvent.KEYCODE_BACK:
+                View v = findViewById(R.id.puppet_library_popup);
+                if (v != null) {
+                    ClosePuppetLibrary();
+                    return true;
+                } else {
+                    return super.onKeyDown(keycode, e);
+                }
+            default:
+                return super.onKeyDown(keycode, e);
         }
     }
 

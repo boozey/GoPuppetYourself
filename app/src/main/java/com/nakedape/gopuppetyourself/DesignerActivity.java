@@ -14,6 +14,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -150,6 +151,22 @@ public class DesignerActivity extends ActionBarActivity {
         else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
             CloseGetNewImagePopup(null);
             NewPuppet();
+        }
+    }
+
+    @Override
+    public boolean onKeyDown(int keycode, KeyEvent e){
+        switch (keycode){
+            case KeyEvent.KEYCODE_BACK:
+                View v = findViewById(R.id.new_image_popup);
+                if (v != null) {
+                    CloseGetNewImagePopup(null);
+                    return true;
+                } else {
+                    return super.onKeyDown(keycode, e);
+                }
+            default:
+                return super.onKeyDown(keycode, e);
         }
     }
 
