@@ -260,14 +260,17 @@ public class MainActivity extends ActionBarActivity {
             case R.id.action_test_show_save:
                 if (showRecorder != null ){
                     File saveFile = new File(showDir, "puppet_show_test.show");
-                    showRecorder.WriteShowToFile(saveFile);
+                    //showRecorder.WriteShowToFile(saveFile);
+                    showRecorder.WriteShowToZipFile(saveFile);
                 }
                 break;
             case R.id.action_test_show_load:
                 showRecorder = new PuppetShowRecorder(context, stage);
                 showRecorder.setHandler(mHandler);
                 File file = new File(showDir, "puppet_show_test.show");
-                showRecorder.LoadShow(file);
+                Log.d(LOG_TAG, "Show size: " + file.length());
+                //showRecorder.LoadShow(file);
+                showRecorder.LoadShowFromZipFile(file);
         }
 
         return super.onOptionsItemSelected(item);

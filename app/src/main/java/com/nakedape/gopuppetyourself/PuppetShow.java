@@ -121,4 +121,16 @@ public class PuppetShow implements Serializable {
             backgrounds.add(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
         }
     }
+    public byte[] getAsByteArray(){
+        ByteArrayOutputStream bos = null;
+        try {
+            bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            writeObject(oos);
+            oos.close();
+            bos.close();
+        } catch (IOException e)
+        {e.printStackTrace();}
+        return bos.toByteArray();
+    }
 }

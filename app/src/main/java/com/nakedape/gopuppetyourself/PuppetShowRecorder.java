@@ -10,15 +10,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.StreamCorruptedException;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Created by Nathan on 6/25/2015.
@@ -152,6 +159,28 @@ public class PuppetShowRecorder {
             e.printStackTrace();
         }
     }
+    public void WriteShowToZipFile(File saveFile){
+        OutputStream os;
+        ZipOutputStream zos;
+        try {
+            os = new FileOutputStream(saveFile);
+            zos = new ZipOutputStream(os);
+            byte[] bytes = puppetShow.getAsByteArray();
+            ZipEntry entry = new ZipEntry("puppet_show");
+            zos.putNextEntry(entry);
+            zos.write(bytes);
+            zos.closeEntry();
+            entry = new ZipEntry("audio");
+            zos.putNextEntry(entry);
+            BufferedInputStream is = new BufferedInputStream(new FileInputStream(audioFilePath));
+            bytes = new byte[1024 * 16];
+            while (is.read(bytes) != -1){
+                zos.write(bytes);
+            }
+            zos.closeEntry();
+            zos.close();
+        } catch (IOException e){e.printStackTrace();}
+    }
     public void LoadShow(File file){
         ObjectInputStream input;
         puppetShow = new PuppetShow(context);
@@ -162,6 +191,34 @@ public class PuppetShowRecorder {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+    public void LoadShowFromZipFile(File file){
+        try {
+            InputStream is = new FileInputStream(file);
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+            ObjectInputStream input;
+            FileOutputStream fos;
+            puppetShow = new PuppetShow(context);
+
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                String filename = ze.getName();
+                if (filename.equals("puppet_show")){
+                    input = new ObjectInputStream(zis);
+                    puppetShow.readObject(input);
+                } else if (filename.equals("audio")){
+                    fos = new FileOutputStream(audioFilePath);
+                    byte[] buffer = new byte[1024];
+                    int count;
+                    while ((count = zis.read(buffer)) != -1) {
+                        fos.write(buffer, 0, count);
+                    }
+                    fos.close();
+                }
+            }
+            zis.close();
+            is.close();
+        } catch (IOException | ClassNotFoundException e) {e.printStackTrace();}
     }
 
     public long getLength(){
