@@ -115,9 +115,6 @@ public class Puppet extends RelativeLayout implements Serializable {
         this.lowerPivotPoint = lowerPivotPoint;
     }
 
-    public ImageView getUpperJawView(){return upperJaw;}
-    public ImageView getLowerJawView(){return lowerJaw;}
-
     public int getOrientation() {
         return orientation;
     }
@@ -158,6 +155,11 @@ public class Puppet extends RelativeLayout implements Serializable {
     }
 
     // Public methods
+    // Movement methods
+    public void OpenMouth(int degrees){
+        upperJaw.setRotation(degrees * getPivotDirection());
+    }
+
     public void applyLayoutParams(){
         removeAllViews();
         int leftClipPadding = 0, rightClipPadding = 0;
@@ -238,6 +240,19 @@ public class Puppet extends RelativeLayout implements Serializable {
         return Bitmap.createBitmap(overlay, 0, 0, overlay.getWidth(), overlay.getHeight(), matrix, true);
     }
 
+    public byte[] getBytes(){
+        ByteArrayOutputStream bos = null;
+        try {
+            bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            writeObject(oos);
+            oos.close();
+            bos.close();
+        } catch (IOException e)
+        {e.printStackTrace();}
+        return bos.toByteArray();
+    }
+
     public void writeObject(ObjectOutputStream out) throws IOException {
         out.writeObject(name);
         out.writeInt(orientation);
@@ -260,6 +275,7 @@ public class Puppet extends RelativeLayout implements Serializable {
         byteLength = stream.toByteArray().length;
         out.writeInt(byteLength);
         out.write(stream.toByteArray());
+        Log.d(LOG_TAG, "Byte array size: " + stream.toByteArray().length);
 
     }
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{

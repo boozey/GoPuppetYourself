@@ -71,7 +71,7 @@ public class MainActivity extends ActionBarActivity {
     private static final String BACKGROUND_HEIGHT = "com.nakedape.gopuppetyourself.BACKGROUND_HEIGHT";
 
     private Context context;
-    private ViewGroup stage;
+    private RelativeLayout stage;
     private int dx;
     private int dy;
     private float prevX, prevY, x1Start, y1Start, x2Start, y2Start;
@@ -154,7 +154,7 @@ public class MainActivity extends ActionBarActivity {
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
 
         // Prepare show recorder
-        showRecorder = new PuppetShowRecorder(stage);
+        showRecorder = new PuppetShowRecorder(context, stage);
         showRecorder.setHandler(mHandler);
 
         // Prepare puppet storage directory for access
@@ -216,7 +216,7 @@ public class MainActivity extends ActionBarActivity {
         if (uriPath != null){
             int width = preferences.getInt(BACKGROUND_WIDTH, 600);
             int height = preferences.getInt(BACKGROUND_HEIGHT, 400);
-            setBackGround(Uri.parse(uriPath), (float)width, (float)height);
+            //setBackGround(Uri.parse(uriPath), (float)width, (float)height);
             Log.d(LOG_TAG, "background set, path: " + Uri.parse(uriPath));
         }
     }
@@ -324,11 +324,11 @@ public class MainActivity extends ActionBarActivity {
     private void moveMouth(Puppet puppet, float Y0, float Y1){
         double width = Math.abs(Y1 - Y0);
         if (width < 300) {
-            puppet.upperJaw.setRotation(15 * puppet.getPivotDirection());
+            puppet.OpenMouth(15);
             if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_NARROW);
         }
         else {
-            puppet.upperJaw.setRotation(30 * puppet.getPivotDirection());
+            puppet.OpenMouth(30);
             if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.OPEN_MOUTH_MED);
         }
     }
@@ -351,7 +351,7 @@ public class MainActivity extends ActionBarActivity {
         }
     };
     private boolean handleMainControlTouch(View view, MotionEvent motionEvent){
-        switch (motionEvent.getAction()){
+        switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 GoBackstage(view);
                 isControlPressed = true;
@@ -361,37 +361,46 @@ public class MainActivity extends ActionBarActivity {
                 secondControlsFadeIn();
                 return true;
             case MotionEvent.ACTION_UP:
-                GoToPerformance(view);
-                if (isPlaying){
+                if (isPlaying) {
                     StopPlay();
+                    secondControlsFadeOut();
+                    mainControlFadeOut();
+                    isControlPressed = false;
                     return true;
                 }
                 Rect hitRect = new Rect();
                 playButton.getGlobalVisibleRect(hitRect);
-                if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())) {
+                if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
                     Log.d(LOG_TAG, "Play button pressed");
                     secondControlsFadeOut();
                     PlayClick(view);
+                    GoToPerformance(view);
+                    mainControlFadeOut();
+                    isControlPressed = false;
+                    return true;
                 }
-                else {
-                    recordButton.getGlobalVisibleRect(hitRect);
-                    if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                        Log.d(LOG_TAG, "Record button pressed");
-                        secondControlsFadeOut();
-                        RecordClick(view);
-                    }
-                    else {
-                        libraryButton.getGlobalVisibleRect(hitRect);
-                        if (hitRect.contains((int)motionEvent.getRawX(), (int)motionEvent.getRawY())){
-                            Log.d(LOG_TAG, "Library button pressed");
-                            secondControlsFadeOut();
-                            ShowPuppetLibrary(view);
-                        }
-                        else {
-                            secondControlsFadeOut();
-                        }
-                    }
+
+                recordButton.getGlobalVisibleRect(hitRect);
+                if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
+                    Log.d(LOG_TAG, "Record button pressed");
+                    secondControlsFadeOut();
+                    GoToPerformance(view);
+                    RecordClick(view);
+                    mainControlFadeOut();
+                    isControlPressed = false;
+                    return true;
                 }
+
+                libraryButton.getGlobalVisibleRect(hitRect);
+                if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
+                    Log.d(LOG_TAG, "Library button pressed");
+                    secondControlsFadeOut();
+                    mainControlFadeOut();
+                    ShowPuppetLibrary(view);
+                    return true;
+                }
+                secondControlsFadeOut();
+                GoToPerformance(view);
                 mainControlFadeOut();
                 isControlPressed = false;
                 return true;
@@ -527,11 +536,14 @@ public class MainActivity extends ActionBarActivity {
     private void setViewGone(View v){
         v.setVisibility(View.GONE);
     }
+
+    // Record/play show methods
     public void RecordClick(View v){
         if (!isRecording) {
             if (showRecorder == null) {
-                showRecorder = new PuppetShowRecorder(stage);
+                showRecorder = new PuppetShowRecorder(context, stage);
             }
+            showRecorder.prepareToRecord();
             showRecorder.RecordStart();
             progressBar.setProgress(progressBar.getMax());
             Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
@@ -551,16 +563,22 @@ public class MainActivity extends ActionBarActivity {
     }
     public void PlayClick(View v){
         if (showRecorder != null){
-            showRecorder.RecordStop();
-            progressBar.setMax(showRecorder.getLength());
-            progressBar.setVisibility(View.VISIBLE);
-            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            progressBar.startAnimation(fadeIn);
-            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_pause));
-            mainControlButton.startAnimation(fadeIn);
-            showRecorder.Play();
-            isPlaying = true;
+            if (showRecorder.isRecording())
+                showRecorder.RecordStop();
+            if (showRecorder.prepareToPlay()) {
+                progressBar.setMax((int)showRecorder.getLength());
+                progressBar.setVisibility(View.VISIBLE);
+                Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+                progressBar.startAnimation(fadeIn);
+                fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+                mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_pause));
+                mainControlButton.startAnimation(fadeIn);
+                showRecorder.Play();
+                isPlaying = true;
+            } else {
+                isPlaying = false;
+                Toast.makeText(context, "Error playing show", Toast.LENGTH_SHORT).show();
+            }
         }
     }
     public void StopPlay(){
@@ -605,49 +623,49 @@ public class MainActivity extends ActionBarActivity {
                 set.start();
             }
         }
-    }
+    } // Called on main control action down
     public void GoToPerformance(View v){
         stage.setOnClickListener(null);
         if (puppetMenu != null) puppetMenu.dismiss();
         if (selectedPuppet != null) selectedPuppet.setBackground(null);
         isBackstage = false;
-        for (int i = 0; i < stage.getChildCount(); i++){
-            final Puppet p = (Puppet)stage.getChildAt(i);
-            if (p.isOnStage()) {
-                p.setOnClickListener(null);
-                p.setOnLongClickListener(null);
-                p.setOnTouchListener(headTouchListener);
+        if (!isPlaying) {
+            for (int i = 0; i < stage.getChildCount(); i++) {
+                final Puppet p = (Puppet) stage.getChildAt(i);
+                if (p.isOnStage()) {
+                    p.setOnClickListener(null);
+                    p.setOnLongClickListener(null);
+                    p.setOnTouchListener(headTouchListener);
+                } else {
+                    // Animate the disappearance
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animator) {
+                            p.setVisibility(View.GONE);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animator) {
+
+                        }
+                    });
+                    set.setTarget(p);
+                    set.start();
+                }
             }
-            else {
-                // Animate the disappearance
-                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        p.setVisibility(View.GONE);
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
-
-                    }
-                });
-                set.setTarget(p);
-                set.start();
-            }
-
         }
-    }
+    } // Called on main control action up
 
     private View.OnTouchListener backstageListener = new View.OnTouchListener() {
         @Override
@@ -964,6 +982,7 @@ public class MainActivity extends ActionBarActivity {
         // Drag listener to receive puppets dropped on the stage
         stage.setOnDragListener(new StagePuppetDragEventListener());
 
+        Log.d(LOG_TAG, "Puppets on stage = " + stage.getChildCount());
         // Touch listeners to start drag events for puppets on stage
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(new View.OnTouchListener() {
@@ -977,6 +996,7 @@ public class MainActivity extends ActionBarActivity {
                     return true;
                 }
             });
+            Log.d(LOG_TAG, "Drag touch listener added");
         }
 
         // Touch listener to close popup window when the stage is touched
@@ -1127,6 +1147,7 @@ public class MainActivity extends ActionBarActivity {
                     });
                     p.setTag(p.getName());
                     p.setPath(path);
+                    p.setOnStage(true);
                     RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(p.getTotalWidth(), p.getTotalHeight());
                     params.setMargins((int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2, -250, -250);
                     p.setLayoutParams(params);
