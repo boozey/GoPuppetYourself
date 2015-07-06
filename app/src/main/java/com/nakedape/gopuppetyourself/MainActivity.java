@@ -1,5 +1,8 @@
 package com.nakedape.gopuppetyourself;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.app.FragmentManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
@@ -594,7 +597,13 @@ public class MainActivity extends ActionBarActivity {
         savedData.isBackstage = isBackstage;
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(backstageListener);
-            stage.getChildAt(i).setVisibility(View.VISIBLE);
+            if (stage.getChildAt(i).getVisibility() == View.GONE) {
+                // Animate the appearance// Start the animation and add the popup
+                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
+                set.setTarget(stage.getChildAt(i));
+                stage.getChildAt(i).setVisibility(View.VISIBLE);
+                set.start();
+            }
         }
     }
     public void GoToPerformance(View v){
@@ -602,16 +611,39 @@ public class MainActivity extends ActionBarActivity {
         if (puppetMenu != null) puppetMenu.dismiss();
         if (selectedPuppet != null) selectedPuppet.setBackground(null);
         isBackstage = false;
-        Puppet p;
         for (int i = 0; i < stage.getChildCount(); i++){
-            p = (Puppet)stage.getChildAt(i);
+            final Puppet p = (Puppet)stage.getChildAt(i);
             if (p.isOnStage()) {
                 p.setOnClickListener(null);
                 p.setOnLongClickListener(null);
                 p.setOnTouchListener(headTouchListener);
             }
             else {
-                p.setVisibility(View.GONE);
+                // Animate the disappearance
+                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        p.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animator) {
+
+                    }
+                });
+                set.setTarget(p);
+                set.start();
             }
 
         }
@@ -808,12 +840,36 @@ public class MainActivity extends ActionBarActivity {
         }
         return false;
     }
-    private void RemovePuppetFromStage(Puppet p){
-        stage.removeView(p);
+    private void RemovePuppetFromStage(final Puppet p){
         puppetsOnStage.remove(p.getPath());
         SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
         prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
         prefEditor.apply();
+        // Animate the puppet being removed
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                stage.removeView(p);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.setTarget(p);
+        set.start();
     }
     public void EditPuppet(Puppet p){
         Intent intent = new Intent(this, DesignerActivity.class);
@@ -904,9 +960,6 @@ public class MainActivity extends ActionBarActivity {
                 return true;
             }
         });
-        Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        layout.startAnimation(fadeIn);
-        rootLayout.addView(layout);
 
         // Drag listener to receive puppets dropped on the stage
         stage.setOnDragListener(new StagePuppetDragEventListener());
@@ -978,14 +1031,43 @@ public class MainActivity extends ActionBarActivity {
         };
         new Thread(loadPuppetsThread).start();
 
+        // Start the animation and add the popup
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+        rootLayout.addView(layout);
+        set.setTarget(layout);
+        set.start();
+
     }
     private void ClosePuppetLibrary(){
-        View layout = findViewById(R.id.puppet_library_popup);
-        rootLayout.removeView(layout);
+        final View layout = findViewById(R.id.puppet_library_popup);
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(headTouchListener);
         }
         stage.setOnTouchListener(null);
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+        set.setTarget(layout);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                rootLayout.removeView(layout);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.start();
     }
     public void StartLibraryDrag(View v, String path){
         // Prevent library from receiving the drop
@@ -1049,6 +1131,9 @@ public class MainActivity extends ActionBarActivity {
                     params.setMargins((int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2, -250, -250);
                     p.setLayoutParams(params);
                     stage.addView(p);
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+                    set.setTarget(p);
+                    set.start();
                     puppetsOnStage.add(path);
                     SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
                     prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
@@ -1092,6 +1177,9 @@ public class MainActivity extends ActionBarActivity {
                     image.setTag(p.getName());
                     ViewFlipper flipper = (ViewFlipper)findViewById(R.id.puppet_flipper);
                     flipper.addView(image);
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+                    set.setTarget(image);
+                    set.start();
                     flipper.setDisplayedChild(flipper.getChildCount() - 1);
                     TextView nameView = (TextView)findViewById(R.id.puppet_name_textview);
                     nameView.setText(p.getName());

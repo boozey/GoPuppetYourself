@@ -1,5 +1,8 @@
 package com.nakedape.gopuppetyourself;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -188,24 +191,42 @@ public class DesignerActivity extends ActionBarActivity {
                 Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
                 cameraButton.setVisibility(View.GONE);
             }
-            //Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_pop_in);
-            //if (rootLayout.getWidth() == 0)
-            //    fadeIn.setStartOffset(300);
-            layout.setAlpha(0f);
-            layout.setScaleX(0.5f);
-            layout.setScaleY(0.5f);
+
+            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+            if (rootLayout.getWidth() == 0)
+                set.setStartDelay(200);
             rootLayout.addView(layout);
-            layout.animate().alpha(1f)
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(200);
-            //layout.startAnimation(fadeIn);
+            set.setTarget(layout);
+            set.start();
         }
 
     }
     public void CloseGetNewImagePopup(View v){
-        View layout = findViewById(R.id.new_image_popup);
-        rootLayout.removeView(layout);
+        final View layout = findViewById(R.id.new_image_popup);
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+        set.setTarget(layout);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                rootLayout.removeView(layout);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.start();
     }
     public void NewGalleryImageClick(View v){
         launchGetPicIntent();
