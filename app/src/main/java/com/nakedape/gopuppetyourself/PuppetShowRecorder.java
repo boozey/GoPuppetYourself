@@ -10,7 +10,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 
 /**
@@ -128,6 +135,35 @@ public class PuppetShowRecorder {
             Log.d(LOG_TAG, "Recording stopped. Length: " + showLength);
         }
     } // Stop recording
+
+    public void WriteShowToFile(File saveFile){
+        ObjectOutputStream out = null;
+        if (saveFile.isFile()) saveFile.delete();
+
+        try {
+            saveFile.createNewFile();
+            if (saveFile.canWrite()) {
+                out = new ObjectOutputStream(new FileOutputStream(saveFile));
+                puppetShow.writeObject(out);
+                out.close();
+                Log.d(LOG_TAG, "File written");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void LoadShow(File file){
+        ObjectInputStream input;
+        puppetShow = new PuppetShow(context);
+        try {
+            input = new ObjectInputStream(new FileInputStream(file));
+            puppetShow.readObject(input);
+            input.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     public long getLength(){
         showLength = -1;
         int i = 0;

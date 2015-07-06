@@ -17,6 +17,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -78,7 +79,7 @@ public class MainActivity extends ActionBarActivity {
     private Puppet selectedPuppet;
     private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
-    private File storageDir;
+    private File storageDir, showDir;
     private HashSet<String> puppetsOnStage;
     private PuppetShowRecorder showRecorder;
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
@@ -162,12 +163,18 @@ public class MainActivity extends ActionBarActivity {
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
             if (!storageDir.exists())
                 if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating external files directory");
+            showDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "puppet shows");
+            if (!showDir.exists())
+                if (!showDir.mkdir()) Log.e(LOG_TAG, "error creating puppet show directory");
             Log.d(LOG_TAG, "Using external files directory");
         }
         else {
             storageDir = new File(getFilesDir(), getResources().getString(R.string.puppet_directory));
             if (!storageDir.exists())
                 if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating internal files directory");
+            showDir = new File(getFilesDir(), "puppet shows");
+            if (!showDir.exists())
+                if (!showDir.mkdir()) Log.e(LOG_TAG, "error creating puppet show directory");
             Log.d(LOG_TAG, "Using internal files directory");
         }
 
@@ -249,9 +256,18 @@ public class MainActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id){
+            case R.id.action_test_show_save:
+                if (showRecorder != null ){
+                    File saveFile = new File(showDir, "puppet_show_test.show");
+                    showRecorder.WriteShowToFile(saveFile);
+                }
+                break;
+            case R.id.action_test_show_load:
+                showRecorder = new PuppetShowRecorder(context, stage);
+                showRecorder.setHandler(mHandler);
+                File file = new File(showDir, "puppet_show_test.show");
+                showRecorder.LoadShow(file);
         }
 
         return super.onOptionsItemSelected(item);
