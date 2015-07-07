@@ -89,7 +89,7 @@ public class PuppetDesigner extends View {
     private int selectionId = 0;
     private float prevX = -1, prevY = -1;
     private boolean isCutPath = false, showUpperJawBox = false, showLowerJawBox = false,
-            pivotsSnapped = true, isDrawMode = false, isEraseMode = false;
+            pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isSaved = true;
 
 
     private int orientation = Puppet.PROFILE_RIGHT;
@@ -164,6 +164,9 @@ public class PuppetDesigner extends View {
     }
     public void setMode(String mode){
         designerMode = mode;
+    }
+    public boolean isSaved(){
+        return isSaved;
     }
 
     public int getOrientation() {
@@ -252,6 +255,7 @@ public class PuppetDesigner extends View {
                     }
                 }
             }
+            isSaved = false;
             invalidate();
 
         }
@@ -302,6 +306,7 @@ public class PuppetDesigner extends View {
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
+                isSaved = false;
                 cutPath.lineTo(x, y);
                 cutPathPoints.add(new Point((int) x, (int) y));
                 cutPath.lineTo(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
@@ -633,6 +638,7 @@ public class PuppetDesigner extends View {
         }
     }
     private void magicErase(int x, int y) {
+        isSaved = false;
         x = Math.min(x, backgroundBitmap.getWidth() - 1);
         x = Math.max(0, x);
         y = Math.min(y, backgroundBitmap.getHeight() - 1);
@@ -957,9 +963,12 @@ public class PuppetDesigner extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 addDrawUndo();
+                isSaved = false;
                 prevX = x;
                 prevY = y;
                 drawPath.moveTo(x, y);
+                drawPath.lineTo(x + 1, y + 1);
+                drawCanvas.drawPath(drawPath, drawPaint);
                 invalidate();
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -1030,6 +1039,8 @@ public class PuppetDesigner extends View {
                 prevY = y;
                 addBackgroundUndo();
                 drawPath.moveTo(x, y);
+                drawPath.lineTo(x + 1, y + 1);
+                backgroundCanvas.drawPath(drawPath, drawPaint);
                 invalidate();
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -1193,8 +1204,10 @@ public class PuppetDesigner extends View {
                     prevX = x;
                     prevY = y;
                     setSelectionId(x, y);
-                } else
-                    moveSelection((int)prevX, (int)prevY, (int)event.getX(), (int)event.getY());
+                } else {
+                    isSaved = false;
+                    moveSelection((int) prevX, (int) prevY, (int) event.getX(), (int) event.getY());
+                }
                 return true;
             case MotionEvent.ACTION_UP:
                 checkForSnap();
@@ -1219,7 +1232,7 @@ public class PuppetDesigner extends View {
     }
     private void setSelectionId(float x, float y){
         if (upperJawBox.contains((int) x, (int) y)) {
-            selectionId = UPPER_JAW;
+            //selectionId = UPPER_JAW;
             if (Math.abs(y - upperJawBox.top) < edgeThresh) selectionId = UPPER_JAW_TOP;
             if (Math.abs(y - upperJawBox.bottom) < edgeThresh) selectionId = UPPER_JAW_BOTTOM;
             if (Math.abs(x - upperJawBox.left) < edgeThresh) selectionId = UPPER_JAW_LEFT;
@@ -1228,14 +1241,14 @@ public class PuppetDesigner extends View {
         if (Math.abs(x - upperJawPivotPoint.x) < pointThresh && Math.abs(y - upperJawPivotPoint.y) < pointThresh)
             selectionId = UPPER_JAW_PIVOT;
         if (lowerJawBox.contains((int) x, (int) y)) {
-            selectionId = LOWER_JAW;
+            //selectionId = LOWER_JAW;
             if (Math.abs(y - lowerJawBox.top) < edgeThresh) selectionId = LOWER_JAW_TOP;
             if (Math.abs(y - lowerJawBox.bottom) < edgeThresh) selectionId = LOWER_JAW_BOTTOM;
             if (Math.abs(x - lowerJawBox.left) < edgeThresh) selectionId = LOWER_JAW_LEFT;
             if (Math.abs(x - lowerJawBox.right) < edgeThresh) selectionId = LOWER_JAW_RIGHT;
         }
-        if (Math.abs(x - lowerJawPivotPoint.x) < pointThresh && Math.abs(y - lowerJawPivotPoint.y) < pointThresh)
-            selectionId = LOWER_JAW_PIVOT;
+        //if (Math.abs(x - lowerJawPivotPoint.x) < pointThresh && Math.abs(y - lowerJawPivotPoint.y) < pointThresh)
+          //  selectionId = LOWER_JAW_PIVOT;
     }
     private void moveSelection(int x1, int y1, int x2, int y2){
         int dx = x2 - x1, dy = y2 - y1;

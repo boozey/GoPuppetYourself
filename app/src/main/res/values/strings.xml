@@ -33,4 +33,6 @@
     <string name="puppet_name_hint">Name this puppet</string>
     <string name="get_new_image_popup_title">Get new image</string>
     <string name="action_new_image">New background</string>
+    <string name="alert_dialog_title_unsaved">Wait a minute&#8230;</string>
+    <string name="alert_dialog_message_unsaved">Do you want to save your changes?</string>
 </resources>

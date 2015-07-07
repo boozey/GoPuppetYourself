@@ -173,7 +173,27 @@ public class DesignerActivity extends Activity {
                 if (v != null) {
                     CloseGetNewImagePopup(null);
                     return true;
-                } else {
+                } else if (!designer.isSaved()){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setMessage(R.string.alert_dialog_message_unsaved);
+                    builder.setTitle(R.string.alert_dialog_title_unsaved);
+                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                            finish();
+                        }
+                    });
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Save(null);
+                        }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
+                else {
                     return super.onKeyDown(keycode, e);
                 }
             default:
