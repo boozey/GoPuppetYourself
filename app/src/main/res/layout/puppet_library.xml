@@ -5,7 +5,7 @@
     android:background="@drawable/puppet_library_background"
     android:id="@+id/puppet_library_popup"    >
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content">
         <TextView
             android:layout_width="0dp"
@@ -22,34 +22,14 @@
             android:layout_gravity="center_vertical"
             android:background="@drawable/ic_action_navigation_close"/>
     </LinearLayout>
-<LinearLayout
+<ListView
+    android:id="@+id/puppet_list_view"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:layout_gravity="center">
-    <LinearLayout
-        android:id="@+id/puppet_flipper_left"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:visibility="visible"/>
-    <ViewFlipper
-        android:id="@+id/puppet_flipper"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="3"
-        android:orientation="horizontal">
-
-    </ViewFlipper>
-    <LinearLayout
-        android:id="@+id/puppet_flipper_right"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:visibility="visible"/>
-</LinearLayout>
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:layout_gravity="top">
+</ListView>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
