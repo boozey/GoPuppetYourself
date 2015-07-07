@@ -988,6 +988,8 @@ public class MainActivity extends Activity {
                     ClosePuppetLibrary();
                 }
             });
+            ImageButton trashButton = (ImageButton) layout.findViewById(R.id.puppet_trash);
+            trashButton.setOnDragListener(new TrashDropListener());
 
             // Setup size and posistion of popup window
             int width = Math.min(250, rootLayout.getWidth());
@@ -1292,6 +1294,42 @@ public class MainActivity extends Activity {
             }
         }
     }
+    protected class TrashDropListener implements View.OnDragListener{
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    ClipData.Item item = event.getClipData().getItemAt(0);
+                    String data = item.getText().toString();
+                    if (event.getClipData().getItemCount() == 1){
+                        int index = Integer.parseInt(data);
+                        Puppet p = (Puppet)stage.getChildAt(index);
+                        File file = new File(getPathFromName(p.getName()));
+                        if (file.isFile())
+                            if (!file.delete()) Log.e(LOG_TAG, "error deleting file");
+                        stage.removeView(p);
+                    } else {
+                        // Remove puppet from library
+                        item = event.getClipData().getItemAt(1);
+                        int index = Integer.parseInt(item.getText().toString());
+                        puppetListAdapter.removeItem(index);
+                        File file = new File(data);
+                        if (file.isFile())
+                            if (!file.delete()) Log.e(LOG_TAG, "error deleting file");
+                    }
+                    return true;
+                default:
+                    return false;
+            }
+        }
+    }
     private void addPuppetToStage(Puppet p){
         p.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -1342,6 +1380,7 @@ public class MainActivity extends Activity {
         Puppet puppet = new Puppet(context, null);
         Utils.ReadPuppetFromFile(puppet, new File(filePath));
         puppet.setOnTouchListener(backstageListener);
+        puppet.setTag(puppet.getName());
         puppetsOnStage.add(puppet.getPath());
         SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
         prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
