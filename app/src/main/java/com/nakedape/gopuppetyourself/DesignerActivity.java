@@ -121,6 +121,13 @@ public class DesignerActivity extends ActionBarActivity {
             ShowGetNewImagePopup();
         }
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing()){ // Release resources used by puppet designer
+            designer.release();
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

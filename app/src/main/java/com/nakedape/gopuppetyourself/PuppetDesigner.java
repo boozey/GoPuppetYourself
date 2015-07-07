@@ -151,6 +151,13 @@ public class PuppetDesigner extends View {
         drawUndoStack = new ArrayList<>();
         undoStack = new ArrayList<>();
     }
+    public void release(){
+        viewBitmap = null;
+        backgroundOriginal = null;
+        backgroundBitmap = null;
+        backgroundUndoStack = null;
+        drawUndoStack = null;
+    }
 
     public String getMode(){
         return designerMode;
