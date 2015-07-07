@@ -496,9 +496,10 @@ public class PuppetDesigner extends View {
         Point rightPoint = new Point(x, y);
         // Determine when color changes from the left
         double m = -1 / tanSlope; // Perpendicular slope
-        int rN = -r; // start at the left
+        int rN = 0; // start at the middle
         int stopValue = r/2   ; // stop at the right
         int currentX, currentY;
+        int leftWeight = 1, rightWeight = 1;
         int a, b;
         do {
             a = (int)Math.round(((double) rN) / Math.sqrt(m * m + 1));
@@ -509,16 +510,20 @@ public class PuppetDesigner extends View {
             currentY = y - b;
             if (currentY < 0) currentY = 0;
             else if(currentY >= backgroundBitmap.getHeight()) currentY = backgroundBitmap.getHeight() - 1;
-            rN++; // move to the right
+            rN++; // move out
             //backgroundBitmap.setPixel(currentX, currentY, Color.GREEN);
         } while (areColorsSimilar(leftAvg, backgroundBitmap.getPixel(currentX, currentY), leftColorThreshold) && rN < stopValue);
-        if (m < 0)
+        if (m < 0) {
             leftPoint = new Point(x - a, y - b);
-        else
+            leftWeight = stopValue - rN;
+        }
+        else {
             rightPoint = new Point(x - a, y - b);
+            rightWeight = stopValue - rN;
+        }
         Log.d(LOG_TAG, "Left loop rN = " + rN);
         // Determine when color changes from the right
-        rN = r/2; // start at the right
+        rN = 0; // start at the middle
         stopValue = -r;
         do {
             a = (int)Math.round(((double) rN) / Math.sqrt(m * m + 1));
@@ -532,13 +537,19 @@ public class PuppetDesigner extends View {
             //backgroundBitmap.setPixel(currentX, currentY, Color.YELLOW);
             rN--;
         } while (areColorsSimilar(rightAvg, backgroundBitmap.getPixel(currentX, currentY), rightColorThreshold) && rN > stopValue);
-        if (m < 0)
+        if (m < 0) {
             leftPoint = new Point(x + a, y + b);
-        else
+            leftWeight = Math.abs(stopValue - rN);
+        }
+        else {
             rightPoint = new Point(x + a, y + b);
+            rightWeight = Math.abs(stopValue - rN);
+        }
         Log.d(LOG_TAG, "Right loop rN = " + rN);
-        // Return midpoint of left and right
-        return new Point((leftPoint.x + rightPoint.x) / 2, (leftPoint.y + rightPoint.y) / 2);
+        // Return weigthed average
+        int newX = (leftWeight * leftPoint.x + x + rightWeight * rightPoint.x) / (leftWeight + 1 + rightWeight);
+        int newY = (leftWeight * leftPoint.y + y + rightWeight * rightPoint.y) / (leftWeight + 1 + rightWeight);
+        return new Point(newX, newY);
     }
     private Point determineCutPointVert(int x, int y, int strokeWidth){
         int r = strokeWidth / 2;
