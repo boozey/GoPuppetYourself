@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
@@ -61,7 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 
     private static String LOG_TAG = "GoPuppetYourself";
 
@@ -122,7 +123,7 @@ public class MainActivity extends ActionBarActivity {
     private SeekBar progressBar;
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
-    private ImageButton mainControlButton, recordButton, playButton, libraryButton;
+    private ImageButton mainControlButton, recordButton, playButton, libraryButton, backgroundLibraryButton, menuButton;
     private PopupMenu puppetMenu;
     private RelativeLayout rootLayout;
     private boolean isControlPressed = false;
@@ -159,6 +160,9 @@ public class MainActivity extends ActionBarActivity {
         playButton.setVisibility(View.GONE);
         libraryButton = (ImageButton)findViewById(R.id.puppet_library_button);
         libraryButton.setVisibility(View.GONE);
+        backgroundLibraryButton = (ImageButton)findViewById(R.id.background_library_button);
+        backgroundLibraryButton.setVisibility(View.GONE);
+        menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
 
         // Prepare show recorder
@@ -311,6 +315,19 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    // Main menu methods
+    public void MenuClick(View v){
+        PopupMenu menu = new PopupMenu(context, menuButton);
+        menu.inflate(R.menu.menu_main);
+        menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                return false;
+            }
+        });
+        menu.show();
+    }
+
     // Performance Methods
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
@@ -449,6 +466,10 @@ public class MainActivity extends ActionBarActivity {
             fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
             libraryButton.startAnimation(fadeIn);
 
+            backgroundLibraryButton.setVisibility(View.VISIBLE);
+            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            backgroundLibraryButton.startAnimation(fadeIn);
+
             isSecondControlShowing = true;
         }
     }
@@ -512,6 +533,26 @@ public class MainActivity extends ActionBarActivity {
             }
         });
         libraryButton.startAnimation(fadeOut);
+
+        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+        fadeOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                backgroundLibraryButton.setVisibility(View.GONE);
+                isSecondControlShowing = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        backgroundLibraryButton.startAnimation(fadeOut);
     }
     private void mainControlFadeIn(){
         Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
@@ -597,7 +638,7 @@ public class MainActivity extends ActionBarActivity {
                 Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
                 progressBar.startAnimation(fadeIn);
                 fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-                mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_pause));
+                mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
                 mainControlButton.startAnimation(fadeIn);
                 showRecorder.Play();
                 isPlaying = true;
@@ -843,7 +884,7 @@ public class MainActivity extends ActionBarActivity {
         return scaleFactor;
     }
 
-    // Popup menu methods
+    // Puppet popup menu methods
     private PopupMenu.OnMenuItemClickListener popupMenuListener = new PopupMenu.OnMenuItemClickListener() {
         @Override
         public boolean onMenuItemClick(MenuItem menuItem) {

@@ -13,8 +13,16 @@
         android:background="@color/dark_grey">
 
     </RelativeLayout>
+    <!-- Menu -->
+    <ImageButton
+        android:id="@+id/main_nav_menu_button"
+        android:alpha="0.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_navigation_menu"
+        android:onClick="MenuClick"/>
 
-
+    <!-- Control buttons -->
     <ImageButton
         android:id="@+id/bottom_left_button"
         android:layout_width="100dp"
@@ -27,20 +35,22 @@
         android:background="@drawable/control_button_background"/>
     <ImageButton
         android:id="@+id/record_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:alpha="0.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="20dp"
         android:layout_above="@id/bottom_left_button"
         android:background="@drawable/ic_action_rec"
         android:onClick="RecordClick"/>
 
     <ImageButton
         android:id="@+id/play_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="12dp"
+        android:alpha="0.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:layout_marginLeft="6dp"
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/record_button"
         android:background="@drawable/ic_action_av_play_arrow"
@@ -48,13 +58,27 @@
 
     <ImageButton
         android:id="@+id/puppet_library_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:alpha="0.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginBottom="-20dp"
-        android:layout_marginLeft="16dp"
+        android:layout_marginLeft="22dp"
         android:layout_above="@id/bottom_left_button"
         android:layout_toRightOf="@id/bottom_left_button"
         android:background="@drawable/ic_action_av_recent_actors"
+        android:onClick="ShowPuppetLibrary"/>
+
+    <ImageButton
+        android:id="@+id/background_library_button"
+        android:alpha="0.5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="-32dp"
+        android:layout_marginLeft="34dp"
+        android:layout_below="@id/puppet_library_button"
+        android:layout_toRightOf="@id/bottom_left_button"
+        android:background="@drawable/ic_image_photo_library"
         android:onClick="ShowPuppetLibrary"/>
 
     <SeekBar
@@ -67,59 +91,4 @@
         android:layout_marginRight="15dp"
         android:layout_alignParentBottom="true"
         android:id="@+id/progress_bar"/>
-    <!-- Backstage button bar -->
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/backstage_button_bar"
-        android:visibility="gone">
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="?android:buttonBarButtonStyle"
-            android:text="Frontstage"
-            android:onClick="GoToPerformance"/>
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/edit_button"
-            style="?android:buttonBarButtonStyle"
-            android:text="New Puppet"
-            android:onClick="NewButtonClick"/>
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Set Background"
-            android:background="@drawable/ic_action_set_background"
-            android:onClick="BackGroundButtonClick"/>
-    </LinearLayout>
-    <!-- Frontstage button bar -->
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/perform_button_bar"
-        android:visibility="gone">
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/record"
-            style="?android:buttonBarButtonStyle"
-            android:text="Record"
-            android:onClick="RecordClick"/>
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/play"
-            android:text="Play"
-            android:background="@drawable/ic_action_av_play_arrow"
-            android:onClick="PlayClick"/>
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="Backstage"
-            android:background="@drawable/ic_action_av_recent_actors"
-            android:onClick="GoBackstage"/>
-    </LinearLayout>
 </RelativeLayout>

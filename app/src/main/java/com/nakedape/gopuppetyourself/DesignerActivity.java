@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -43,7 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
-public class DesignerActivity extends ActionBarActivity {
+public class DesignerActivity extends Activity {
 
     private static final String LOG_TAG = "DesignerActivity";
     private static final int REQUEST_IMAGE_GET = 4001;
@@ -700,6 +701,7 @@ public class DesignerActivity extends ActionBarActivity {
         if (buttonBarFinal != null) buttonBarFinal.startAnimation(scaleDownLeft);
     }
     public void BackgroundBarDoneClick(View v){
+        UnselectCutPathButton();
         final View backgroundBar = findViewById(R.id.background_button_bar);
         if (backgroundBar.getVisibility() != View.GONE) {
             final View navButton = findViewById(R.id.nav_button);
@@ -740,6 +742,7 @@ public class DesignerActivity extends ActionBarActivity {
         }
     }
     public void EraseBackGroundClick(View v){
+        UnselectCutPathButton();
         // Hide background bar and show background erase bar
         final View buttonBar = backgroundButtonBar;
         final View navButton = findViewById(R.id.nav_button);
@@ -816,6 +819,7 @@ public class DesignerActivity extends ActionBarActivity {
 
     }
     public void MagicEraseBGClick(View v){
+        UnselectCutPathButton();
         // Hide background bar and show background erase bar
         final View buttonBar = findViewById(R.id.background_button_bar);
         final View navButton = findViewById(R.id.nav_button);
@@ -889,6 +893,7 @@ public class DesignerActivity extends ActionBarActivity {
         }
     }
     public void HealClick(View v){
+        UnselectCutPathButton();
         // Hide background bar and show background erase bar
         final View buttonBar = backgroundButtonBar;
         final View navButton = findViewById(R.id.nav_button);
@@ -964,6 +969,10 @@ public class DesignerActivity extends ActionBarActivity {
         Animation spinOut = AnimationUtils.loadAnimation(context, R.anim.anim_fade_out_spin);
         navButton.startAnimation(spinOut);
         buttonBar.startAnimation(scaleDownLeft);
+    }
+    private void UnselectCutPathButton(){
+        View v = findViewById(R.id.cut_path_button);
+        v.setBackground(getResources().getDrawable(R.drawable.ic_action_cut));
     }
 
     // Portrait adjustment methods
