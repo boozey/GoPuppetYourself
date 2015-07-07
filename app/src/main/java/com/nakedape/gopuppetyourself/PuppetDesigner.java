@@ -293,44 +293,48 @@ public class PuppetDesigner extends View {
         cutPathPaint.setStrokeCap(Paint.Cap.ROUND);
     }
     private boolean handleCutPathTouch(MotionEvent event){
-        float x = event.getX(), y = event.getY();
-        switch (event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                startCutPathFlow();
-                cutPath.moveTo(x, y);
-                cutPathPoints.add(new Point((int)x, (int)y));
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                cutPath.lineTo(x, y);
-                cutPathPoints.add(new Point((int) x, (int) y));
-                invalidate();
-                return true;
-            case MotionEvent.ACTION_UP:
-                isSaved = false;
-                cutPath.lineTo(x, y);
-                cutPathPoints.add(new Point((int) x, (int) y));
-                cutPath.lineTo(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
-                cutPath.setLastPoint(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
-                invalidate();
-                addBackgroundUndo();
-                Log.d(LOG_TAG, "Number of cut path points = " + cutPathPoints.size());
-                determineCutPath((int) cutPathPaint.getStrokeWidth());
-                cutPathPaint.setColor(Color.TRANSPARENT);
-                cutPathPaint.setStrokeWidth(1);
-                cutPathPaint.setStyle(Paint.Style.FILL);
-                cutPathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                cutPath.toggleInverseFillType();
-                backgroundCanvas.drawPath(cutPath, cutPathPaint);
-                cutPathPaint.setMaskFilter(new BlurMaskFilter(3, BlurMaskFilter.Blur.NORMAL));
-                cutPathPaint.setStrokeWidth(5);
-                cutPathPaint.setStyle(Paint.Style.STROKE);
-                cutPath.toggleInverseFillType();
-                backgroundCanvas.drawPath(cutPath, cutPathPaint);
-                cutPath.reset();
-                invalidate();  // End cut path flow
-                return true;
-            default:
-                return true;
+        if (backgroundBitmap != null) {
+            float x = event.getX(), y = event.getY();
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startCutPathFlow();
+                    cutPath.moveTo(x, y);
+                    cutPathPoints.add(new Point((int) x, (int) y));
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    cutPath.lineTo(x, y);
+                    cutPathPoints.add(new Point((int) x, (int) y));
+                    invalidate();
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    isSaved = false;
+                    cutPath.lineTo(x, y);
+                    cutPathPoints.add(new Point((int) x, (int) y));
+                    cutPath.lineTo(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
+                    cutPath.setLastPoint(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
+                    invalidate();
+                    addBackgroundUndo();
+                    Log.d(LOG_TAG, "Number of cut path points = " + cutPathPoints.size());
+                    determineCutPath((int) cutPathPaint.getStrokeWidth());
+                    cutPathPaint.setColor(Color.TRANSPARENT);
+                    cutPathPaint.setStrokeWidth(1);
+                    cutPathPaint.setStyle(Paint.Style.FILL);
+                    cutPathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                    cutPath.toggleInverseFillType();
+                    backgroundCanvas.drawPath(cutPath, cutPathPaint);
+                    cutPathPaint.setMaskFilter(new BlurMaskFilter(3, BlurMaskFilter.Blur.NORMAL));
+                    cutPathPaint.setStrokeWidth(5);
+                    cutPathPaint.setStyle(Paint.Style.STROKE);
+                    cutPath.toggleInverseFillType();
+                    backgroundCanvas.drawPath(cutPath, cutPathPaint);
+                    cutPath.reset();
+                    invalidate();  // End cut path flow
+                    return true;
+                default:
+                    return true;
+            }
+        } else {
+            return false;
         }
     }
     public void cancelCutPathMode(){
@@ -625,16 +629,20 @@ public class PuppetDesigner extends View {
         designerMode = MODE_MAGIC_ERASE;
     }
     private boolean handleMagicEraseTouch(MotionEvent event){
-        switch (event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                addBackgroundUndo();
-                magicErase((int)event.getX(), (int)event.getY());
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                magicErase((int)event.getX(),(int)event.getY());
-                return true;
-            default:
-                return false;
+        if (backgroundBitmap != null) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    addBackgroundUndo();
+                    magicErase((int) event.getX(), (int) event.getY());
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    magicErase((int) event.getX(), (int) event.getY());
+                    return true;
+                default:
+                    return false;
+            }
+        } else {
+            return false;
         }
     }
     private void magicErase(int x, int y) {
