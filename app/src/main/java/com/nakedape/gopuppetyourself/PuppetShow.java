@@ -42,6 +42,7 @@ public class PuppetShow implements Serializable {
     }
     public PuppetShow(RelativeLayout stage){
         this.stage = stage;
+        context = stage.getContext();
         puppets = new ArrayList<>();
         backgrounds = new ArrayList<>();
         frameSequence = new ArrayList<>();
