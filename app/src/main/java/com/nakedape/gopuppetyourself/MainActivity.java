@@ -660,6 +660,7 @@ public class MainActivity extends Activity {
         }
         else {
             showRecorder.RecordStop();
+            showRecorder.FinalizeRecording();
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
             recordButton.setBackground(getResources().getDrawable(R.drawable.ic_action_rec));
             mainControlFadeOut();
@@ -1064,6 +1065,8 @@ public class MainActivity extends Activity {
     private void setBackground(String path){
         Bitmap bitmap = BitmapFactory.decodeFile(path);
         if (bitmap != null) {
+            if (isRecording)
+                showRecorder.RecordFrame(showRecorder.getBackgroundFrame(path));
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
 
             // Save so that background will persist

@@ -1,6 +1,8 @@
 package com.nakedape.gopuppetyourself;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -9,6 +11,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
+
+import com.Utils;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,6 +53,7 @@ public class PuppetShowRecorder {
     private MediaPlayer mPlayer;
     private int width, height;
     private PuppetShow puppetShow;
+    private ArrayList<String> bitmapPaths;
 
     public PuppetShowRecorder(Context context, RelativeLayout stage){
         this.context = context;
@@ -59,10 +64,15 @@ public class PuppetShowRecorder {
     public void setHandler(Handler handler){
         mHandler = handler;
     }
+    public void setStage(RelativeLayout stage){
+        this.stage = stage;
+    }
 
     // Recording flow
     public void prepareToRecord(){
         puppetShow = new PuppetShow(stage);
+        bitmapPaths = new ArrayList<>();
+        bitmapPaths.add("empty");
         width = stage.getWidth();
         height = stage.getHeight();
         isReady = true;
@@ -125,6 +135,11 @@ public class PuppetShowRecorder {
     public KeyFrame getVisiblilityFrame(String puppetId, boolean visible){
         return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.VISIBILITY, visible);
     }
+    public KeyFrame getBackgroundFrame(String bitmapPath){
+        bitmapPaths.add(bitmapPath);
+        Log.d(LOG_TAG, "background set recorded");
+        return new KeyFrame(getTimeFromStartMillis(), KeyFrame.SET_BACKGROUND, bitmapPaths.size() - 1);
+    }
     public void RecordStop(){
         if (isRecording()) {
             showLength = getTimeFromStartMillis();
@@ -142,6 +157,13 @@ public class PuppetShowRecorder {
             Log.d(LOG_TAG, "Recording stopped. Length: " + showLength);
         }
     } // Stop recording
+    public void FinalizeRecording(){
+        for (String path : bitmapPaths){
+            if (!path.equals("empty")){
+                puppetShow.addBackground(BitmapFactory.decodeFile(path));
+            }
+        }
+    }
 
     public void WriteShowToFile(File saveFile){
         ObjectOutputStream out = null;
@@ -364,6 +386,15 @@ public class PuppetShowRecorder {
                                     p.setVisibility(View.VISIBLE);
                                 else
                                     p.setVisibility(View.GONE);
+                            }
+                        });
+                        break;
+                    case KeyFrame.SET_BACKGROUND:
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                              stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
+                                Log.d(LOG_TAG, "background set");
                             }
                         });
                         break;

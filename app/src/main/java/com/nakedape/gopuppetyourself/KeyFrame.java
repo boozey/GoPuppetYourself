@@ -32,6 +32,11 @@ public class KeyFrame implements Serializable {
         this.time = time;
         this.eventType = eventType;
     }
+    public KeyFrame(long time, int eventType, int index){
+        this.time = time;
+        this.eventType = eventType;
+        this.integer = index;
+    }
     public KeyFrame(long time, String puppetId, int eventType){
         this.time = time;
         this.puppetId = puppetId;

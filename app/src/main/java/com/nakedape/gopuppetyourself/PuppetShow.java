@@ -81,7 +81,7 @@ public class PuppetShow implements Serializable {
     public void addBackground(Bitmap bitmap){
         backgrounds.add(bitmap);
     }
-    public Bitmap getBackground(int index){ return backgrounds.get(0);}
+    public Bitmap getBackground(int index){ return backgrounds.get(index);}
     public int backgroundCount(){
         return backgrounds.size();
     }
