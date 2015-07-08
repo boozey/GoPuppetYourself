@@ -688,6 +688,7 @@ public class MainActivity extends Activity {
             showRecorder.Play();
             isPlaying = true;
         } else {
+            SwitchToRecordStage();
             isPlaying = false;
             Toast.makeText(context, "Error playing show", Toast.LENGTH_SHORT).show();
         }
@@ -758,6 +759,8 @@ public class MainActivity extends Activity {
             @Override
             public void onAnimationEnd(Animator animator) {
                 rootLayout.removeView(showStage);
+                if (stage.getParent() != null)
+                    rootLayout.removeView(stage);
                 showStage = null;
                 rootLayout.addView(stage, 0);
                 AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
