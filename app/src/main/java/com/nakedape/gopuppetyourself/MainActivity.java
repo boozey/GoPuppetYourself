@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
                     progressBar.setProgress((int)showRecorder.getTimeFromStartMillis());
                     break;
                 case PuppetShowRecorder.COUNTER_END:
-                    mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_action_av_play_arrow));
+                    mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
                     Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
                     fadeOut.setAnimationListener(new Animation.AnimationListener() {
                         @Override
@@ -488,7 +488,7 @@ public class MainActivity extends Activity {
     }
     private void secondControlsFadeIn(){
         if (!isSecondControlShowing) {
-            mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+            //mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
 
             recordButton.setVisibility(View.VISIBLE);
             Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
@@ -592,7 +592,10 @@ public class MainActivity extends Activity {
     }
     private void mainControlFadeIn(){
         Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-        mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
+        if (isRecording)
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.record_background));
+        else
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
         mainControlButton.startAnimation(fadeIn);
     }
     private void mainControlFadeOut(){
@@ -775,7 +778,6 @@ public class MainActivity extends Activity {
             return HandleBackstageTouch((Puppet)view, event);
         }
     };
-
     private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
         Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
@@ -813,13 +815,6 @@ public class MainActivity extends Activity {
     }
 
     // Start background gallery flow
-    public void BackGroundButtonClick(View v){
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(intent, REQUEST_IMAGE_GET);
-        }
-    } // Called from background click listener in backstage mode
     private void ShowBackgroundPopup(){
         if (!isBackgroundLibraryOpen){
             if (isLibraryOpen) ClosePuppetLibrary();
@@ -1194,6 +1189,8 @@ public class MainActivity extends Activity {
                     selectedPuppet.setScaleX(getScaleFactor(motionEvent.getX(pointerCount - 1), motionEvent.getY(pointerCount - 1),
                             motionEvent.getX(pointerCount - 2), motionEvent.getY(pointerCount - 2)));
                     selectedPuppet.setScaleY(Math.copySign(selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                    if (isRecording)
+                        showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 }
                 return true;
             case MotionEvent.ACTION_UP:
