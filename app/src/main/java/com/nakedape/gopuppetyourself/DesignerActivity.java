@@ -371,11 +371,15 @@ public class DesignerActivity extends Activity {
     public void Save(View v){
         EditText text = (EditText)findViewById(R.id.puppet_name);
         String newName = text.getText().toString();
+        // If there is no name set the puppet's name to unnamed
         if (newName.length() <= 0){
             newName = "Unnamed";
         }
+        // If this was an edit and the puppet's name hasn't changed, save save and finish
+        if (puppet != null && newName.equals(puppet.getName()))
+            FinishAndSave(newName);
+        // If the puppet name has changed, prompt if there is already a puppet with this name
         final String name = newName;
-        // Check if the puppet name has changed and prompt if a puppet already has that name
         File[] files = storageDir.listFiles(new FileFilter() {
             @Override
             public boolean accept(File file) {
@@ -407,6 +411,12 @@ public class DesignerActivity extends Activity {
 
     }
     private void FinishAndSave(String puppetName){
+        // Delete the old puppet file if it exists
+        if (puppet != null){
+            File oldFile = new File(storageDir, puppet.getName() + getString(R.string.puppet_extension));
+            if (oldFile.isFile())
+                if (oldFile.delete()) Log.i(LOG_TAG, "removed previous puppet file");
+        }
         // Create puppet
         puppet = new Puppet(context, null);
         puppet.setOrientation(designer.getOrientation());
