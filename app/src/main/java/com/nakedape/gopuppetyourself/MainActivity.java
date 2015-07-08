@@ -1090,8 +1090,6 @@ public class MainActivity extends Activity {
         if (layout == null) {
             layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
             int width = 200;
-            int height = 400;
-            layout.setMinimumHeight(height);
             layout.setMinimumWidth(width);
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
             if (params == null) {
@@ -1103,6 +1101,9 @@ public class MainActivity extends Activity {
                 Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
                 cameraButton.setVisibility(View.GONE);
             }
+            // Hide blank image option
+            View blankImageView = layout.findViewById(R.id.blank_image_layout);
+            blankImageView.setVisibility(View.GONE);
 
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
             if (rootLayout.getWidth() == 0)

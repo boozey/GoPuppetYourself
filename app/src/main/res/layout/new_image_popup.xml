@@ -62,6 +62,7 @@
         android:onClick="NewGalleryImageClick" />
         </LinearLayout>
     <LinearLayout
+        android:id="@+id/blank_image_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
