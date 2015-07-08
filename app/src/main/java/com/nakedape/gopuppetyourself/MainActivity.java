@@ -122,6 +122,7 @@ public class MainActivity extends Activity {
                         }
                     });
                     progressBar.startAnimation(fadeOut);
+                    SwitchToRecordStage();
                     mainControlFadeOut();
                     isPlaying = false;
             }
@@ -145,6 +146,7 @@ public class MainActivity extends Activity {
     private String cameraCapturePath;
     private PuppetListAdapter puppetListAdapter;
     private BitmapFileListAdapter backgroundListAdapter;
+    private RelativeLayout showStage;
 
     // Gesture fields
     private GestureDetectorCompat gestureDetector;
@@ -646,9 +648,8 @@ public class MainActivity extends Activity {
     // Record/play show methods
     public void RecordClick(View v){
         if (!isRecording) {
-            if (showRecorder == null) {
-                showRecorder = new PuppetShowRecorder(context, stage);
-            }
+            showRecorder = new PuppetShowRecorder(context, stage);
+            showRecorder.setHandler(mHandler);
             showRecorder.prepareToRecord();
             showRecorder.RecordStart();
             progressBar.setProgress(progressBar.getMax());
@@ -672,25 +673,114 @@ public class MainActivity extends Activity {
         if (showRecorder != null){
             if (showRecorder.isRecording())
                 showRecorder.RecordStop();
-            if (showRecorder.prepareToPlay()) {
-                progressBar.setMax((int)showRecorder.getLength());
-                progressBar.setVisibility(View.VISIBLE);
-                Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-                progressBar.startAnimation(fadeIn);
-                fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-                mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
-                mainControlButton.startAnimation(fadeIn);
-                showRecorder.Play();
-                isPlaying = true;
-            } else {
-                isPlaying = false;
-                Toast.makeText(context, "Error playing show", Toast.LENGTH_SHORT).show();
-            }
+            SwitchToShowStage(); // Calls PlayShow
         }
     }
+    private void PlayShow(){
+        if (showRecorder.prepareToPlay()) {
+            progressBar.setMax((int)showRecorder.getLength());
+            progressBar.setVisibility(View.VISIBLE);
+            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            progressBar.startAnimation(fadeIn);
+            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
+            mainControlButton.startAnimation(fadeIn);
+            showRecorder.Play();
+            isPlaying = true;
+        } else {
+            isPlaying = false;
+            Toast.makeText(context, "Error playing show", Toast.LENGTH_SHORT).show();
+        }
+    }// Called from stage animation listener
+    private void SwitchToShowStage(){
+        showStage = new RelativeLayout(context);
+        showStage.setLayoutParams(stage.getLayoutParams());
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
+        set.setTarget(stage);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                rootLayout.removeView(stage);
+                rootLayout.addView(showStage, 0);
+                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
+                set.setTarget(showStage);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        showRecorder.setStage(showStage);
+                        PlayShow();
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animator) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animator) {
+
+                    }
+                });
+                set.start();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.start();
+    }
+    private void SwitchToRecordStage(){
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
+        set.setTarget(showStage);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                rootLayout.removeView(showStage);
+                showStage = null;
+                rootLayout.addView(stage, 0);
+                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
+                set.setTarget(stage);
+                set.start();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.start();
+    } // Called from mHandler when show ends
     public void StopPlay(){
         if (isPlaying){
             showRecorder.Stop();
+            SwitchToRecordStage();
             Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
             fadeOut.setAnimationListener(new Animation.AnimationListener() {
                 @Override
