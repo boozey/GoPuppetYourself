@@ -149,6 +149,20 @@ public class Utils {
         return BitmapFactory.decodeStream(inputStream, null, options);
     }
 
+    public static Bitmap decodedSampledBitmapFromFile(File f, int reqWidth, int reqHeight){
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(f.getPath(), options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        options.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(f.getPath(), options);
+    }
+
     public static Bitmap drawableToBitmap (Drawable drawable) {
         Bitmap bitmap = null;
 
