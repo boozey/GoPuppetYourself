@@ -34,10 +34,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <ImageButton
+            android:id="@+id/add_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:background="@drawable/ic_action_puppet_add"/>
+            android:background="@drawable/ic_action_content_add"/>
         <TextView
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -47,10 +48,14 @@
             android:gravity="center"
             android:textColor="@color/abc_primary_text_material_dark"/>
         <ImageButton
+            android:id="@+id/background_library_trash"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:background="@drawable/ic_action_delete_light"/>
+            android:background="@drawable/ic_action_delete_light"
+            android:onClick="TrashClick"/>
 
     </LinearLayout>
 

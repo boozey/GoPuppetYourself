@@ -23,6 +23,7 @@
     <string name="puppet_library_title">Puppet Library</string>
     <string name="alert_dialog_title_delete">Delete puppet</string>
     <string name="alert_dialog_message_delete">Are you sure you want to permanently delete this puppet?</string>
+    <string name="trash_click_message">Drag an item to the trash to delete it</string>
 
     <!-- Background library strings -->
     <string name="background_library_title">Background Library</string>

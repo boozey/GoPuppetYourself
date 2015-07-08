@@ -15,6 +15,7 @@ public class MainActivityDataFrag extends Fragment {
     Bitmap currentBackground;
     ArrayList<ViewGroup.LayoutParams> layoutParamses = new ArrayList<>();
     boolean isBackstage;
+    String cameraCapturePath;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

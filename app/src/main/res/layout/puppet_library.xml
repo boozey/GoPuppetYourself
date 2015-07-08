@@ -52,9 +52,11 @@
             android:id="@+id/puppet_trash"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_gravity="center_vertical"
             android:background="@drawable/ic_action_delete_light"
-            android:onClick="DeletePuppet"/>
+            android:onClick="TrashClick"/>
 
     </LinearLayout>
 

@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -44,6 +45,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -59,6 +61,7 @@ import com.Utils;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -76,6 +79,7 @@ public class MainActivity extends Activity {
     private static final int REQUEST_PUPPET_GET = 4001;
     private static final int REQUEST_IMAGE_GET = 4002;
     private static final int REQUEST_EDIT = 4003;
+    private static final int REQUEST_IMAGE_CAPTURE = 4004;
     private static final String PUPPETS_ON_STAGE = "com.nakedape.gopuppetyourself.PUPPETS_ON_STAGE";
     private static final String BACKGROUND_PATH = "com.nakedape.gopuppetyourself.BACKGROUND_PATH";
     private static final String BACKGROUND_WIDTH = "com.nakedape.gopuppetyourself.BACKGROUND_WIDTH";
@@ -87,7 +91,6 @@ public class MainActivity extends Activity {
     private int dy;
     private float prevX, prevY, x1Start, y1Start, x2Start, y2Start;
     private Puppet selectedPuppet;
-    private ArrayList<Puppet> puppets;
     private boolean isBackstage = false;
     private File storageDir, showDir, backgroundDir;
     private HashSet<String> puppetsOnStage;
@@ -139,7 +142,9 @@ public class MainActivity extends Activity {
     private float lastScaleFactor = 1;
     private boolean scaleUp, scaleDown;
     private DisplayMetrics metrics;
+    private String cameraCapturePath;
     private PuppetListAdapter puppetListAdapter;
+    private BitmapFileListAdapter backgroundListAdapter;
 
     // Gesture fields
     private GestureDetectorCompat gestureDetector;
@@ -204,6 +209,7 @@ public class MainActivity extends Activity {
         FragmentManager fm = getFragmentManager();
         savedData = (MainActivityDataFrag) fm.findFragmentByTag("data");
         if (savedData != null){ // Load the data
+            cameraCapturePath = savedData.cameraCapturePath;
             if (savedData.currentBackground != null)
                 stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
             else
@@ -263,6 +269,7 @@ public class MainActivity extends Activity {
             for (int i = 0; i < stage.getChildCount(); i++){
                 savedData.layoutParamses.add(stage.getChildAt(i).getLayoutParams());
             }
+            savedData.cameraCapturePath = cameraCapturePath;
         }
     }
     @Override
@@ -305,20 +312,27 @@ public class MainActivity extends Activity {
         else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK){
             Uri imageUri = data.getData();
             setBackGround(imageUri, stage.getWidth(), stage.getHeight());
+            CloseBGPopup();
         }
         else if (requestCode == REQUEST_EDIT && resultCode == RESULT_OK){
             SetupNewPuppet(data);
+        }
+        else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
+            setBackground(cameraCapturePath);
+            CloseBGPopup();
         }
     }
     @Override
     public boolean onKeyDown(int keycode, KeyEvent e){
         switch (keycode){
             case KeyEvent.KEYCODE_BACK:
+                View v = findViewById(R.id.new_image_popup);
                 if (isLibraryOpen) {
                     ClosePuppetLibrary();
                     return true;
                 } else if(isBackgroundLibraryOpen){
-                    CloseBGPopup();
+                    if (v != null) CloseGetNewImagePopup(null);
+                    else CloseBGPopup();
                     return true;
                 } else {
                     return super.onKeyDown(keycode, e);
@@ -699,7 +713,6 @@ public class MainActivity extends Activity {
 
     // Control pressed methods
     public void GoBackstage(View v){
-        stage.setOnClickListener(backgroundClickListener);
         isBackstage = true;
         savedData.isBackstage = isBackstage;
         for (int i = 0; i < stage.getChildCount(); i++){
@@ -800,14 +813,6 @@ public class MainActivity extends Activity {
     }
 
     // Start background gallery flow
-    private View.OnClickListener backgroundClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if (selectedPuppet != null) selectedPuppet.setBackground(null);
-            selectedPuppet = null;
-            BackGroundButtonClick(view);
-        }
-    };
     public void BackGroundButtonClick(View v){
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
@@ -819,16 +824,36 @@ public class MainActivity extends Activity {
         if (!isBackgroundLibraryOpen){
             if (isLibraryOpen) ClosePuppetLibrary();
             isBackgroundLibraryOpen = true;
-            final View layout = getLayoutInflater().inflate(R.layout.background_library, null);
+
             // Set position of the popup
+            final View layout = getLayoutInflater().inflate(R.layout.background_library, null);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             layout.setLayoutParams(params);
+
             // Configure listview to show thumbnails
-            ListView listView = (ListView)layout.findViewById(R.id.background_list_view);
-            final BitmapFileListAdapter listAdapter = new BitmapFileListAdapter(context, R.layout.puppet_list_item);
-            listView.setAdapter(listAdapter);
-            //Search for files an a separate thread
+            final ListView listView = (ListView)layout.findViewById(R.id.background_list_view);
+            backgroundListAdapter = new BitmapFileListAdapter(context, R.layout.puppet_list_item);
+            listView.setAdapter(backgroundListAdapter);
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    setBackground(backgroundListAdapter.getItem(i).getPath());
+                }
+            });
+            listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    // Prevent library from receiving the drop
+                    View library = findViewById(R.id.background_library_popup);
+                    library.setOnDragListener(new NoDropDragListener());
+                    View v = view.findViewById(R.id.list_item_puppet_thumb);
+                    StartLibraryDrag(v, backgroundListAdapter.getItem(i).getPath(), i);
+                    return false;
+                }
+            });
+
+            //Search for files an a separate thread and add to list adapter as they are found
             Runnable loadThumbsThread = new Runnable() {
                 @Override
                 public void run() {
@@ -841,10 +866,10 @@ public class MainActivity extends Activity {
                     if (files.length > 0) {
                         for (final File f : files) {
                             final Bitmap b = Utils.decodedSampledBitmapFromFile(f, 256, 256);
-                            mHandler.post(new Runnable() {
+                            listView.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    listAdapter.add(b, f);
+                                    backgroundListAdapter.add(b, f);
                                     Log.d(LOG_TAG, "added background to list adapter");
 
                                 }
@@ -869,6 +894,22 @@ public class MainActivity extends Activity {
                 }
             });
 
+            // Stage drag listener to receive drops
+            stage.setOnDragListener(new StageBGDragEventListener());
+
+            // Trash drag listener
+            View trashView = layout.findViewById(R.id.background_library_trash);
+            trashView.setOnDragListener(new BGTrashDragEventListener());
+
+            // Add button click listener
+            ImageButton addButton = (ImageButton)layout.findViewById(R.id.add_button);
+            addButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ShowGetNewImagePopup();
+                }
+            });
+
             // Start the animation and show the popup
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.flip_in_from_right);
             rootLayout.addView(layout);
@@ -879,8 +920,13 @@ public class MainActivity extends Activity {
         }
     }
     private void CloseBGPopup(){
+        View v = findViewById(R.id.new_image_popup);
+        if (v != null) CloseGetNewImagePopup(null);
         final View layout = findViewById(R.id.background_library_popup);
         if (layout != null){
+            for (int i = 0; i < stage.getChildCount(); i++) {
+                stage.getChildAt(i).setOnTouchListener(headTouchListener);
+            }
             stage.setOnTouchListener(null);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.flip_out_to_right);
             layout.setPivotX(500);
@@ -909,6 +955,73 @@ public class MainActivity extends Activity {
             });
             set.start();
             isBackgroundLibraryOpen = false;
+        }
+    }
+    public void TrashClick(View v){
+        Toast.makeText(context, getString(R.string.trash_click_message), Toast.LENGTH_SHORT).show();
+    }
+    protected class StageBGDragEventListener implements View.OnDragListener{
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    ClipData.Item item = event.getClipData().getItemAt(0);
+                    String path = item.getText().toString();
+                    // Remove item from library
+                    //item = event.getClipData().getItemAt(1);
+                    //int index = Integer.parseInt(item.getText().toString());
+                    //backgroundListAdapter.removeItem(index);
+                    setBackground(path);
+                    return true;
+                default:
+                    return true;
+            }
+        }
+    }
+    protected class BGTrashDragEventListener implements View.OnDragListener{
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    // Animate view to indicate it can receive the drop
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.grow);
+                    set.setTarget(v);
+                    set.start();
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    AnimatorSet shrink = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.shrink_to_1x);
+                    shrink.setTarget(v);
+                    shrink.start();
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    v.setScaleX(1f);
+                    v.setScaleY(1f);
+                    ClipData.Item item = event.getClipData().getItemAt(0);
+                    String data = item.getText().toString();
+                    // Remove item from library
+                    item = event.getClipData().getItemAt(1);
+                    int index = Integer.parseInt(item.getText().toString());
+                    backgroundListAdapter.removeItem(index);
+                    File file = new File(data);
+                    if (file.isFile())
+                        if (!file.delete()) Log.e(LOG_TAG, "error deleting file");
+
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
     private void setBackGround(Uri imageUri, float reqWidth, float reqHeight){
@@ -955,12 +1068,104 @@ public class MainActivity extends Activity {
     } // Called from activity result
     private void setBackground(String path){
         Bitmap bitmap = BitmapFactory.decodeFile(path);
-        stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+        if (bitmap != null) {
+            stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+
+            // Save so that background will persist
+            savedData.currentBackground = bitmap;
+            SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+            prefEditor.putString(BACKGROUND_PATH, path);
+            prefEditor.putInt(BACKGROUND_WIDTH, bitmap.getWidth());
+            prefEditor.putInt(BACKGROUND_HEIGHT, bitmap.getHeight());
+            prefEditor.apply();
+        }
     }
     private String getNextBackgroundPath(){
         Calendar c = Calendar.getInstance();
         File file = new File(backgroundDir,"background" + c.getTime().toString() + ".png");
         return file.getPath();
+    }
+    private void ShowGetNewImagePopup(){
+        View layout = findViewById(R.id.new_image_popup);
+        if (layout == null) {
+            layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
+            int width = 200;
+            int height = 400;
+            layout.setMinimumHeight(height);
+            layout.setMinimumWidth(width);
+            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+            if (params == null) {
+                params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.addRule(RelativeLayout.CENTER_IN_PARENT, rootLayout.getId());
+            }
+            layout.setLayoutParams(params);
+            if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+                Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
+                cameraButton.setVisibility(View.GONE);
+            }
+
+            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+            if (rootLayout.getWidth() == 0)
+                set.setStartDelay(200);
+            rootLayout.addView(layout);
+            set.setTarget(layout);
+            set.start();
+        }
+
+    }
+    public void CloseGetNewImagePopup(View v){
+        final View layout = findViewById(R.id.new_image_popup);
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+        set.setTarget(layout);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                rootLayout.removeView(layout);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+        set.start();
+    }
+    public void NewGalleryImageClick(View v){
+        launchGetPicIntent();
+    }
+    private void launchGetPicIntent(){
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent, REQUEST_IMAGE_GET);
+        }
+    }
+    public void NewCameraImageClick(View v){
+        launchCameraIntent();
+    }
+    private void launchCameraIntent(){
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Ensure that there's a camera activity to handle the intent
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            cameraCapturePath = getNextBackgroundPath();
+            File photoFile = new File(cameraCapturePath);
+            // Continue only if the File was successfully created
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+                    Uri.fromFile(photoFile));
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+
+        }
     }
 
     // Scale puppet listener and methods
@@ -1129,8 +1334,11 @@ public class MainActivity extends Activity {
             listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    // Prevent library from receiving the drop
+                    View library = findViewById(R.id.puppet_library_popup);
+                    library.setOnDragListener(new NoDropDragListener());
                     View v = view.findViewById(R.id.list_item_puppet_thumb);
-                    StartLibraryDrag(v, (String) v.getTag(), i);
+                    StartLibraryDrag(v, getPathFromName((String) v.getTag()), i);
                     return false;
                 }
             });
@@ -1294,11 +1502,7 @@ public class MainActivity extends Activity {
         }
     }
     public void StartLibraryDrag(View v, String path, int index){
-        // Prevent library from receiving the drop
-        View library = findViewById(R.id.puppet_library_popup);
-        library.setOnDragListener(new NoDropDragListener());
-
-        ClipData.Item pathItem = new ClipData.Item(storageDir.getPath() + "//" + path + getResources().getString(R.string.puppet_extension));
+        ClipData.Item pathItem = new ClipData.Item(path);
         String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
         ClipData dragData = new ClipData("PUPPET_PATH", mime_type, pathItem);
         dragData.addItem(new ClipData.Item(String.valueOf(index)));
@@ -1417,9 +1621,12 @@ public class MainActivity extends Activity {
                 case DragEvent.ACTION_DRAG_EXITED:
                     return true;
                 case DragEvent.ACTION_DROP:
-                    View library = findViewById(R.id.puppet_library_popup);
-                    library.setOnDragListener(new LibraryPuppetDragEventListener());
-                    stage.setOnDragListener(new StagePuppetDragEventListener());
+                    if (isLibraryOpen) {
+                        View library = findViewById(R.id.puppet_library_popup);
+                        if (library != null)
+                            library.setOnDragListener(new LibraryPuppetDragEventListener());
+                        stage.setOnDragListener(new StagePuppetDragEventListener());
+                    }
                     return false;
                 default:
                     return false;
@@ -1430,6 +1637,10 @@ public class MainActivity extends Activity {
         public boolean onDrag(View v, DragEvent event) {
             switch (event.getAction()) {
                 case DragEvent.ACTION_DRAG_STARTED:
+                    // Animate view to indicate it can receive the drop
+                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.grow);
+                    set.setTarget(v);
+                    set.start();
                     return true;
                 case DragEvent.ACTION_DRAG_ENTERED:
                     return true;
@@ -1437,7 +1648,14 @@ public class MainActivity extends Activity {
                     return true;
                 case DragEvent.ACTION_DRAG_EXITED:
                     return true;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    AnimatorSet shrink = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.shrink_to_1x);
+                    shrink.setTarget(v);
+                    shrink.start();
+                    return true;
                 case DragEvent.ACTION_DROP:
+                    v.setScaleX(1f);
+                    v.setScaleY(1f);
                     ClipData.Item item = event.getClipData().getItemAt(0);
                     String data = item.getText().toString();
                     if (event.getClipData().getItemCount() == 1){
@@ -1729,7 +1947,8 @@ public class MainActivity extends Activity {
         }
 
         public void removeItem(int position) {
-            puppets.remove(position);
+            thumbs.remove(position);
+            files.remove(position);
             notifyDataSetChanged();
         }
 
