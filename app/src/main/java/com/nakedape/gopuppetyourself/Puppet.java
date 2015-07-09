@@ -135,8 +135,9 @@ public class Puppet extends RelativeLayout implements Serializable {
 
         setUpperJawImage(upperJawBitmap);
         setLowerJawImage(lowerJawBitmap);
-        applyLayoutParams();
-
+        //applyLayoutParams();
+        addView(upperJaw);
+        addView(lowerJaw);
     }
 
     public void setUpperJawImage(Bitmap bitmap){
@@ -144,7 +145,9 @@ public class Puppet extends RelativeLayout implements Serializable {
         upperBitmapHeight = bitmap.getHeight();
         upperBitmapWidth = bitmap.getWidth();
         upperJaw.setBackground(new BitmapDrawable(getResources(), bitmap));
-
+        addView(upperJaw);
+        upperJaw.setPivotX(upperPivotPoint.x);
+        upperJaw.setPivotY(upperPivotPoint.y);
     }
 
     public void setLowerJawImage(Bitmap bitmap){
@@ -152,12 +155,70 @@ public class Puppet extends RelativeLayout implements Serializable {
         lowerBitmapHeight = bitmap.getHeight();
         lowerBitmapWidth = bitmap.getWidth();
         lowerJaw.setBackground(new BitmapDrawable(getResources(), bitmap));
+        addView(lowerJaw);
     }
 
     // Public methods
     // Movement methods
     public void OpenMouth(int degrees){
         upperJaw.setRotation(degrees * getPivotDirection());
+    }
+    @Override
+    protected void onMeasure (int widthMeasureSpec, int heightMeasureSpec){
+        int leftClipPadding = 0, rightClipPadding = 0;
+        lowerLeftPadding = 0;
+        upperLeftPadding = 0;
+        upperRightPadding = 0;
+        lowerRightPadding = 0;
+        int upperLeft = upperPivotPoint.x;
+        int upperRight = upperBitmapWidth - upperPivotPoint.x;
+        int lowerLeft = lowerPivotPoint.x; Log.d(LOG_TAG, "pivot x: " + lowerLeft);
+        int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
+        if (orientation == PROFILE_RIGHT){
+            // Calculate top padding
+            double h = upperBitmapHeight, x = upperBitmapWidth - upperPivotPoint.x;
+            double l = Math.sqrt(h*h + x*x);
+            double theta = Math.atan(h/x);
+            topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
+            // Calculate left padding
+            x = upperPivotPoint.x; // Set x value to distance from left
+            leftClipPadding = (int)(Math.sqrt(h*h + x*x) * Math.cos(Math.atan(h/x) - 30*Math.PI/180) - x);
+        }
+        else{
+            // Calculate top padding
+            double h = upperBitmapHeight, x = upperPivotPoint.x;
+            double l = Math.sqrt(h*h + x*x);
+            double theta = Math.atan(h/x);
+            topPadding = (int)(l * Math.sin(theta + 30*3.14/180) - h);
+            // Calculate right padding
+            x = upperBitmapWidth - upperPivotPoint.x; // Set x value to distance from right
+            leftClipPadding = (int)(Math.sqrt(h*h + x*x) * Math.cos(Math.atan(h/x) - 30*Math.PI/180) - x);
+        }
+
+        // Decide which sides need padding to keep images aligned
+        if (upperLeft > lowerLeft) lowerLeftPadding = upperLeft - lowerLeft;
+        else upperLeftPadding = lowerLeft - upperLeft;
+        if (upperRight > lowerRight) lowerRightPadding = upperRight - lowerRight;
+        else upperRightPadding = lowerRight - upperRight;
+
+        // Set final upper and lower padding, minimum of zero
+        upperLeftPadding += Math.max(leftClipPadding, 0); Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
+        lowerLeftPadding += Math.max(leftClipPadding, 0); Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
+        upperRightPadding += Math.max(rightClipPadding, 0); Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
+        lowerRightPadding += Math.max(rightClipPadding, 0); Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
+
+        setMeasuredDimension(upperLeftPadding + upperBitmapWidth + upperRightPadding, topPadding + upperBitmapHeight + lowerBitmapHeight);
+    }
+    @Override
+    protected void onLayout (boolean changed, int left, int top, int right, int bottom){
+        if (changed) {
+            //upperJaw.layout(upperLeftPadding, 0, upperLeftPadding + upperBitmapWidth, upperBitmapHeight);
+            //lowerJaw.layout(lowerLeftPadding, upperBitmapHeight, lowerLeftPadding + lowerBitmapWidth, upperBitmapHeight + lowerBitmapHeight);
+            upperJaw.layout(upperLeftPadding, topPadding, upperLeftPadding + upperBitmapWidth, topPadding + upperBitmapHeight);
+            Log.d(LOG_TAG, upperJaw.getLeft() + ", " + upperJaw.getTop() + ", " + upperJaw.getRight() + ", " + upperJaw.getBottom());
+            lowerJaw.layout(lowerLeftPadding, topPadding + upperBitmapHeight, lowerLeftPadding + lowerBitmapWidth, topPadding + upperBitmapHeight + lowerBitmapHeight);
+            Log.d(LOG_TAG, lowerJaw.getLeft() + ", " + lowerJaw.getTop() + ", " + lowerJaw.getRight() + ", " + lowerJaw.getBottom());
+        }
     }
 
     public void applyLayoutParams(){
@@ -297,6 +358,6 @@ public class Puppet extends RelativeLayout implements Serializable {
         in.readFully(bytes);
         lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         setLowerJawImage(lowerJawBitmap);
-        applyLayoutParams();
+        //applyLayoutParams();
     }
 }
