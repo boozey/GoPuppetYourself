@@ -40,7 +40,7 @@ public class Puppet extends View implements Serializable {
     transient private int orientation = 0;
     transient private Bitmap upperJawBitmap, lowerJawBitmap;
     transient private Canvas upperJawCanvas, lowerJawCanvas;
-    transient private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0, topPadding = 0;
+    transient private int upperLeftPadding = 0, upperRightPadding = 0, lowerLeftPadding = 0, lowerRightPadding = 0, topPadding = 0, leftClipPadding = 0, rightClipPadding = 0;
     transient private int upperBitmapWidth, upperBitmapHeight, lowerBitmapWidth, lowerBitmapHeight;
     transient private String name = getResources().getString(R.string.default_puppet_name);
     transient private String path = "";
@@ -108,6 +108,16 @@ public class Puppet extends View implements Serializable {
     }
     public int getLowerRightPadding() {
         return lowerRightPadding;
+    }
+
+    public int getLeftClipPadding(){
+        return leftClipPadding;
+    }
+    public int getRightClipPadding(){
+        return rightClipPadding;
+    }
+    public int getTopClipPadding() {
+        return topPadding;
     }
 
     public Point getLowerPivotPoint() {
@@ -183,7 +193,8 @@ public class Puppet extends View implements Serializable {
         setMeasuredDimension((int) ((upperLeftPadding + upperBitmapWidth + upperRightPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
     }
     private void setPadding(){
-        int leftClipPadding = 0, rightClipPadding = 0;
+        leftClipPadding = 0;
+        rightClipPadding = 0;
         lowerLeftPadding = 0;
         upperLeftPadding = 0;
         upperRightPadding = 0;
@@ -220,10 +231,12 @@ public class Puppet extends View implements Serializable {
         else upperRightPadding = lowerRight - upperRight;
 
         // Set final upper and lower padding, minimum of zero
-        upperLeftPadding += Math.max(leftClipPadding, 0); Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
-        lowerLeftPadding += Math.max(leftClipPadding, 0); Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
-        upperRightPadding += Math.max(rightClipPadding, 0); Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
-        lowerRightPadding += Math.max(rightClipPadding, 0); Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
+        leftClipPadding = Math.max(leftClipPadding, 0);
+        rightClipPadding = Math.max(rightClipPadding, 0);
+        upperLeftPadding += leftClipPadding; Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
+        lowerLeftPadding += leftClipPadding; Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
+        upperRightPadding += rightClipPadding; Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
+        lowerRightPadding += rightClipPadding; Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
 
         upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
         lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
@@ -252,6 +265,7 @@ public class Puppet extends View implements Serializable {
     public float getScaleY(){
         return scaleY;
     }
+
 
     @Override
     protected void onDraw(Canvas canvas){
@@ -331,8 +345,8 @@ public class Puppet extends View implements Serializable {
         onStage = in.readBoolean();
         upperPivotPoint = new Point(in.readInt(), in.readInt());
         lowerPivotPoint = new Point(in.readInt(), in.readInt());
-        setScaleX(in.readFloat());
-        setScaleY(in.readFloat());
+        scaleX = in.readFloat();
+        scaleY =in.readFloat();
 
         byte[] bytes = new byte[in.readInt()];
         in.readFully(bytes);
@@ -344,6 +358,8 @@ public class Puppet extends View implements Serializable {
         in.readFully(bytes);
         lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         setLowerJawImage(lowerJawBitmap);
+        setScaleX(scaleX);
+        setScaleY(scaleY);
         setPadding();
         //applyLayoutParams();
     }

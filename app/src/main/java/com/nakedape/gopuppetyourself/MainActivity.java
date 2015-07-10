@@ -39,6 +39,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -217,7 +218,8 @@ public class MainActivity extends Activity {
                 stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
             else
                 stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
-            showRecorder.setShow(savedData.puppetShow);
+            if (savedData.puppetShow != null)
+                showRecorder.setShow(savedData.puppetShow);
         }
         else { // Create a new data fragment instance to save the data
             savedData = new MainActivityDataFrag();
@@ -358,6 +360,21 @@ public class MainActivity extends Activity {
             default:
                 return super.onKeyDown(keycode, e);
         }
+    }
+
+    public void setTouchDelegate(final Puppet p){
+        stage.post( new Runnable() {
+            // Post in the parent's message queue to make sure the parent
+            // lays out its children before we call getHitRect()
+            public void run() {
+                final Rect rect = new Rect();
+                p.getHitRect(rect);
+                rect.top += p.getTopClipPadding();
+                rect.left += p.getLeftClipPadding();
+                rect.right -= p.getRightClipPadding();
+                stage.setTouchDelegate( new TouchDelegate( rect , p));
+            }
+        });
     }
 
     // Main menu methods
