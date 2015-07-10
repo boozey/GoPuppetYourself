@@ -49,6 +49,7 @@ public class Puppet extends View implements Serializable {
     transient private float scaleY = 1;
     transient private Matrix upperJawMatrix, lowerJawMatrix;
     transient private int degrees;
+    transient private boolean isFlippedHorz = false;
 
 
     // Constructors
@@ -164,9 +165,12 @@ public class Puppet extends View implements Serializable {
         upperJawBitmap = Bitmap.createBitmap(upperJawBitmap, 0, 0, upperJawBitmap.getWidth(), upperJawBitmap.getHeight(), m, false);
         lowerJawBitmap = Bitmap.createBitmap(lowerJawBitmap, 0, 0, lowerJawBitmap.getWidth(), lowerJawBitmap.getHeight(), m, false);
         upperPivotPoint.x = upperBitmapWidth - upperPivotPoint.x;
+        lowerPivotPoint.x = lowerBitmapWidth - lowerPivotPoint.x;
         if (orientation == PROFILE_LEFT) orientation = PROFILE_RIGHT;
         else orientation = PROFILE_LEFT;
         setPadding();
+        isFlippedHorz = !isFlippedHorz;
+        invalidate();
         requestLayout();
     }
 
@@ -186,7 +190,7 @@ public class Puppet extends View implements Serializable {
         lowerRightPadding = 0;
         int upperLeft = upperPivotPoint.x;
         int upperRight = upperBitmapWidth - upperPivotPoint.x;
-        int lowerLeft = lowerPivotPoint.x; Log.d(LOG_TAG, "pivot x: " + lowerLeft);
+        int lowerLeft = lowerPivotPoint.x;
         int lowerRight = lowerBitmapWidth - lowerPivotPoint.x;
         if (orientation == PROFILE_RIGHT){
             // Calculate top padding
@@ -228,12 +232,15 @@ public class Puppet extends View implements Serializable {
     @Override
     public void setScaleX(float scaleX){
         this.scaleX = Math.abs(scaleX);
+        if (scaleX < 0 && !isFlippedHorz) FlipHoriz();
+        if (scaleX > 0 && isFlippedHorz) FlipHoriz();
         invalidate();
         requestLayout();
     }
     @Override
     public float getScaleX(){
-        return scaleX;
+        if (isFlippedHorz) return -1 * scaleX;
+        else return scaleX;
     }
     @Override
     public void setScaleY(float scaleY){
