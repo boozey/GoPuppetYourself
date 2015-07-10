@@ -235,15 +235,22 @@ public class MainActivity extends Activity {
                 file = new File(path);
                 Puppet p = new Puppet(context, null);
                 Utils.ReadPuppetFromFile(p, file);
-                p.setId(nextPuppetId++);
-                p.setOnTouchListener(headTouchListener);
-                p.setTag(p.getName());
-                p.setPath(path);
-                if (!p.isOnStage()) p.setVisibility(View.GONE);
-                if (savedData.layoutParamses.size() > 0){
-                    p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
+                if (p.getLowerJawBitmap() != null) {
+                    p.setId(nextPuppetId++);
+                    p.setOnTouchListener(headTouchListener);
+                    p.setTag(p.getName());
+                    p.setPath(path);
+                    if (!p.isOnStage()) p.setVisibility(View.GONE);
+                    if (savedData.layoutParamses.size() > 0) {
+                        p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
+                    }
+                    stage.addView(p);
+                } else {
+                    puppetsOnStage.remove(o);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                    editor.apply();
                 }
-                stage.addView(p);
             }
         }
         else {
@@ -1345,8 +1352,7 @@ public class MainActivity extends Activity {
             case R.id.action_puppet_flip_horz:
                 if (isRecording)
                     showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                //selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
-                selectedPuppet.FlipHoriz();
+                selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;
         }
