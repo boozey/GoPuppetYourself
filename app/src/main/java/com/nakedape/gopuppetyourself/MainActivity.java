@@ -1380,37 +1380,6 @@ public class MainActivity extends Activity {
         }
         return false;
     }
-    private void RemovePuppetFromStage(final Puppet p){
-        puppetsOnStage.remove(p.getPath());
-        SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
-        prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-        prefEditor.apply();
-        // Animate the puppet being removed
-        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                stage.removeView(p);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        set.setTarget(p);
-        set.start();
-    }
     public void EditPuppet(Puppet p){
         Intent intent = new Intent(this, DesignerActivity.class);
         for (int i = 0; i < stage.getChildCount(); i++){
@@ -1455,17 +1424,37 @@ public class MainActivity extends Activity {
             });
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
                     View v = view.findViewById(R.id.list_item_puppet_thumb);
                     File f = new File(getPathFromName((String) v.getTag()));
                     Puppet p = new Puppet(context, null);
                     Utils.ReadPuppetFromFile(p, f);
-                    addPuppetToStage(p);
+                    addPuppetToStage(p, stage.getWidth() / 2 - p.getTotalWidth() / 2, stage.getHeight() / 2 - p.getTotalHeight() / 2);
                     // Animate disappearance of item
                     AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animator) {
+                            puppetListAdapter.removeItem(i);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animator) {
+
+                        }
+                    });
                     set.setTarget(view);
                     set.start();
-                    puppetListAdapter.removeItem(i);
 
                 }
             });
@@ -1659,31 +1648,7 @@ public class MainActivity extends Activity {
                     File f = new File(path);
                     Puppet p = new Puppet(context, null);
                     Utils.ReadPuppetFromFile(p, f);
-                    p.setOnTouchListener(new View.OnTouchListener() {
-                        @Override
-                        public boolean onTouch(View view, MotionEvent motionEvent) {
-                            switch (motionEvent.getAction()) {
-                                case MotionEvent.ACTION_DOWN:
-                                    StartStageDrag((Puppet) view);
-                                    break;
-                            }
-                            return true;
-                        }
-                    });
-                    p.setTag(p.getName());
-                    p.setPath(path);
-                    p.setOnStage(true);
-                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    params.setMargins((int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2, -250, -250);
-                    p.setLayoutParams(params);
-                    stage.addView(p);
-                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
-                    set.setTarget(p);
-                    set.start();
-                    puppetsOnStage.add(path);
-                    SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
-                    prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-                    prefEditor.apply();
+                    addPuppetToStage(p, (int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2);
                     // Re-attach drag listener so the library receive drops again
                     View library = findViewById(R.id.puppet_library_popup);
                     library.setOnDragListener(new LibraryPuppetDragEventListener());
@@ -1791,7 +1756,10 @@ public class MainActivity extends Activity {
             }
         }
     }
-    private void addPuppetToStage(Puppet p){
+    private void addPuppetToStage(final Puppet p, int x, int y){
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(x, y, -250, -250);
+        p.setLayoutParams(params);
         p.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -1807,14 +1775,54 @@ public class MainActivity extends Activity {
         String path = getPathFromName(p.getName());
         p.setPath(path);
         p.setOnStage(true);
+        p.setVisibility(View.INVISIBLE);
         stage.addView(p);
-        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
-        set.setTarget(p);
-        set.start();
+        Animation popIn = AnimationUtils.loadAnimation(context, R.anim.anim_pop_in);
+        popIn.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                p.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        p.startAnimation(popIn);
         puppetsOnStage.add(path);
         SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
         prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
         prefEditor.apply();
+    }
+    private void RemovePuppetFromStage(final Puppet p){
+        puppetsOnStage.remove(p.getPath());
+        SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+        prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+        prefEditor.apply();
+        // Animate the puppet being removed
+        Animation popOut = AnimationUtils.loadAnimation(context, R.anim.anim_pop_out);
+        popOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                stage.removeView(p);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        p.startAnimation(popOut);
     }
     private String getPathFromName(String name){
         return storageDir.getPath() + "//" + name + getResources().getString(R.string.puppet_extension);
