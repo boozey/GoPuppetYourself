@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -188,6 +189,34 @@ public class Utils {
     public static int getInBounds(int value, int min, int max){
         value = Math.max(min, value);
         return Math.min(value, max);
+    }
+
+    public static Point getScaledDimension(Point imgSize, Point boundary) {
+
+        float original_width = imgSize.x;
+        float original_height = imgSize.y;
+        float bound_width = boundary.x;
+        float bound_height = boundary.y;
+        float new_width = original_width;
+        float new_height = original_height;
+
+        // first check if we need to scale width
+        if (original_width > bound_width) {
+            //scale width to fit
+            new_width = bound_width;
+            //scale height to maintain aspect ratio
+            new_height = (new_width * original_height) / original_width;
+        }
+
+        // then check if we need to scale even with the new height
+        if (new_height > bound_height) {
+            //scale height to fit instead
+            new_height = bound_height;
+            //scale width to maintain aspect ratio
+            new_width = (new_height * original_width) / original_height;
+        }
+
+        return new Point(Math.round(new_width), Math.round(new_height));
     }
 
 

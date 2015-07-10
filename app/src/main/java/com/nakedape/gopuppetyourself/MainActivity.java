@@ -162,6 +162,7 @@ public class MainActivity extends Activity {
         metrics = getResources().getDisplayMetrics();
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
+        showStage = (RelativeLayout)findViewById(R.id.show_stage);
         progressBar = (SeekBar)findViewById(R.id.progress_bar);
         progressBar.setVisibility(View.GONE);
         mainControlButton = (ImageButton)findViewById(R.id.bottom_left_button);
@@ -216,6 +217,7 @@ public class MainActivity extends Activity {
                 stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
             else
                 stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
+            showRecorder.setShow(savedData.puppetShow);
         }
         else { // Create a new data fragment instance to save the data
             savedData = new MainActivityDataFrag();
@@ -272,6 +274,13 @@ public class MainActivity extends Activity {
                 savedData.layoutParamses.add(stage.getChildAt(i).getLayoutParams());
             }
             savedData.cameraCapturePath = cameraCapturePath;
+            if (showRecorder != null) {
+                PuppetShow show = showRecorder.getShow();
+                if (show != null) {
+                    show.ReleaseContext();
+                    savedData.puppetShow = showRecorder.getShow();
+                }
+            }
         }
     }
     @Override
@@ -384,7 +393,7 @@ public class MainActivity extends Activity {
                 if (event.getPointerCount() > 1) {
                     moveMouth(puppet, event.getY(0), event.getY(1));
                 } else {
-                    puppet.upperJaw.setRotation(0);
+                    puppet.OpenMouth(0);
                     if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.CLOSE_MOUTH);
                 }
                 moveView(view, X, Y);
@@ -694,8 +703,12 @@ public class MainActivity extends Activity {
         }
     }// Called from stage animation listener
     private void SwitchToShowStage(){
-        showStage = new RelativeLayout(context);
-        showStage.setLayoutParams(stage.getLayoutParams());
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int)(rootLayout.getWidth() * 0.75), (int)(rootLayout.getHeight() * 0.75));
+        params.addRule(RelativeLayout.CENTER_IN_PARENT);
+        showStage.setLayoutParams(params);
+        //showStage.setLayoutParams(stage.getLayoutParams());
+        showStage.setAlpha(0f);
+        showStage.setVisibility(View.VISIBLE);
         AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
         set.setTarget(stage);
         set.addListener(new Animator.AnimatorListener() {
@@ -706,33 +719,11 @@ public class MainActivity extends Activity {
 
             @Override
             public void onAnimationEnd(Animator animator) {
-                rootLayout.removeView(stage);
-                rootLayout.addView(showStage, 0);
-                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
-                set.setTarget(showStage);
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        showRecorder.setStage(showStage);
-                        PlayShow();
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
-
-                    }
-                });
-                set.start();
+                //rootLayout.removeView(stage);
+                //rootLayout.addView(showStage, 0);
+                stage.setVisibility(View.GONE);
+                showRecorder.setStage(showStage);
+                PlayShow();
             }
 
             @Override
@@ -758,11 +749,8 @@ public class MainActivity extends Activity {
 
             @Override
             public void onAnimationEnd(Animator animator) {
-                rootLayout.removeView(showStage);
-                if (stage.getParent() != null)
-                    rootLayout.removeView(stage);
-                showStage = null;
-                rootLayout.addView(stage, 0);
+                showStage.setVisibility(View.GONE);
+                stage.setVisibility(View.VISIBLE);
                 AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
                 set.setTarget(stage);
                 set.start();
@@ -1357,7 +1345,8 @@ public class MainActivity extends Activity {
             case R.id.action_puppet_flip_horz:
                 if (isRecording)
                     showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                //selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                selectedPuppet.FlipHoriz();
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
                 return true;
         }
@@ -1656,7 +1645,7 @@ public class MainActivity extends Activity {
                     p.setTag(p.getName());
                     p.setPath(path);
                     p.setOnStage(true);
-                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(p.getTotalWidth(), p.getTotalHeight());
+                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                     params.setMargins((int) event.getX() - p.getTotalWidth() / 2, (int) event.getY() - p.getTotalHeight() / 2, -250, -250);
                     p.setLayoutParams(params);
                     stage.addView(p);
@@ -1756,9 +1745,9 @@ public class MainActivity extends Activity {
                         int index = Integer.parseInt(data);
                         Puppet p = (Puppet)stage.getChildAt(index);
                         File file = new File(getPathFromName(p.getName()));
+                        RemovePuppetFromStage(p);
                         if (file.isFile())
                             if (!file.delete()) Log.e(LOG_TAG, "error deleting file");
-                        stage.removeView(p);
                     } else {
                         // Remove puppet from library
                         item = event.getClipData().getItemAt(1);

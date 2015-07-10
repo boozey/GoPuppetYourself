@@ -1,8 +1,12 @@
 package com.nakedape.gopuppetyourself;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -10,6 +14,7 @@ import android.os.*;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 
 import com.Utils;
@@ -54,6 +59,7 @@ public class PuppetShowRecorder {
     private int width, height;
     private PuppetShow puppetShow;
     private ArrayList<String> bitmapPaths;
+    private float xScaleFactor, yScaleFactor;
 
     public PuppetShowRecorder(Context context, RelativeLayout stage){
         this.context = context;
@@ -75,6 +81,8 @@ public class PuppetShowRecorder {
         bitmapPaths.add("empty");
         width = stage.getWidth();
         height = stage.getHeight();
+        puppetShow.origWidth = width;
+        puppetShow.origHeight = height;
         isReady = true;
     }
     public void RecordStart(){
@@ -111,8 +119,8 @@ public class PuppetShowRecorder {
         puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event));
     } // Record a keyframe event
     public void RecordFrame(String puppetId, int event, float x, float y){
-        puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x / width, y / height));
-        Log.d(LOG_TAG, "Puppet movement: " + x / width + ", " + y / height);
+        puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x, y));
+        Log.d(LOG_TAG, "Puppet movement: " + x + ", " + y);
     } // Record a keyframe event with movement
     public void RecordFrame(KeyFrame frame){
         puppetShow.addFrame(frame);
@@ -165,6 +173,13 @@ public class PuppetShowRecorder {
         }
     }
 
+    public PuppetShow getShow(){
+        return puppetShow;
+    }
+    public void setShow(PuppetShow puppetShow){
+        this.puppetShow = puppetShow;
+        this.puppetShow.SetContext(context);
+    }
     public void WriteShowToFile(File saveFile){
         ObjectOutputStream out = null;
         if (saveFile.isFile()) saveFile.delete();
@@ -267,8 +282,15 @@ public class PuppetShowRecorder {
     public boolean prepareToPlay(){
         if (puppetShow != null){
             // Set the width/height
-            width = stage.getWidth();
-            height = stage.getHeight();
+            Point newDimensions = Utils.getScaledDimension(new Point(puppetShow.origWidth, puppetShow.origHeight), new Point(stage.getWidth(), stage.getHeight()));
+            RelativeLayout.LayoutParams stageParams = (RelativeLayout.LayoutParams)stage.getLayoutParams();
+            stageParams.width = newDimensions.x;
+            stageParams.height = newDimensions.y;
+            stage.setLayoutParams(stageParams);
+            width = newDimensions.x;
+            height = newDimensions.y;
+            xScaleFactor = (float) width / puppetShow.origWidth;
+            yScaleFactor = (float) height / puppetShow.origHeight;
             // Remove any puppets that are on the stage
             stage.removeAllViews();
             // Set the first background
@@ -279,15 +301,42 @@ public class PuppetShowRecorder {
             for (int i = 0; i < puppetShow.getPuppets().size(); i++){
                 p = puppetShow.getPuppet(i);
                 RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                params.setMargins((int) (puppetShow.initialXs[i] * width), (int) (puppetShow.initialYs[i] * height), 0, 0);
+                p.setScaleX(xScaleFactor * p.getScaleX());
+                p.setScaleY(yScaleFactor * p.getScaleY());
+                params.setMargins((int) (puppetShow.initialXs[i] * xScaleFactor), (int) (puppetShow.initialYs[i] * yScaleFactor), -250, -250);
                 p.setLayoutParams(params);
                 p.setTag(p.getName());
                 stage.addView(p);
-                Log.d(LOG_TAG, "Puppet added, visibility = " + p.isOnStage());
             }
             // Set the frame sequence and length
             frameSequence = puppetShow.getFrameSequence();
             getLength();
+
+            stage.setVisibility(View.VISIBLE);
+            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
+            set.setTarget(stage);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    stage.setAlpha(1f);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+            set.start();
             return true;
         } else
             return false;
@@ -361,11 +410,12 @@ public class PuppetShowRecorder {
                             public void run() {
                                 RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) p
                                         .getLayoutParams();
-                                layoutParams.leftMargin = (int)(frame.x * width);
-                                layoutParams.topMargin = (int)(frame.y * height);
+                                layoutParams.leftMargin = Math.round(frame.x * xScaleFactor);
+                                layoutParams.topMargin = Math.round(frame.y * yScaleFactor);
                                 layoutParams.rightMargin = -250;
                                 layoutParams.bottomMargin = -250;
                                 p.setLayoutParams(layoutParams);
+                                Log.d(LOG_TAG, "Scaled position: " + (int)(frame.x * xScaleFactor) + ", " + (int)(frame.y * yScaleFactor));
                             }
                         });
                         break;
@@ -373,8 +423,8 @@ public class PuppetShowRecorder {
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                p.setScaleX(frame.x);
-                                p.setScaleY(frame.y);
+                                p.setScaleX(frame.x * xScaleFactor);
+                                p.setScaleY(frame.y * yScaleFactor);
                             }
                         });
                         break;

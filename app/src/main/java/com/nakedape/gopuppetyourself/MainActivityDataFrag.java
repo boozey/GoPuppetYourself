@@ -16,6 +16,7 @@ public class MainActivityDataFrag extends Fragment {
     ArrayList<ViewGroup.LayoutParams> layoutParamses = new ArrayList<>();
     boolean isBackstage;
     String cameraCapturePath;
+    PuppetShow puppetShow;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

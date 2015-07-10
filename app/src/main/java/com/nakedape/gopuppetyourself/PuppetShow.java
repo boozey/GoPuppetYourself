@@ -33,6 +33,7 @@ public class PuppetShow implements Serializable {
     transient public float[] initialScales;
     transient private int orientation;
     transient private Context context;
+    transient int origWidth, origHeight;
 
     public PuppetShow(Context context){
         puppets = new ArrayList<>();
@@ -41,7 +42,8 @@ public class PuppetShow implements Serializable {
         this.context = context;
     }
     public PuppetShow(RelativeLayout stage){
-        this.stage = stage;
+        origWidth = stage.getWidth();
+        origHeight = stage.getHeight();
         context = stage.getContext();
         puppets = new ArrayList<>();
         backgrounds = new ArrayList<>();
@@ -61,6 +63,12 @@ public class PuppetShow implements Serializable {
             initialXs[i] = (float) params.leftMargin / stage.getWidth();
             initialYs[i] = (float) params.topMargin / stage.getHeight();
         }
+    }
+    public void SetContext(Context context){
+        this.context = context;
+    }
+    public void ReleaseContext(){
+        context = null;
     }
 
     public void addPuppet(Puppet puppet){
