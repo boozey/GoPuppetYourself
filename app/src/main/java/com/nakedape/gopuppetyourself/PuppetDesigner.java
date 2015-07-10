@@ -1161,6 +1161,7 @@ public class PuppetDesigner extends View {
         lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
+        invalidate();
     }
     public void loadPuppet(PuppetData data){
         int height, width;
