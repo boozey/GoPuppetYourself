@@ -1806,23 +1806,8 @@ public class MainActivity extends Activity {
         prefEditor.apply();
         // Animate the puppet being removed
         Animation popOut = AnimationUtils.loadAnimation(context, R.anim.anim_pop_out);
-        popOut.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                stage.removeView(p);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
         p.startAnimation(popOut);
+        stage.removeView(p);
     }
     private String getPathFromName(String name){
         return storageDir.getPath() + "//" + name + getResources().getString(R.string.puppet_extension);
