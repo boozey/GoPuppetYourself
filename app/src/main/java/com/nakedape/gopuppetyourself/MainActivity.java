@@ -476,7 +476,6 @@ public class MainActivity extends Activity {
                 }
                 playButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    Log.d(LOG_TAG, "Play button pressed");
                     secondControlsFadeOut();
                     PlayClick(view);
                     GoToPerformance(view);
@@ -487,7 +486,6 @@ public class MainActivity extends Activity {
 
                 recordButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    Log.d(LOG_TAG, "Record button pressed");
                     secondControlsFadeOut();
                     GoToPerformance(view);
                     RecordClick(view);
@@ -498,7 +496,6 @@ public class MainActivity extends Activity {
 
                 libraryButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    Log.d(LOG_TAG, "Library button pressed");
                     secondControlsFadeOut();
                     mainControlFadeOut();
                     ShowPuppetLibrary(view);
@@ -507,7 +504,6 @@ public class MainActivity extends Activity {
 
                 backgroundLibraryButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    Log.d(LOG_TAG, "Background library button pressed");
                     secondControlsFadeOut();
                     mainControlFadeOut();
                     ShowBackgroundPopup();
@@ -971,7 +967,6 @@ public class MainActivity extends Activity {
                                 @Override
                                 public void run() {
                                     backgroundListAdapter.add(b, f);
-                                    Log.d(LOG_TAG, "added background to list adapter");
 
                                 }
                             });
@@ -1126,7 +1121,6 @@ public class MainActivity extends Activity {
         }
     }
     private void setBackGround(Uri imageUri, float reqWidth, float reqHeight){
-        Log.d(LOG_TAG, "set background called");
         Bitmap bitmap = null;
         try {
             try {
@@ -1134,14 +1128,10 @@ public class MainActivity extends Activity {
                 Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
                 cursor.moveToFirst();
                 int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
-                Log.d(LOG_TAG, "image width = " + width);
                 int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
-                Log.d(LOG_TAG, "image width = " + height);
                 if (width > stage.getWidth() || height > stage.getHeight()) {
                     double scale = Math.min(reqWidth / width, reqHeight / height);
                     bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int) (reqWidth * scale), (int) (reqHeight * scale));
-                    Log.d(LOG_TAG, "Scaled factor = " + String.valueOf(scale));
-                    Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(stage.getWidth() * scale));
                 } else {
                     bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
                 }
@@ -1157,14 +1147,12 @@ public class MainActivity extends Activity {
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             String path = getNextBackgroundPath();
             Utils.WriteImage(bitmap, path);
-            Log.d(LOG_TAG, "background path: " + path);
             savedData.currentBackground = bitmap;
             SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
             prefEditor.putString(BACKGROUND_PATH, path);
             prefEditor.putInt(BACKGROUND_WIDTH, bitmap.getWidth());
             prefEditor.putInt(BACKGROUND_HEIGHT, bitmap.getHeight());
             prefEditor.apply();
-            Log.d(LOG_TAG, "background changed, path: " + imageUri.toString());
         }
     } // Called from activity result
     private void setBackground(String path){
@@ -1385,7 +1373,6 @@ public class MainActivity extends Activity {
         for (int i = 0; i < stage.getChildCount(); i++){
             if (stage.getChildAt(i).equals(p)) {
                 intent.putExtra(PUPPET_INDEX, i);
-                Log.d(LOG_TAG, "index = " + i);
             }
         }
         intent.putExtra(PUPPET_PATH, p.getPath());
@@ -1472,30 +1459,9 @@ public class MainActivity extends Activity {
             // Drag listener to catch drops inside the popup window
             layout.setOnDragListener(new LibraryPuppetDragEventListener());
 
-            // Touch listner to allow popup window to be moved
-            /*layout.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View view, MotionEvent event) {
-                    final int X = (int) event.getRawX();
-                    final int Y = (int) event.getRawY();
-                    switch (event.getAction() & MotionEvent.ACTION_MASK) {
-                        case MotionEvent.ACTION_DOWN:
-                            RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
-                            dx = X - lParams.leftMargin;
-                            dy = Y - lParams.topMargin;
-                            break;
-                        case MotionEvent.ACTION_MOVE:
-                            moveView(view, X, Y);
-                            break;
-                    }
-                    return true;
-                }
-            });*/
-
             // Drag listener to receive puppets dropped on the stage
             stage.setOnDragListener(new StagePuppetDragEventListener());
 
-            Log.d(LOG_TAG, "Puppets on stage = " + stage.getChildCount());
             // Touch listeners to start drag events for puppets on stage
             for (int i = 0; i < stage.getChildCount(); i++) {
                 stage.getChildAt(i).setOnTouchListener(new View.OnTouchListener() {
@@ -1509,7 +1475,6 @@ public class MainActivity extends Activity {
                         return true;
                     }
                 });
-                Log.d(LOG_TAG, "Drag touch listener added");
             }
 
             // Touch listener to close popup window when the stage is touched
@@ -1524,7 +1489,6 @@ public class MainActivity extends Activity {
                     return false;
                 }
             });
-            Log.d(LOG_TAG, "popup should be visible");
 
             // Search for puppet files on a separate thread and update UI as they're loaded
             Runnable loadPuppetsThread = new Runnable() {
@@ -1545,7 +1509,6 @@ public class MainActivity extends Activity {
                                     @Override
                                     public void run() {
                                         puppetListAdapter.add(f);
-                                        Log.d(LOG_TAG, "added puppet to library popup");
 
                                     }
                                 });
@@ -1672,7 +1635,6 @@ public class MainActivity extends Activity {
                     return true;
                 case DragEvent.ACTION_DROP:
                     ClipData.Item item = event.getClipData().getItemAt(0);
-                    Log.d(LOG_TAG, "Puppet drag index " + item.getText().toString());
                     int index = Integer.parseInt(item.getText().toString());
                     Puppet p = (Puppet)stage.getChildAt(index);
                     ListView flipper = (ListView)findViewById(R.id.puppet_list_view);
@@ -1830,7 +1792,6 @@ public class MainActivity extends Activity {
         String filePath = data.getStringExtra(PUPPET_PATH);
         int index = data.getIntExtra(PUPPET_INDEX, -1);
         if (index > -1) stage.removeViewAt(index);
-        Log.d(LOG_TAG, "index = " + index);
         Puppet puppet = new Puppet(context, null);
         Utils.ReadPuppetFromFile(puppet, new File(filePath));
         puppet.setOnTouchListener(backstageListener);
@@ -1841,7 +1802,6 @@ public class MainActivity extends Activity {
         prefEditor.apply();
         stage.addView(puppet);
         GoToPerformance(null);
-        Log.d(LOG_TAG, "new puppet should be visible");
     } // Called from activity result
     public void DeletePuppet(View v){
         AlertDialog.Builder builder = new AlertDialog.Builder(context);

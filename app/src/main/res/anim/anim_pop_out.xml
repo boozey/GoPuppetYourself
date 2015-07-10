@@ -11,14 +11,14 @@
             android:toYScale="1.1"
             android:fillBefore="false"
             android:fillAfter="false"
-            android:duration="200" />
+            android:duration="50" />
     </set>
     <set>
         <alpha
             android:interpolator="@android:interpolator/accelerate_decelerate"
             android:fromAlpha="1"
             android:toAlpha="0"
-            android:duration="200"
+            android:duration="100"
             android:fillBefore="false"
             android:fillAfter="false"/>
         <scale
@@ -31,7 +31,7 @@
             android:toYScale="0"
             android:fillBefore="false"
             android:fillAfter="false"
-            android:duration="75"
-            android:startOffset="200"/>
+            android:duration="100"
+            android:startOffset="50"/>
     </set>
 </set>
