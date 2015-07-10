@@ -1370,7 +1370,12 @@ public class MainActivity extends Activity {
                 if (isRecording)
                     showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
-                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                    }
+                }).start();
                 return true;
         }
         return false;
