@@ -14,7 +14,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -34,8 +33,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
-
-import com.Utils;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -309,42 +306,24 @@ public class DesignerActivity extends Activity {
 
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
-        int width, height;
+        View view = findViewById(R.id.designer_frame_layout);
         try {
-            try {
-                final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
-                Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
-                cursor.moveToFirst();
-                width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
-                Log.d(LOG_TAG, "image width = " + width);
-                height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
-                Log.d(LOG_TAG, "image width = " + height);
-                if (width > designer.getWidth() || height > designer.getHeight()){
-                    double scale = Math.min(((float) designer.getWidth() / width), ((float) designer.getHeight() / height));
-                    bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)(designer.getWidth() * scale), (int)(designer.getHeight() * scale));
-                    Log.d(LOG_TAG, "Scaled image width = " + String.valueOf(designer.getWidth() * scale));
-                }
-                else {
-                    bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                }
-            } catch (IllegalArgumentException | NullPointerException e) {
-                e.printStackTrace();
-                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, designer.getWidth(), designer.getHeight());
-            }
+            bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, view.getWidth(), view.getHeight());
         } catch (IOException e){
             e.printStackTrace();
             Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
         }
         if (bitmap != null){
-            designer.SetNewImage(bitmap);
-            designer.invalidate();
-            Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
+                designer.SetNewImage(bitmap);
+                designer.invalidate();
+                Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
         }
     }
     private void NewPuppet(){
         // Get the dimensions of the View
-        int targetW = (int)designer.getWidth();
-        int targetH = (int)designer.getHeight();
+        View view = findViewById(R.id.designer_frame_layout);
+        int targetW = (int)view.getWidth();
+        int targetH = (int)view.getHeight();
 
         // Get the dimensions of the bitmap
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();

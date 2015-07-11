@@ -285,6 +285,7 @@
 
     <!-- Puppet Designer Layout -->
     <FrameLayout
+        android:id="@+id/designer_frame_layout"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_below="@id/button_bar"

@@ -1,4 +1,4 @@
-package com;
+package com.nakedape.gopuppetyourself;
 
 import android.content.ContentResolver;
 import android.content.res.Resources;
@@ -139,8 +139,10 @@ public class Utils {
         InputStream inputStream = r.openInputStream(uri);
         BitmapFactory.decodeStream(inputStream, null, options);
 
+        Point dimensions = getScaledDimension(options.outWidth, options.outHeight, reqWidth, reqHeight);
+
         // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inSampleSize = calculateInSampleSize(options, dimensions.x, dimensions.y);
 
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
@@ -156,8 +158,10 @@ public class Utils {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(f.getPath(), options);
 
+        Point dimensions = getScaledDimension(options.outWidth, options.outHeight, reqWidth, reqHeight);
+
         // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inSampleSize = calculateInSampleSize(options, dimensions.x, dimensions.y);
 
         options.inJustDecodeBounds = false;
 
@@ -189,6 +193,10 @@ public class Utils {
     public static int getInBounds(int value, int min, int max){
         value = Math.max(min, value);
         return Math.min(value, max);
+    }
+
+    public static Point getScaledDimension(int origWidth, int origHeight, int maxWidth, int maxHeight){
+        return getScaledDimension(new Point(origWidth, origHeight), new Point(maxWidth, maxHeight));
     }
 
     public static Point getScaledDimension(Point imgSize, Point boundary) {

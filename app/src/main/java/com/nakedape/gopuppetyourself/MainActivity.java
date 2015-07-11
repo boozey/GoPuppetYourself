@@ -25,10 +25,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.view.GestureDetectorCompat;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
@@ -54,21 +52,14 @@ import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ViewFlipper;
-
-import com.Utils;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 
 
 public class MainActivity extends Activity {
@@ -178,6 +169,7 @@ public class MainActivity extends Activity {
         backgroundLibraryButton = (ImageButton)findViewById(R.id.background_library_button);
         backgroundLibraryButton.setVisibility(View.GONE);
         menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
+        menuButton.setVisibility(View.GONE);
         gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
 
         // Prepare show recorder
@@ -364,7 +356,7 @@ public class MainActivity extends Activity {
     }
 
     public void setTouchDelegate(final Puppet p){
-        stage.post( new Runnable() {
+        stage.post(new Runnable() {
             // Post in the parent's message queue to make sure the parent
             // lays out its children before we call getHitRect()
             public void run() {
@@ -373,7 +365,7 @@ public class MainActivity extends Activity {
                 rect.top += p.getTopClipPadding();
                 rect.left += p.getLeftClipPadding();
                 rect.right -= p.getRightClipPadding();
-                stage.setTouchDelegate( new TouchDelegate( rect , p));
+                stage.setTouchDelegate(new TouchDelegate(rect, p));
             }
         });
     }
@@ -1121,26 +1113,11 @@ public class MainActivity extends Activity {
     private void setBackGround(Uri imageUri, float reqWidth, float reqHeight){
         Bitmap bitmap = null;
         try {
-            try {
-                final String[] columns = {MediaStore.Images.ImageColumns.WIDTH, MediaStore.Images.ImageColumns.HEIGHT};
-                Cursor cursor = MediaStore.Images.Media.query(getContentResolver(), imageUri, columns);
-                cursor.moveToFirst();
-                int width = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.WIDTH));
-                int height = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.ImageColumns.HEIGHT));
-                if (width > stage.getWidth() || height > stage.getHeight()) {
-                    double scale = Math.min(reqWidth / width, reqHeight / height);
-                    bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int) (reqWidth * scale), (int) (reqHeight * scale));
-                } else {
-                    bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-                }
-            } catch (IllegalArgumentException | NullPointerException e) {
-                e.printStackTrace();
-                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, stage.getWidth(), stage.getHeight());
-            }
-        } catch (IOException e){
-        e.printStackTrace();
-        Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
-    }
+                    bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, (int)reqWidth, (int)reqHeight);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
+        }
         if (bitmap != null){
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             String path = getNextBackgroundPath();

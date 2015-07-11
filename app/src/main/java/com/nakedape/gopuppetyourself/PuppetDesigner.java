@@ -1149,6 +1149,7 @@ public class PuppetDesigner extends View {
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
         invalidate();
+        requestLayout();
     }
     public void loadPuppet(PuppetData data){
         int height, width;
