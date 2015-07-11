@@ -15,13 +15,10 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
-import com.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -670,13 +667,10 @@ public class PuppetDesigner extends View {
                     keepSearchingx = true;
                 }
                 else keepSearchingy = false;
-                if (!keepSearchingy && yN == y) {
-                    keepSearchingx = false;
-                }
             }
 
             keepSearchingy = true;
-            for (yN = y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) { // Search up, start at y - 1 since y has been checked
+            for (yN = y - 1; yN >= 0 && keepSearchingy; yN--) { // Search up, start at y - 1 since y has been checked
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
                 if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
@@ -705,22 +699,19 @@ public class PuppetDesigner extends View {
             for (yN = y; yN < backgroundBitmap.getHeight() && keepSearchingy; yN++) {
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
                 if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
-                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
+                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     if (rgbPrevX != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold))
                         backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
                 }
                 else keepSearchingy = false;
-                if (!keepSearchingy && yN == y){
-                    keepSearchingx = false;
-                }
             }
             keepSearchingy = true;
-            for (yN = y - 1; yN >= 0 && keepSearchingy && keepSearchingx; yN--) {
+            for (yN = y - 1; yN >= 0 && keepSearchingy; yN--) {
                 rgbCurrent = backgroundBitmap.getPixel(xN, yN);
                 if (rgbCurrent != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbCurrent, threshold)){
-                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     backgroundBitmap.setPixel(xN, yN, Color.TRANSPARENT);
+                    rgbPrevX = backgroundBitmap.getPixel(prevX, yN);
                     if (rgbPrevX != Color.TRANSPARENT && areColorsSimilar(rgbInit, rgbPrevX, threshold))
                         backgroundBitmap.setPixel(prevX, yN, Color.TRANSPARENT);
                 }
