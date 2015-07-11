@@ -1735,12 +1735,13 @@ public class MainActivity extends Activity {
         String path = getPathFromName(p.getName());
         p.setPath(path);
         p.setOnStage(true);
-        p.setVisibility(View.INVISIBLE);
+        p.setVisibility(View.GONE);
         stage.addView(p);
         Animation popIn = AnimationUtils.loadAnimation(context, R.anim.anim_pop_in);
         popIn.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
+                p.setVisibility(View.VISIBLE);
             }
 
             @Override
