@@ -112,6 +112,9 @@ public class Puppet extends View implements Serializable {
         return topPadding;
     }
 
+    public void setUpperPivotPoint(Point upperPivotPoint){
+        this.upperPivotPoint = upperPivotPoint;
+    }
     public Point getLowerPivotPoint() {
         return lowerPivotPoint;
     }

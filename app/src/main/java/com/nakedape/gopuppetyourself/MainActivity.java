@@ -16,6 +16,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
@@ -77,6 +78,7 @@ public class MainActivity extends Activity {
     private static final String BACKGROUND_PATH = "com.nakedape.gopuppetyourself.BACKGROUND_PATH";
     private static final String BACKGROUND_WIDTH = "com.nakedape.gopuppetyourself.BACKGROUND_WIDTH";
     private static final String BACKGROUND_HEIGHT = "com.nakedape.gopuppetyourself.BACKGROUND_HEIGHT";
+    private static final String FIRST_RUN = "com.nakedape.gopuppetyourself.FIRST_RUN";
 
     private Context context;
     private RelativeLayout stage;
@@ -140,6 +142,7 @@ public class MainActivity extends Activity {
     private PuppetListAdapter puppetListAdapter;
     private BitmapFileListAdapter backgroundListAdapter;
     private RelativeLayout showStage;
+    private boolean isFirstRun;
 
     // Gesture fields
     private GestureDetectorCompat gestureDetector;
@@ -177,6 +180,9 @@ public class MainActivity extends Activity {
         showRecorder.setHandler(mHandler);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
+        // Prepare shared preferences
+        SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
+
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
@@ -211,17 +217,31 @@ public class MainActivity extends Activity {
             if (savedData.currentBackground != null)
                 stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
             else
-                stage.setBackground(new ColorDrawable(getResources().getColor(R.color.dark_grey)));
+                stage.setBackground(new ColorDrawable(Color.parseColor("#8B37AF")));
             if (savedData.puppetShow != null)
                 showRecorder.setShow(savedData.puppetShow);
         }
-        else { // Create a new data fragment instance to save the data
+        else { // Create a new data fragment instance to save the data and perform
+            // other tasks that should only happen on initial app starts
             savedData = new MainActivityDataFrag();
             fm.beginTransaction().add(savedData, "data").commit();
+            // Check if this is the first run of the app
+            isFirstRun = preferences.getBoolean(FIRST_RUN, true);
+            if (isFirstRun) {
+                String path = setupBananaMan();
+                Puppet p = new Puppet(context, null);
+                Utils.ReadPuppetFromFile(p, new File(path));
+                p.setOnTouchListener(headTouchListener);
+                p.setTag(p.getName());
+                p.setPath(path);
+                stage.addView(p);
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean(FIRST_RUN, false);
+                editor.apply();
+            }
         }
 
         // Load puppets that are on stage
-        SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
         puppetsOnStage = (HashSet<String>)preferences.getStringSet(PUPPETS_ON_STAGE, null);
         if(puppetsOnStage != null) {
             File file;
@@ -255,9 +275,7 @@ public class MainActivity extends Activity {
 
         // Set background
         String backgroundPath = preferences.getString(BACKGROUND_PATH, null);
-        if (backgroundPath != null){
-            //int width = preferences.getInt(BACKGROUND_WIDTH, 600);
-            //int height = preferences.getInt(BACKGROUND_HEIGHT, 400);
+        if (backgroundPath != null){ // Should only be null if user has never set a background
             setBackground(backgroundPath);
             Log.d(LOG_TAG, "background set, path: " + Uri.parse(backgroundPath));
         }
@@ -368,6 +386,18 @@ public class MainActivity extends Activity {
                 stage.setTouchDelegate(new TouchDelegate(rect, p));
             }
         });
+    }
+    private String setupBananaMan(){
+        Puppet bananaMan = new Puppet(context, null);
+        bananaMan.setUpperJawImage(Utils.decodeSampledBitmapFromResource(getResources(), R.drawable.banana_man_top, 100, 100));
+        bananaMan.setLowerJawImage(Utils.decodeSampledBitmapFromResource(getResources(), R.drawable.banana_man_bottom, 100, 100));
+        bananaMan.setUpperPivotPoint(new Point(bananaMan.getUpperJawBitmap().getWidth() / 3, bananaMan.getUpperJawBitmap().getHeight()));
+        bananaMan.setLowerPivotPoint(new Point(bananaMan.getUpperJawBitmap().getWidth() / 3, 0));
+        bananaMan.setName("Banana Man");
+
+        // Save puppet to storage directory
+        File saveFile = new File(storageDir, bananaMan.getName() + getResources().getString(R.string.puppet_extension));
+        return Utils.WritePuppetToFile(bananaMan, saveFile);
     }
 
     // Main menu methods

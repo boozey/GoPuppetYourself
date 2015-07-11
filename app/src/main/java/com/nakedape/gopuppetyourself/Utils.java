@@ -124,8 +124,10 @@ public class Utils {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeResource(res, resId, options);
 
+        Point dimensions = getScaledDimension(options.outWidth, options.outHeight, reqWidth, reqHeight);
+
         // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inSampleSize = calculateInSampleSize(options, dimensions.x, dimensions.y);
 
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;

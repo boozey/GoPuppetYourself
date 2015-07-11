@@ -10,7 +10,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:id="@+id/stage"
-        android:background="@color/dark_grey">
+        android:background="#8B37AF">
 
     </RelativeLayout>
     <RelativeLayout
