@@ -233,10 +233,10 @@ public class Puppet extends View implements Serializable {
         // Set final upper and lower padding, minimum of zero
         leftClipPadding = Math.max(leftClipPadding, 0);
         rightClipPadding = Math.max(rightClipPadding, 0);
-        upperLeftPadding += leftClipPadding; Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
-        lowerLeftPadding += leftClipPadding; Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
-        upperRightPadding += rightClipPadding; Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
-        lowerRightPadding += rightClipPadding; Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
+        upperLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
+        lowerLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
+        upperRightPadding += rightClipPadding; //Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
+        lowerRightPadding += rightClipPadding; //Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
 
         upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
         lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
@@ -336,7 +336,7 @@ public class Puppet extends View implements Serializable {
         byteLength = stream.toByteArray().length;
         out.writeInt(byteLength);
         out.write(stream.toByteArray());
-        Log.d(LOG_TAG, "Byte array size: " + stream.toByteArray().length);
+        //Log.d(LOG_TAG, "Byte array size: " + stream.toByteArray().length);
 
     }
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
@@ -351,7 +351,6 @@ public class Puppet extends View implements Serializable {
         byte[] bytes = new byte[in.readInt()];
         in.readFully(bytes);
         upperJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        Log.d(LOG_TAG, "Bitmap size " + bytes.length);
         setUpperJawImage(upperJawBitmap);
 
         bytes = new byte[in.readInt()];

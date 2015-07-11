@@ -192,9 +192,8 @@ public class PuppetDesigner extends View {
             Runtime runtime = Runtime.getRuntime();
             if (3 * backgroundBitmap.getByteCount() + runtime.totalMemory() >= runtime.maxMemory()) {
                 backgroundUndoStack.remove(0);
-                Log.d(LOG_TAG, "Memory low, removing undo level");
+                Log.i(LOG_TAG, "Memory low, removing undo level");
             }
-            Log.d(LOG_TAG, "add undo, undo stack size: " + backgroundUndoStack.size());
         }
     }
     private void addDrawUndo(){
@@ -203,7 +202,7 @@ public class PuppetDesigner extends View {
         Runtime runtime = Runtime.getRuntime();
         if (3 * drawBitmap.getByteCount() + runtime.totalMemory() >= runtime.maxMemory()) {
             drawUndoStack.remove(0);
-            Log.d(LOG_TAG, "Memory low, removing undo level");
+            Log.i(LOG_TAG, "Memory low, removing undo level");
         }
     }
     public boolean Undo(){
@@ -314,7 +313,6 @@ public class PuppetDesigner extends View {
                     cutPath.setLastPoint(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
                     invalidate();
                     addBackgroundUndo();
-                    Log.d(LOG_TAG, "Number of cut path points = " + cutPathPoints.size());
                     determineCutPath((int) cutPathPaint.getStrokeWidth());
                     cutPathPaint.setColor(Color.TRANSPARENT);
                     cutPathPaint.setStrokeWidth(1);
@@ -537,7 +535,6 @@ public class PuppetDesigner extends View {
             rightPoint = new Point(x - a, y - b);
             rightWeight = stopValue - rN;
         }
-        Log.d(LOG_TAG, "Left loop rN = " + rN);
         // Determine when color changes from the right
         rN = 0; // start at the middle
         stopValue = -r;
@@ -561,7 +558,6 @@ public class PuppetDesigner extends View {
             rightPoint = new Point(x + a, y + b);
             rightWeight = Math.abs(stopValue - rN);
         }
-        Log.d(LOG_TAG, "Right loop rN = " + rN);
         // Return weigthed average
         int newX = (leftWeight * leftPoint.x + x + rightWeight * rightPoint.x) / (leftWeight + 1 + rightWeight);
         int newY = (leftWeight * leftPoint.y + y + rightWeight * rightPoint.y) / (leftWeight + 1 + rightWeight);
@@ -655,7 +651,7 @@ public class PuppetDesigner extends View {
         boolean keepSearchingx = true;
         int rgbInit = getColorAverage(backgroundBitmap, x, y, 2);
         double threshold = colorSimilarity * colorSimilaritySensitivity;
-        Log.d(LOG_TAG, "Magic Erase Threshold = " + threshold);
+        //Log.d(LOG_TAG, "Magic Erase Threshold = " + threshold);
         int rgbCurrent, rgbPrevX;
         int xN, yN, prevX = x;
         for (xN = x; xN < backgroundBitmap.getWidth() && keepSearchingx; xN++) { // Search to the right
@@ -932,7 +928,7 @@ public class PuppetDesigner extends View {
                 difference = Math.max(difference, getColorDiff(average, i));
         }
         colorSimilarity = difference;
-        Log.d(LOG_TAG, "Color similarity: " + colorSimilarity);
+        //Log.d(LOG_TAG, "Color similarity: " + colorSimilarity);
         return average;
     }
     private int getColorAverage(Bitmap b, int x, int y, int radius){

@@ -120,7 +120,6 @@ public class PuppetShowRecorder {
     } // Record a keyframe event
     public void RecordFrame(String puppetId, int event, float x, float y){
         puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x, y));
-        Log.d(LOG_TAG, "Puppet movement: " + x + ", " + y);
     } // Record a keyframe event with movement
     public void RecordFrame(KeyFrame frame){
         puppetShow.addFrame(frame);
@@ -145,7 +144,6 @@ public class PuppetShowRecorder {
     }
     public KeyFrame getBackgroundFrame(String bitmapPath){
         bitmapPaths.add(bitmapPath);
-        Log.d(LOG_TAG, "background set recorded");
         return new KeyFrame(getTimeFromStartMillis(), KeyFrame.SET_BACKGROUND, bitmapPaths.size() - 1);
     }
     public void RecordStop(){
@@ -162,7 +160,7 @@ public class PuppetShowRecorder {
             }
 
             isRecording = false;
-            Log.d(LOG_TAG, "Recording stopped. Length: " + showLength);
+            Log.i(LOG_TAG, "Recording stopped. Length: " + showLength);
         }
     } // Stop recording
     public void FinalizeRecording(){
@@ -268,9 +266,9 @@ public class PuppetShowRecorder {
         } while (frameSequence.get(i).eventType != KeyFrame.END && i < frameSequence.size());
         if (showLength == -1){
             showLength = frameSequence.get(frameSequence.size() - 1).time;
-            Log.d(LOG_TAG, "Error determining frameSequence start time");
+            //Log.d(LOG_TAG, "Error determining frameSequence start time");
         }
-        Log.d(LOG_TAG, "Show length: " + showLength);
+        Log.i(LOG_TAG, "Show length: " + showLength);
         return showLength;
     }
 
@@ -372,7 +370,7 @@ public class PuppetShowRecorder {
     private class PlayLoop implements Runnable{
         @Override
         public void run(){
-            Log.d(LOG_TAG, "Play loop started");
+            //Log.d(LOG_TAG, "Play loop started");
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
             startMillis = SystemClock.elapsedRealtime();
             for (int i = 0; i < frameSequence.size() && isPlaying; i++) {
@@ -444,7 +442,6 @@ public class PuppetShowRecorder {
                             @Override
                             public void run() {
                               stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
-                                Log.d(LOG_TAG, "background set");
                             }
                         });
                         break;
@@ -457,8 +454,8 @@ public class PuppetShowRecorder {
                         });
                         Message msg = mHandler.obtainMessage(COUNTER_END);
                         msg.sendToTarget();
-                        Log.d(LOG_TAG, "Show end time: " + frame.time);
-                        Log.d(LOG_TAG, "Actual end time: " + getTimeFromStartMillis());
+                        //Log.d(LOG_TAG, "Show end time: " + frame.time);
+                        //Log.d(LOG_TAG, "Actual end time: " + getTimeFromStartMillis());
                         return;
 
                 }

@@ -58,7 +58,6 @@ public class PuppetShow implements Serializable {
         for (int i = 0; i < stage.getChildCount(); i++) {
             p = (Puppet) stage.getChildAt(i);
             puppets.add(p.getBytes());
-            Log.d(LOG_TAG, "Byte array size: " + puppets.get(i).length);
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) p.getLayoutParams();
             initialXs[i] = (float) params.leftMargin / stage.getWidth();
             initialYs[i] = (float) params.topMargin / stage.getHeight();
