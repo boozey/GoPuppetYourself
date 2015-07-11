@@ -435,7 +435,6 @@ public class PuppetShowRecorder {
                                 layoutParams.rightMargin = -250;
                                 layoutParams.bottomMargin = -250;
                                 p.setLayoutParams(layoutParams);
-                                Log.d(LOG_TAG, "Scaled position: " + (int)(frame.x * xScaleFactor) + ", " + (int)(frame.y * yScaleFactor));
                             }
                         });
                         break;
