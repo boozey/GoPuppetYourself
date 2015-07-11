@@ -541,21 +541,106 @@ public class MainActivity extends Activity {
         if (!isSecondControlShowing) {
             //mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
 
-            recordButton.setVisibility(View.VISIBLE);
-            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            recordButton.startAnimation(fadeIn);
+            AnimatorSet set1 = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_scale_in);
+            set1.setTarget(recordButton);
+            set1.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    recordButton.setVisibility(View.VISIBLE);
+                }
 
-            playButton.setVisibility(View.VISIBLE);
-            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            playButton.startAnimation(fadeIn);
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    recordButton.setVisibility(View.VISIBLE);
+                }
 
-            libraryButton.setVisibility(View.VISIBLE);
-            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            libraryButton.startAnimation(fadeIn);
+                @Override
+                public void onAnimationCancel(Animator animator) {
 
-            backgroundLibraryButton.setVisibility(View.VISIBLE);
-            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            backgroundLibraryButton.startAnimation(fadeIn);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+
+            AnimatorSet set2 = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_scale_in);
+            set2.setTarget(playButton);
+            set2.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    playButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    playButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+
+            AnimatorSet set3 = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_scale_in);
+            set3.setTarget(libraryButton);
+            set3.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    libraryButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    libraryButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+
+            AnimatorSet set4 = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_scale_in);
+            set4.setTarget(backgroundLibraryButton);
+            set4.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+                    backgroundLibraryButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    backgroundLibraryButton.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+
+            set1.start();
+            set2.start();
+            set3.start();
+            set4.start();
 
             isSecondControlShowing = true;
         }
