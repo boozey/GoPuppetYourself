@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
 
                         @Override
                         public void onAnimationEnd(Animation animation) {
-                            setViewGone(progressBar);
+                            progressBar.setVisibility(View.GONE);
                         }
 
                         @Override
@@ -273,7 +273,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume(){
         super.onResume();
-        progressBarFadeOut();
         mainControlFadeOut();
     }
     @Override
@@ -672,9 +671,6 @@ public class MainActivity extends Activity {
         });
         progressBar.startAnimation(fade_out);
     }
-    private void setViewGone(View v){
-        v.setVisibility(View.GONE);
-    }
 
     // Record/play show methods
     public void RecordClick(View v){
@@ -803,7 +799,7 @@ public class MainActivity extends Activity {
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    setViewGone(progressBar);
+                    progressBar.setVisibility(View.GONE);
                 }
 
                 @Override
