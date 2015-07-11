@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.*;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.Utils;
 
@@ -340,19 +342,25 @@ public class PuppetShowRecorder {
             return false;
     }
     public void Play(){
-        // Start playing audio
-        mPlayer = new MediaPlayer();
-        try {
-            mPlayer.setDataSource(audioFilePath);
-            mPlayer.prepare();
-            mPlayer.start();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            // Start playing audio
+            mPlayer = new MediaPlayer();
+            try {
+                mPlayer.setDataSource(audioFilePath);
+                mPlayer.prepare();
+                mPlayer.start();
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+            }
+            // Start playing animation
+            playLoop = new PlayLoop();
+            new Thread(playLoop).start();
+            isPlaying = true;
+        } else {
+            Toast.makeText(context, "Unable to gain audio focus", Toast.LENGTH_SHORT).show();
         }
-        // Start playing animation
-        playLoop = new PlayLoop();
-        new Thread(playLoop).start();
-        isPlaying = true;
     }
     public void Stop(){
         // Stop media player
@@ -366,6 +374,20 @@ public class PuppetShowRecorder {
         isRecording = false;
         stopCounterThread = true;
     }
+    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int i) {
+            if (i == AudioManager.AUDIOFOCUS_LOSS || i == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT){
+                if (mPlayer != null) {
+                    mPlayer.stop();
+                    mPlayer.release();
+                    mPlayer = null;
+                }
+                isPlaying = false;
+            }
+        }
+    };
+
 
     private class PlayLoop implements Runnable{
         @Override
@@ -441,7 +463,7 @@ public class PuppetShowRecorder {
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                              stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
+                                stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
                             }
                         });
                         break;

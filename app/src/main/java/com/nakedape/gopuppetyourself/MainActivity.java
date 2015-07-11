@@ -19,6 +19,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
@@ -182,6 +183,7 @@ public class MainActivity extends Activity {
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(context, stage);
         showRecorder.setHandler(mHandler);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
@@ -712,7 +714,7 @@ public class MainActivity extends Activity {
             Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
             progressBar.startAnimation(fadeIn);
             fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
+            mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_stop_plain));
             mainControlButton.startAnimation(fadeIn);
             showRecorder.Play();
             isPlaying = true;
