@@ -194,7 +194,6 @@ public class MainActivity extends Activity {
             backgroundDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "backgrounds");
             if (!backgroundDir.exists())
                 if (!backgroundDir.mkdir()) Log.e(LOG_TAG, "error creating background directory");
-            Log.d(LOG_TAG, "Using external files directory");
         }
         else {
             storageDir = new File(getFilesDir(), getResources().getString(R.string.puppet_directory));
@@ -206,7 +205,6 @@ public class MainActivity extends Activity {
             backgroundDir = new File(getFilesDir(), "backgrounds");
             if (!backgroundDir.exists())
                 if (!backgroundDir.mkdir()) Log.e(LOG_TAG, "error creating background directory");
-            Log.d(LOG_TAG, "Using internal files directory");
         }
 
         // Check for a data fragment retained after activity restart
@@ -277,7 +275,6 @@ public class MainActivity extends Activity {
         String backgroundPath = preferences.getString(BACKGROUND_PATH, null);
         if (backgroundPath != null){ // Should only be null if user has never set a background
             setBackground(backgroundPath);
-            Log.d(LOG_TAG, "background set, path: " + Uri.parse(backgroundPath));
         }
     }
     @Override
