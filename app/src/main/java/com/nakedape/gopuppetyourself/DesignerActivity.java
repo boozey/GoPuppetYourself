@@ -214,10 +214,6 @@ public class DesignerActivity extends Activity {
         View layout = findViewById(R.id.new_image_popup);
         if (layout == null) {
             layout = getLayoutInflater().inflate(R.layout.new_image_popup, null);
-            int width = 200;
-            int height = 400;
-            layout.setMinimumHeight(height);
-            layout.setMinimumWidth(width);
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
             if (params == null) {
                 params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
