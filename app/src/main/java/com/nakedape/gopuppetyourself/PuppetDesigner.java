@@ -1059,10 +1059,11 @@ public class PuppetDesigner extends View {
         if (backgroundBitmap != null) {
             Matrix m = new Matrix();
             m.preScale(-1, 1);
-            Bitmap dst = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
-            backgroundBitmap = dst;
+            backgroundBitmap = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
             backgroundCanvas = new Canvas(backgroundBitmap);
+            backgroundOriginal = Bitmap.createBitmap(backgroundOriginal, 0, 0, backgroundOriginal.getWidth(), backgroundOriginal.getHeight(), m, false);
             invalidate();
+            requestLayout();
             //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
         }
     }
@@ -1073,6 +1074,7 @@ public class PuppetDesigner extends View {
             // Rotate background and draw bitmaps
             backgroundBitmap = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
             backgroundCanvas = new Canvas(backgroundBitmap);
+            backgroundOriginal = Bitmap.createBitmap(backgroundOriginal, 0, 0, backgroundOriginal.getWidth(), backgroundOriginal.getHeight(), m, false);
             drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
             drawCanvas = new Canvas(drawBitmap);
 
@@ -1085,6 +1087,14 @@ public class PuppetDesigner extends View {
             tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
             tile.setBounds(viewCanvas.getClipBounds());
             tile.draw(viewCanvas);
+
+            // Re-position the crop boxes
+            int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
+            upperJawBox = new Rect(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
+            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, upperJawBox.bottom);
+            lowerJawBox = new Rect(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
+            //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
+            lowerJawPivotPoint = upperJawPivotPoint;
 
             invalidate();
             requestLayout();
@@ -1097,6 +1107,7 @@ public class PuppetDesigner extends View {
             // Rotate background and draw bitmaps
             backgroundBitmap = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
             backgroundCanvas = new Canvas(backgroundBitmap);
+            backgroundOriginal = Bitmap.createBitmap(backgroundOriginal, 0, 0, backgroundOriginal.getWidth(), backgroundOriginal.getHeight(), m, false);
             drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
             drawCanvas = new Canvas(drawBitmap);
 
@@ -1109,6 +1120,14 @@ public class PuppetDesigner extends View {
             tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
             tile.setBounds(viewCanvas.getClipBounds());
             tile.draw(viewCanvas);
+
+            // Re-position the crop boxes
+            int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
+            upperJawBox = new Rect(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
+            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, upperJawBox.bottom);
+            lowerJawBox = new Rect(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
+            //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
+            lowerJawPivotPoint = upperJawPivotPoint;
 
             invalidate();
             requestLayout();
