@@ -18,6 +18,7 @@
     <string name="action_delete_remove">Return to library</string>
     <string name="action_scale">Scale</string>
     <string name="action_flip_horz">Flip</string>
+    <string name="toast_scale">Pinch to shrink or grow</string>
 
     <!-- Puppet library strings -->
     <string name="puppet_library_title">Puppet Library</string>
@@ -39,4 +40,7 @@
     <string name="toast_magic_erase">Touch to erase a region of similar colors</string>
     <string name="toast_cut_path">Outline the region to cut</string>
     <string name="toast_profile">Select the direction the puppet is facing</string>
+    <string name="toast_profile_right">Right facing</string>
+    <string name="toast_profile_left">Left facing</string>
+
 </resources>

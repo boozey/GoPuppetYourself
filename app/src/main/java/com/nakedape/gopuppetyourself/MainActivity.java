@@ -517,6 +517,7 @@ public class MainActivity extends Activity {
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
                     secondControlsFadeOut();
                     mainControlFadeOut();
+                    isControlPressed = false;
                     ShowPuppetLibrary(view);
                     return true;
                 }
@@ -525,6 +526,7 @@ public class MainActivity extends Activity {
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
                     secondControlsFadeOut();
                     mainControlFadeOut();
+                    isControlPressed = false;
                     ShowBackgroundPopup();
                     return true;
                 }
@@ -933,43 +935,45 @@ public class MainActivity extends Activity {
         }
     } // Called on main control action down
     public void GoToPerformance(View v){
-        stage.setOnClickListener(null);
-        if (puppetMenu != null) puppetMenu.dismiss();
-        if (selectedPuppet != null) selectedPuppet.setBackground(null);
-        isBackstage = false;
-        if (!isPlaying) {
-            for (int i = 0; i < stage.getChildCount(); i++) {
-                final Puppet p = (Puppet) stage.getChildAt(i);
-                if (p.isOnStage()) {
-                    p.setOnClickListener(null);
-                    p.setOnLongClickListener(null);
-                    p.setOnTouchListener(headTouchListener);
-                } else {
-                    // Animate the disappearance
-                    AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
-                    set.addListener(new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationStart(Animator animator) {
+        if (!isLibraryOpen) {
+            stage.setOnClickListener(null);
+            //if (puppetMenu != null) puppetMenu.dismiss();
+            if (selectedPuppet != null) selectedPuppet.setBackground(null);
+            isBackstage = false;
+            if (!isPlaying) {
+                for (int i = 0; i < stage.getChildCount(); i++) {
+                    final Puppet p = (Puppet) stage.getChildAt(i);
+                    if (p.isOnStage()) {
+                        p.setOnClickListener(null);
+                        p.setOnLongClickListener(null);
+                        p.setOnTouchListener(headTouchListener);
+                    } else {
+                        // Animate the disappearance
+                        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
+                        set.addListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animator) {
 
-                        }
+                            }
 
-                        @Override
-                        public void onAnimationEnd(Animator animator) {
-                            p.setVisibility(View.GONE);
-                        }
+                            @Override
+                            public void onAnimationEnd(Animator animator) {
+                                p.setVisibility(View.GONE);
+                            }
 
-                        @Override
-                        public void onAnimationCancel(Animator animator) {
+                            @Override
+                            public void onAnimationCancel(Animator animator) {
 
-                        }
+                            }
 
-                        @Override
-                        public void onAnimationRepeat(Animator animator) {
+                            @Override
+                            public void onAnimationRepeat(Animator animator) {
 
-                        }
-                    });
-                    set.setTarget(p);
-                    set.start();
+                            }
+                        });
+                        set.setTarget(p);
+                        set.start();
+                    }
                 }
             }
         }
@@ -993,17 +997,20 @@ public class MainActivity extends Activity {
                 lastScaleFactor = view.getScaleX();
                 break;
             case MotionEvent.ACTION_UP:
-                if (selectedPuppet != null) selectedPuppet.setBackground(null);
-                selectedPuppet = (Puppet)view;
-                selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
-                puppetMenu = new PopupMenu(context, selectedPuppet);
-                puppetMenu.inflate(R.menu.menu_puppet_edit);
-                puppetMenu.setOnMenuItemClickListener(popupMenuListener);
-                if (!selectedPuppet.isOnStage()){
-                    MenuItem item = puppetMenu.getMenu().findItem(R.id.action_puppet_visible);
-                    item.setChecked(false);
+                if (selectedPuppet != null) {
+                    selectedPuppet.setBackground(null);
                 }
-                puppetMenu.show();
+                    selectedPuppet = (Puppet) view;
+                    selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
+                    if (puppetMenu != null) puppetMenu.dismiss();
+                    puppetMenu = new PopupMenu(context, selectedPuppet);
+                    puppetMenu.inflate(R.menu.menu_puppet_edit);
+                    puppetMenu.setOnMenuItemClickListener(popupMenuListener);
+                    if (!selectedPuppet.isOnStage()) {
+                        MenuItem item = puppetMenu.getMenu().findItem(R.id.action_puppet_visible);
+                        item.setChecked(false);
+                    }
+                    puppetMenu.show();
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
                 break;
@@ -1121,10 +1128,8 @@ public class MainActivity extends Activity {
         if (v != null) CloseGetNewImagePopup(null);
         final View layout = findViewById(R.id.background_library_popup);
         if (layout != null){
-            for (int i = 0; i < stage.getChildCount(); i++) {
-                stage.getChildAt(i).setOnTouchListener(headTouchListener);
-            }
-            stage.setOnTouchListener(null);
+            if (!isControlPressed)
+                GoToPerformance(null);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.flip_out_to_right);
             layout.setPivotX(500);
             layout.setPivotY(rootLayout.getHeight() / 2);
@@ -1415,6 +1420,7 @@ public class MainActivity extends Activity {
                 if (isRecording)
                     showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                if (!isControlPressed) GoToPerformance(view);
                 return true;
         }
         return true;
@@ -1475,6 +1481,7 @@ public class MainActivity extends Activity {
                 });
                 lastScaleFactor = selectedPuppet.getScaleX();
                 stage.setOnTouchListener(scaleListener);
+                Toast.makeText(context, getString(R.string.toast_scale), Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.action_puppet_flip_horz:
                 if (isRecording)
@@ -1653,10 +1660,10 @@ public class MainActivity extends Activity {
     private void ClosePuppetLibrary(){
         final View layout = findViewById(R.id.puppet_library_popup);
         if (layout != null && isLibraryOpen) {
-            for (int i = 0; i < stage.getChildCount(); i++) {
-                stage.getChildAt(i).setOnTouchListener(headTouchListener);
+            isLibraryOpen = false;
+            if (!isControlPressed){
+                GoToPerformance(null);
             }
-            stage.setOnTouchListener(null);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.flip_out_to_right);
             layout.setPivotX(500);
             layout.setPivotY(rootLayout.getHeight() / 2);
@@ -1683,7 +1690,6 @@ public class MainActivity extends Activity {
                 }
             });
             set.start();
-            isLibraryOpen = false;
         }
     }
     public void StartLibraryDrag(View v, String path, int index){
