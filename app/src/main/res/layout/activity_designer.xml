@@ -111,7 +111,7 @@
         </RelativeLayout>
 
         <!-- Background Bar Layout -->
-        <RelativeLayout
+        <LinearLayout
             android:layout_height="wrap_content"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -123,46 +123,45 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/flip_horz_button"
                 android:background="@drawable/ic_action_image_flip_horz"
-                android:layout_centerVertical="true"
                 android:onClick="FlipHorzClick"/>
             <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:id="@+id/rotate_left_button"
+                android:background="@drawable/ic_action_image_rotate_left"
+                android:onClick="RotateLeftClick"/>
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/rotate_right_button"
+                android:background="@drawable/ic_action_image_rotate_right"
+                android:onClick="RotatRightClick"/>
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:id="@+id/erase_background_button"
-                android:layout_toEndOf="@id/flip_horz_button"
-                android:layout_toRightOf="@id/flip_horz_button"
                 android:background="@drawable/ic_action_erase_background"
-                android:layout_centerVertical="true"
                 android:onClick="EraseBackGroundClick"/>
             <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/magic_erase_background_button"
-                android:layout_toEndOf="@id/erase_background_button"
-                android:layout_toRightOf="@id/erase_background_button"
                 android:background="@drawable/ic_action_magic_erase_background"
-                android:layout_centerVertical="true"
                 android:onClick="MagicEraseBGClick"/>
             <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/cut_path_button"
-                android:layout_toEndOf="@id/magic_erase_background_button"
-                android:layout_toRightOf="@id/magic_erase_background_button"
                 android:background="@drawable/ic_action_cut"
-                android:layout_centerVertical="true"
                 android:onClick="CutPathClick"/>
             <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/heal_button"
-                android:layout_toEndOf="@id/cut_path_button"
-                android:layout_toRightOf="@id/cut_path_button"
                 android:background="@drawable/ic_action_image_healing"
-                android:layout_centerVertical="true"
                 android:onClick="HealClick"/>
 
-        </RelativeLayout>
+        </LinearLayout>
 
         <!-- Background Erase Bar Layout-->
         <RelativeLayout
@@ -199,7 +198,7 @@
             android:layout_gravity="center_vertical"
             android:id="@+id/magic_erase_bar"
             android:visibility="gone">
-            <EditText
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -289,6 +288,7 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_below="@id/button_bar"
+        android:padding="16dp"
         android:background="@color/light_grey">
         <com.nakedape.gopuppetyourself.PuppetDesigner
             android:layout_height="wrap_content"

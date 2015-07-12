@@ -16,6 +16,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -76,8 +77,6 @@ public class MainActivity extends Activity {
     private static final int REQUEST_IMAGE_CAPTURE = 4004;
     private static final String PUPPETS_ON_STAGE = "com.nakedape.gopuppetyourself.PUPPETS_ON_STAGE";
     private static final String BACKGROUND_PATH = "com.nakedape.gopuppetyourself.BACKGROUND_PATH";
-    private static final String BACKGROUND_WIDTH = "com.nakedape.gopuppetyourself.BACKGROUND_WIDTH";
-    private static final String BACKGROUND_HEIGHT = "com.nakedape.gopuppetyourself.BACKGROUND_HEIGHT";
     private static final String FIRST_RUN = "com.nakedape.gopuppetyourself.FIRST_RUN";
 
     private Context context;
@@ -188,10 +187,10 @@ public class MainActivity extends Activity {
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
             if (!storageDir.exists())
                 if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating external files directory");
-            showDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "puppet shows");
+            showDir = new File(getExternalFilesDir(null), "puppet shows");
             if (!showDir.exists())
                 if (!showDir.mkdir()) Log.e(LOG_TAG, "error creating puppet show directory");
-            backgroundDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "backgrounds");
+            backgroundDir = new File(getExternalFilesDir(null), "backgrounds");
             if (!backgroundDir.exists())
                 if (!backgroundDir.mkdir()) Log.e(LOG_TAG, "error creating background directory");
         }
@@ -346,7 +345,7 @@ public class MainActivity extends Activity {
             SetupNewPuppet(data);
         }
         else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
-            setBackground(cameraCapturePath);
+            setBackground(cameraCapturePath, stage.getWidth(), stage.getHeight());
             CloseBGPopup();
         }
     }
@@ -1231,14 +1230,21 @@ public class MainActivity extends Activity {
             Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
         }
         if (bitmap != null){
+            if (bitmap.getWidth() > reqWidth || bitmap.getHeight() > reqHeight){
+                Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(),(int)reqWidth, (int)reqHeight);
+                float scale = (float)dimens.x / bitmap.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+            }
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             String path = getNextBackgroundPath();
             Utils.WriteImage(bitmap, path);
+            if (isRecording)
+                showRecorder.RecordFrame(showRecorder.getBackgroundFrame(path));
             savedData.currentBackground = bitmap;
             SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
             prefEditor.putString(BACKGROUND_PATH, path);
-            prefEditor.putInt(BACKGROUND_WIDTH, bitmap.getWidth());
-            prefEditor.putInt(BACKGROUND_HEIGHT, bitmap.getHeight());
             prefEditor.apply();
         }
     } // Called from activity result
@@ -1253,15 +1259,44 @@ public class MainActivity extends Activity {
             savedData.currentBackground = bitmap;
             SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
             prefEditor.putString(BACKGROUND_PATH, path);
-            prefEditor.putInt(BACKGROUND_WIDTH, bitmap.getWidth());
-            prefEditor.putInt(BACKGROUND_HEIGHT, bitmap.getHeight());
+            prefEditor.apply();
+        }
+    }
+    private void setBackground(final String path, int reqWidth, int reqHeight){
+        Bitmap bitmap = Utils.decodedSampledBitmapFromFile(new File(path), reqWidth, reqHeight);
+        if (bitmap != null) {
+            if (isRecording)
+                showRecorder.RecordFrame(showRecorder.getBackgroundFrame(path));
+            if (bitmap.getWidth() > reqWidth || bitmap.getHeight() > reqHeight){
+                Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(),(int)reqWidth, (int)reqHeight);
+                float scale = (float)dimens.x / bitmap.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+                final Bitmap scaledBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Utils.WriteImage(scaledBitmap, path);
+                    }
+                }).start();
+            }
+            stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+
+            // Save so that background will persist
+            savedData.currentBackground = bitmap;
+            SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+            prefEditor.putString(BACKGROUND_PATH, path);
             prefEditor.apply();
         }
     }
     private String getNextBackgroundPath(){
         Calendar c = Calendar.getInstance();
-        File file = new File(backgroundDir,"background" + c.getTime().toString() + ".png");
-        return file.getPath();
+        String fileName = "background_" + c.getTime().toString() + ".png";
+        fileName = fileName.replaceAll("[|?*<\":>+\\[\\]/']", "_");
+        File file = new File(backgroundDir, fileName);
+        Log.d(LOG_TAG, file.getAbsolutePath());
+        return file.getAbsolutePath();
     }
     private void ShowGetNewImagePopup(){
         View layout = findViewById(R.id.new_image_popup);

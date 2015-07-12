@@ -70,29 +70,25 @@ public class Utils {
             puppet.readObject(input);
             input.close();
             puppet.setPath(file.getAbsolutePath());
-        } catch (StreamCorruptedException e) {
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     public static String WriteImage(Bitmap image, String filePath) {
         try {
+            File file = new File(filePath);
             FileOutputStream fos = new FileOutputStream(filePath);
             image.compress(Bitmap.CompressFormat.PNG, 90, fos);
             fos.close();
+
             return filePath;
         } catch (FileNotFoundException e) {
             Log.d(LOG_TAG, "File not found: " + e.getMessage());
         } catch (IOException e) {
             Log.d(LOG_TAG, "Error accessing file: " + e.getMessage());
         }
-        return "";
+        return filePath;
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {

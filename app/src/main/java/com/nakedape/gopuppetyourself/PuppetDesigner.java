@@ -1054,6 +1054,7 @@ public class PuppetDesigner extends View {
         }
     }
 
+    // Image position methods
     public void flipHorz(){
         if (backgroundBitmap != null) {
             Matrix m = new Matrix();
@@ -1063,6 +1064,54 @@ public class PuppetDesigner extends View {
             backgroundCanvas = new Canvas(backgroundBitmap);
             invalidate();
             //dst.setDensity(DisplayMetrics.DENSITY_DEFAULT);
+        }
+    }
+    public void rotateRight(){
+        if (backgroundBitmap != null){
+            Matrix m = new Matrix();
+            m.setRotate(90);
+            // Rotate background and draw bitmaps
+            backgroundBitmap = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
+            backgroundCanvas = new Canvas(backgroundBitmap);
+            drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
+            drawCanvas = new Canvas(drawBitmap);
+
+            // Setup view background
+            viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            viewCanvas = new Canvas(viewBitmap);
+            viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+            Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+            BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+            tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+            tile.setBounds(viewCanvas.getClipBounds());
+            tile.draw(viewCanvas);
+
+            invalidate();
+            requestLayout();
+        }
+    }
+    public void rotateLeft(){
+        if (backgroundBitmap != null){
+            Matrix m = new Matrix();
+            m.setRotate(-90);
+            // Rotate background and draw bitmaps
+            backgroundBitmap = Bitmap.createBitmap(backgroundBitmap, 0, 0, backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), m, false);
+            backgroundCanvas = new Canvas(backgroundBitmap);
+            drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
+            drawCanvas = new Canvas(drawBitmap);
+
+            // Setup view background
+            viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            viewCanvas = new Canvas(viewBitmap);
+            viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+            Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+            BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+            tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+            tile.setBounds(viewCanvas.getClipBounds());
+            tile.draw(viewCanvas);
+
+            invalidate();
+            requestLayout();
         }
     }
 
@@ -1142,12 +1191,43 @@ public class PuppetDesigner extends View {
         tile.draw(viewCanvas);
         Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
         Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
-        int padding = (int)(Math.min(image.getHeight(), image.getWidth()) * 0.1);
+        int padding = (int)(Math.min(image.getHeight() * 0.1, image.getWidth()) * 0.1);
         upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
         upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
         lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
+        invalidate();
+        requestLayout();
+    }
+    public void CreatBlankImage(int w, int h){
+        // Setup view background
+        viewBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        viewCanvas = new Canvas(viewBitmap);
+        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
+        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        tile.setBounds(viewCanvas.getClipBounds());
+        tile.draw(viewCanvas);
+
+        // Setup blank drawing canvas
+        drawBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        drawBitmap.setHasAlpha(true);
+        drawCanvas = new Canvas(drawBitmap);
+        drawPath = new Path();
+        backgroundBitmap = null;
+
+        // Set initial positions of jaw boxes
+        int padding = (int)(Math.min(drawBitmap.getHeight() * 0.1, drawBitmap.getWidth()) * 0.1);
+        upperJawBox = new Rect(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
+        upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, upperJawBox.bottom);
+        lowerJawBox = new Rect(padding, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - padding, drawBitmap.getHeight() - padding);
+        lowerJawPivotPoint = upperJawPivotPoint;
+
+        backgroundUndoStack = new ArrayList<>();
+        drawUndoStack = new ArrayList<>();
+        undoStack = new ArrayList<>();
         invalidate();
         requestLayout();
     }

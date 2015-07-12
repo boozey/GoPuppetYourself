@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GoPuppetYourself</string>
+    <string name="app_name">Go Puppet Yourself!</string>
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_designer">Puppet Designer</string>
@@ -36,4 +36,7 @@
     <string name="action_new_image">New background</string>
     <string name="alert_dialog_title_unsaved">Wait a minute&#8230;</string>
     <string name="alert_dialog_message_unsaved">Do you want to save your changes?</string>
+    <string name="toast_magic_erase">Touch to erase a region of similar colors</string>
+    <string name="toast_cut_path">Outline the region to cut</string>
+    <string name="toast_profile">Select the direction the puppet is facing</string>
 </resources>

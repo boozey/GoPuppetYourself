@@ -77,6 +77,7 @@
         android:textColor="@color/white"
         style="@style/Base.Widget.AppCompat.Button.Borderless"
         android:text="Blank Image"
-        android:id="@+id/blank_image_button" />
+        android:id="@+id/blank_image_button"
+        android:onClick="NewBlankImageClick"/>
         </LinearLayout>
 </LinearLayout>

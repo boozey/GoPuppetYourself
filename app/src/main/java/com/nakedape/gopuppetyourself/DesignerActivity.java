@@ -8,9 +8,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -32,6 +33,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -71,7 +73,8 @@ public class DesignerActivity extends Activity {
     private int paletteBrushSize = BRUSH_SIZE_M;
     private ImageButton showBoxButton;
     private Puppet puppet;
-    private File storageDir;
+    private File puppetDir;
+    private File appDir;
     private int stageIndex = -1;
     private String cameraCapturePath;
 
@@ -90,14 +93,16 @@ public class DesignerActivity extends Activity {
 
         // Prepare puppet storage directory for access
         if (Utils.isExternalStorageWritable()){
-            storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
-            if (!storageDir.exists())
-                if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating external files directory");
+            puppetDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
+            if (!puppetDir.exists())
+                if (!puppetDir.mkdir()) Log.e(LOG_TAG, "error creating external files directory");
+            appDir = getExternalFilesDir(null);
         }
         else {
-            storageDir = new File(getFilesDir(), getResources().getString(R.string.puppet_directory));
-            if (!storageDir.exists())
-                if (!storageDir.mkdir()) Log.e(LOG_TAG, "error creating internal files directory");
+            puppetDir = new File(getFilesDir(), getResources().getString(R.string.puppet_directory));
+            if (!puppetDir.exists())
+                if (!puppetDir.mkdir()) Log.e(LOG_TAG, "error creating internal files directory");
+            appDir = getFilesDir();
         }
 
         // Load data from intent or open file picker
@@ -116,6 +121,13 @@ public class DesignerActivity extends Activity {
             editText.setText(puppet.getName());
         }
         else {
+            designer.post(new Runnable() {
+                @Override
+                public void run() {
+                    View view = findViewById(R.id.designer_frame_layout);
+                    designer.CreatBlankImage(view.getWidth(), view.getHeight());
+                }
+            });
             ShowGetNewImagePopup();
         }
     }
@@ -271,13 +283,8 @@ public class DesignerActivity extends Activity {
         // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // Create the File where the photo should go
-            File photoFile = null;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException ex) {
-                // Error occurred while creating the File
-                ex.printStackTrace();
-            }
+            File photoFile = new File(appDir, "capture.jpg");
+            cameraCapturePath = photoFile.getPath();
             // Continue only if the File was successfully created
             if (photoFile != null) {
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
@@ -286,23 +293,11 @@ public class DesignerActivity extends Activity {
             }
         }
     }
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES);
-        File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                storageDir      /* directory */
-        );
-
-        // Save a file: path for use with ACTION_VIEW intents
-        cameraCapturePath = image.getAbsolutePath();
-        return image;
+    public void NewBlankImageClick(View v){
+        View view = findViewById(R.id.designer_frame_layout);
+        designer.CreatBlankImage(view.getWidth(), view.getHeight());
+        CloseGetNewImagePopup(v);
     }
-
 
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
@@ -314,8 +309,14 @@ public class DesignerActivity extends Activity {
             Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
         }
         if (bitmap != null){
+            if (bitmap.getWidth() > view.getHeight() || bitmap.getHeight() > view.getHeight()){
+                Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(), view.getWidth(), view.getHeight());
+                float scale = (float)dimens.x / bitmap.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+            }
                 designer.SetNewImage(bitmap);
-                designer.invalidate();
                 Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
         }
     }
@@ -325,24 +326,16 @@ public class DesignerActivity extends Activity {
         int targetW = (int)view.getWidth();
         int targetH = (int)view.getHeight();
 
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(cameraCapturePath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-
-        Bitmap bitmap = BitmapFactory.decodeFile(cameraCapturePath, bmOptions);
+        Bitmap bitmap = Utils.decodedSampledBitmapFromFile(new File(cameraCapturePath), targetW, targetH);
         if (bitmap != null) {
+            if (bitmap.getWidth() > view.getHeight() || bitmap.getHeight() > view.getHeight()){
+                Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(), view.getWidth(), view.getHeight());
+                float scale = (float)dimens.x / bitmap.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+            }
             designer.SetNewImage(bitmap);
-            designer.invalidate();
             Log.d(LOG_TAG, "Bitmap width = " + String.valueOf(bitmap.getWidth()));
         }
     }
@@ -359,7 +352,7 @@ public class DesignerActivity extends Activity {
             FinishAndSave(newName);
         // If the puppet name has changed, prompt if there is already a puppet with this name
         final String name = newName;
-        File[] files = storageDir.listFiles(new FileFilter() {
+        File[] files = puppetDir.listFiles(new FileFilter() {
             @Override
             public boolean accept(File file) {
                 return file.getName().equals(name + getString(R.string.puppet_extension)) || file.getName().equals(name);
@@ -392,7 +385,7 @@ public class DesignerActivity extends Activity {
     private void FinishAndSave(String puppetName){
         // Delete the old puppet file if it exists
         if (puppet != null){
-            File oldFile = new File(storageDir, puppet.getName() + getString(R.string.puppet_extension));
+            File oldFile = new File(puppetDir, puppet.getName() + getString(R.string.puppet_extension));
             if (oldFile.isFile())
                 if (oldFile.delete()) Log.i(LOG_TAG, "removed previous puppet file");
         }
@@ -402,7 +395,7 @@ public class DesignerActivity extends Activity {
         puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         puppet.setName(puppetName);
         // Save puppet to storage directory
-        File saveFile = new File(storageDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
+        File saveFile = new File(puppetDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
         String filePath = Utils.WritePuppetToFile(puppet, saveFile);
         // Pass file name back to MainActivity
         Intent data = new Intent();
@@ -832,7 +825,7 @@ public class DesignerActivity extends Activity {
         // Hide background bar and show background erase bar
         final View buttonBar = findViewById(R.id.background_button_bar);
         final View navButton = findViewById(R.id.nav_button);
-        final EditText thresholdText = (EditText)findViewById(R.id.threshold_text);
+        final TextView thresholdText = (TextView)findViewById(R.id.threshold_text);
 
         // Listener to update brush view and palatteBrushSize
         SeekBar slider = (SeekBar)findViewById(R.id.magic_erase_slider);
@@ -878,6 +871,7 @@ public class DesignerActivity extends Activity {
                 });
                 Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
                 newButtonBar.startAnimation(scaleUpRight);
+                Toast.makeText(context, getString(R.string.toast_magic_erase), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -892,13 +886,20 @@ public class DesignerActivity extends Activity {
     public void FlipHorzClick(View v){
         designer.flipHorz();
     }
+    public void RotatRightClick(View v){
+        designer.rotateRight();
+    }
+    public void RotateLeftClick(View v){
+        designer.rotateLeft();
+    }
     public void CutPathClick(View v){
-        if (designer.getMode() == PuppetDesigner.MODE_CUT_PATH){
+        if (designer.getMode().equals(PuppetDesigner.MODE_CUT_PATH)){
             designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
             v.setBackground(getResources().getDrawable(R.drawable.ic_action_cut));
         } else{
             designer.setCutPathMode();
             v.setBackground(getResources().getDrawable(R.drawable.ic_action_cut_selected));
+            Toast.makeText(context, getString(R.string.toast_cut_path), Toast.LENGTH_SHORT).show();
         }
     }
     public void HealClick(View v){
@@ -1016,6 +1017,7 @@ public class DesignerActivity extends Activity {
                 });
                 Animation scaleUpRight = AnimationUtils.loadAnimation(context, R.anim.anim_scale_up_right);
                 newButtonBar.startAnimation(scaleUpRight);
+                Toast.makeText(context, getString(R.string.toast_profile), Toast.LENGTH_SHORT).show();
             }
 
             @Override
