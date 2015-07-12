@@ -459,10 +459,17 @@ public class MainActivity extends Activity {
     private void moveView(Puppet puppet, int X, int Y){
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) puppet
                 .getLayoutParams();
-        layoutParams.leftMargin = X - dx;
-        layoutParams.topMargin = Y - dy;
-        layoutParams.rightMargin = -250;
-        layoutParams.bottomMargin = -250;
+        if (puppet.isMouthOpen()){ // Compensate for clip padding
+            layoutParams.leftMargin = X - dx - puppet.getLeftClipPadding() + puppet.getRightClipPadding();
+            layoutParams.topMargin = Y - dy;
+            layoutParams.rightMargin = -250;
+            layoutParams.bottomMargin = -250;
+        } else {
+            layoutParams.leftMargin = X - dx;
+            layoutParams.topMargin = Y - dy;
+            layoutParams.rightMargin = -250;
+            layoutParams.bottomMargin = -250;
+        }
         if (showRecorder.isRecording()) showRecorder.RecordFrame(puppet.getName(), KeyFrame.MOVEMENT, layoutParams.leftMargin, layoutParams.topMargin);
         puppet.setLayoutParams(layoutParams);
     }

@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -42,6 +44,7 @@ public class Puppet extends View implements Serializable {
     transient private Matrix upperJawMatrix, lowerJawMatrix;
     transient private int degrees;
     transient private boolean isFlippedHorz = false;
+    transient private boolean isMouthOpen = false;
 
 
     // Constructors
@@ -163,6 +166,13 @@ public class Puppet extends View implements Serializable {
     // Movement methods
     public void OpenMouth(int degrees){
         this.degrees = degrees;
+        if (degrees > 0)
+            isMouthOpen = true;
+        else
+            isMouthOpen = false;
+    }
+    public boolean isMouthOpen(){
+        return isMouthOpen;
     }
     public void FlipHoriz(){
         Matrix m = new Matrix();
@@ -181,11 +191,24 @@ public class Puppet extends View implements Serializable {
 
     @Override
     protected void onSizeChanged (int w, int h, int oldw, int oldh){
-        setPadding();
+        if (leftClipPadding == 0 && rightClipPadding == 0 && upperLeftPadding == 0 && upperRightPadding == 0 && lowerLeftPadding == 0 && lowerRightPadding == 0){
+            setPadding();
+        }
     }
     @Override
     protected void onMeasure (int widthMeasureSpec, int heightMeasureSpec){
-        setMeasuredDimension((int) ((upperLeftPadding + upperBitmapWidth + upperRightPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
+        if (isMouthOpen)
+            setMeasuredDimension((int) ((leftClipPadding + upperLeftPadding + upperBitmapWidth + upperRightPadding + rightClipPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
+        else
+            setMeasuredDimension((int) ((upperLeftPadding + upperBitmapWidth + upperRightPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
+    }
+    private void adjustClipBounds(){
+        if (Build.VERSION.SDK_INT > 18) {
+            Rect clipBounds = getClipBounds();
+            clipBounds.left -= leftClipPadding;
+            clipBounds.top -= topPadding;
+            setClipBounds(clipBounds);
+        }
     }
     private void setPadding(){
         leftClipPadding = 0;
@@ -226,15 +249,15 @@ public class Puppet extends View implements Serializable {
         else upperRightPadding = lowerRight - upperRight;
 
         // Set final upper and lower padding, minimum of zero
-        leftClipPadding = Math.max(leftClipPadding, 0);
-        rightClipPadding = Math.max(rightClipPadding, 0);
-        upperLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
-        lowerLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
-        upperRightPadding += rightClipPadding; //Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
-        lowerRightPadding += rightClipPadding; //Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
+        //leftClipPadding = Math.max(leftClipPadding, 0);
+        //rightClipPadding = Math.max(rightClipPadding, 0);
+        //upperLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
+        //lowerLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
+        //upperRightPadding += rightClipPadding; //Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);
+        //lowerRightPadding += rightClipPadding; //Log.d(LOG_TAG, "lower right padding = " + lowerRightPadding);
 
-        upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
-        lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
+        //upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
+        //lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
     }
 
     @Override
@@ -264,11 +287,19 @@ public class Puppet extends View implements Serializable {
 
     @Override
     protected void onDraw(Canvas canvas){
-        upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
-        upperJawMatrix.postRotate(degrees * getPivotDirection(), upperPivotPoint.x + upperLeftPadding, upperPivotPoint.y + topPadding);
-        upperJawMatrix.postScale(scaleX, scaleY);
-        lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
-        lowerJawMatrix.postScale(scaleX, scaleY);
+        if (isMouthOpen) {
+            upperJawMatrix.setTranslate(upperLeftPadding + leftClipPadding, topPadding);
+            upperJawMatrix.postRotate(degrees * getPivotDirection(), upperPivotPoint.x + upperLeftPadding + leftClipPadding, upperPivotPoint.y + topPadding);
+            upperJawMatrix.postScale(scaleX, scaleY);
+            lowerJawMatrix.setTranslate(lowerLeftPadding + leftClipPadding, topPadding + upperJawBitmap.getHeight());
+            lowerJawMatrix.postScale(scaleX, scaleY);
+        } else {
+            upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
+            upperJawMatrix.postRotate(degrees * getPivotDirection(), upperPivotPoint.x + upperLeftPadding, upperPivotPoint.y + topPadding);
+            upperJawMatrix.postScale(scaleX, scaleY);
+            lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
+            lowerJawMatrix.postScale(scaleX, scaleY);
+        }
         canvas.drawBitmap(upperJawBitmap, upperJawMatrix, null);
         canvas.drawBitmap(lowerJawBitmap, lowerJawMatrix, null);
     }
