@@ -2143,10 +2143,27 @@ public class MainActivity extends Activity {
 
         public void add(File file){
             files.add(file);
-            thumbs.add(Utils.decodedSampledBitmapFromFile(file, 256, 256));
+            Bitmap bitmap = Utils.decodedSampledBitmapFromFile(file, 320, 320);
+            if (bitmap.getWidth() > 320 || bitmap.getHeight() > 320) {
+                Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(), 320, 320);
+                float scale = (float) dimens.x / bitmap.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, false);
+            }
+            Log.d(LOG_TAG, "thumbnail size: " + bitmap.getWidth() + ", " + bitmap.getHeight());
+            thumbs.add(bitmap);
             notifyDataSetChanged();
         }
         public void add(Bitmap b, File f){
+            if (b.getWidth() > 320 || b.getHeight() > 320) {
+                Point dimens = Utils.getScaledDimension(b.getWidth(), b.getHeight(), 320, 320);
+                float scale = (float) dimens.x / b.getWidth();
+                Matrix m = new Matrix();
+                m.setScale(scale, scale);
+                b = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, false);
+            }
+            Log.d(LOG_TAG, "thumbnail size: " + b.getWidth() + ", " + b.getHeight());
             thumbs.add(b);
             files.add(f);
             notifyDataSetChanged();
