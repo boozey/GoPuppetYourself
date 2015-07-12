@@ -431,6 +431,11 @@ public class MainActivity extends Activity {
             case MotionEvent.ACTION_POINTER_DOWN:
                 break;
             case MotionEvent.ACTION_POINTER_UP:
+                if (event.getPointerCount() < 2) {
+                    puppet.OpenMouth(0);
+                    if (showRecorder.isRecording())
+                        showRecorder.RecordFrame(puppet.getName(), KeyFrame.CLOSE_MOUTH);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (event.getPointerCount() > 1) {
@@ -447,13 +452,25 @@ public class MainActivity extends Activity {
     }
     private void moveMouth(Puppet puppet, float Y0, float Y1){
         double width = Math.abs(Y1 - Y0);
-        if (width < 300) {
-            puppet.OpenMouth(15);
-            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 15));
+        if (width < metrics.densityDpi * 0.8){
+            puppet.OpenMouth(20);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 20));
         }
-        else {
+        else if (width < metrics.densityDpi * 1.2){
             puppet.OpenMouth(30);
             if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 30));
+        }
+        else if (width < metrics.densityDpi * 1.4) {
+            puppet.OpenMouth(40);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 40));
+        }
+        else if (width < metrics.densityDpi * 1.8) {
+            puppet.OpenMouth(50);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 50));
+        } else {
+            puppet.OpenMouth(60);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 60));
+
         }
     }
     private void moveView(Puppet puppet, int X, int Y){
@@ -1498,6 +1515,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                        Log.d(LOG_TAG, "puppet file updated width flip");
                     }
                 }).start();
                 return true;

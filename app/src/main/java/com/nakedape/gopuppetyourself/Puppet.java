@@ -186,13 +186,7 @@ public class Puppet extends View implements Serializable {
         lowerPivotPoint.x = lowerBitmapWidth - lowerPivotPoint.x;
         if (orientation == PROFILE_LEFT) orientation = PROFILE_RIGHT;
         else orientation = PROFILE_LEFT;
-        setPadding();
         isFlippedHorz = !isFlippedHorz;
-        Log.d(LOG_TAG, "left padding: " + leftClipPadding + ", " + upperLeftPadding );
-        Log.d(LOG_TAG, "top padding: " + topPadding );
-        Log.d(LOG_TAG, "right padding: " + rightClipPadding + ", " + upperRightPadding );
-        invalidate();
-        requestLayout();
     }
 
     @Override
@@ -272,6 +266,9 @@ public class Puppet extends View implements Serializable {
         this.scaleX = Math.abs(scaleX);
         if (scaleX < 0 && !isFlippedHorz) FlipHoriz();
         if (scaleX > 0 && isFlippedHorz) FlipHoriz();
+        Log.d(LOG_TAG, "isFlippedHorz = " + isFlippedHorz);
+        Log.d(LOG_TAG, "ScaleX = " + scaleX);
+        setPadding();
         invalidate();
         requestLayout();
     }
@@ -390,8 +387,13 @@ public class Puppet extends View implements Serializable {
         in.readFully(bytes);
         lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         setLowerJawImage(lowerJawBitmap);
-        setScaleX(scaleX);
-        setScaleY(scaleY);
+
+        // Adjust if for horizontally flipped images
+        if (scaleX < 0) {
+            FlipHoriz();
+            isFlippedHorz = true;
+            scaleX = Math.abs(scaleX);
+        }
         setPadding();
         //applyLayoutParams();
     }
