@@ -1074,12 +1074,14 @@ public class DesignerActivity extends Activity {
         findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
         findViewById(R.id.portrait_left_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
         designer.setOrientation(Puppet.PROFILE_RIGHT);
+        Toast.makeText(context, getString(R.string.toast_profile_right), Toast.LENGTH_SHORT).show();
     }
     public void LeftPortraitClick(View v){
         v.setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left_selected));
         findViewById(R.id.portrait_edit_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_left));
         findViewById(R.id.portrait_right_button).setBackground(getResources().getDrawable(R.drawable.ic_action_profile_right));
         designer.setOrientation(Puppet.PROFILE_LEFT);
+        Toast.makeText(context, getString(R.string.toast_profile_left), Toast.LENGTH_SHORT).show();
     }
 
 }
