@@ -47,6 +47,7 @@ public class Puppet extends View implements Serializable {
     transient private boolean isFlippedHorz = false;
     transient private boolean isMouthOpen = false;
     transient private boolean mouthDrawStateChanged = false;
+    transient private int serializationVersion = 1;
 
 
     // Constructors
@@ -345,6 +346,7 @@ public class Puppet extends View implements Serializable {
     }
 
     public void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeInt(serializationVersion);
         out.writeObject(name);
         out.writeInt(orientation);
         out.writeBoolean(onStage);
@@ -370,31 +372,34 @@ public class Puppet extends View implements Serializable {
 
     }
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
-        name = (String)in.readObject();
-        orientation = in.readInt();
-        onStage = in.readBoolean();
-        upperPivotPoint = new Point(in.readInt(), in.readInt());
-        lowerPivotPoint = new Point(in.readInt(), in.readInt());
-        scaleX = in.readFloat();
-        scaleY =in.readFloat();
+        serializationVersion = in.readInt();
+        if (serializationVersion == 1) {
+            name = (String) in.readObject();
+            orientation = in.readInt();
+            onStage = in.readBoolean();
+            upperPivotPoint = new Point(in.readInt(), in.readInt());
+            lowerPivotPoint = new Point(in.readInt(), in.readInt());
+            scaleX = in.readFloat();
+            scaleY = in.readFloat();
 
-        byte[] bytes = new byte[in.readInt()];
-        in.readFully(bytes);
-        upperJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        setUpperJawImage(upperJawBitmap);
+            byte[] bytes = new byte[in.readInt()];
+            in.readFully(bytes);
+            upperJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            setUpperJawImage(upperJawBitmap);
 
-        bytes = new byte[in.readInt()];
-        in.readFully(bytes);
-        lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        setLowerJawImage(lowerJawBitmap);
+            bytes = new byte[in.readInt()];
+            in.readFully(bytes);
+            lowerJawBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            setLowerJawImage(lowerJawBitmap);
 
-        // Adjust if for horizontally flipped images
-        if (scaleX < 0) {
-            FlipHoriz();
-            isFlippedHorz = true;
-            scaleX = Math.abs(scaleX);
+            // Adjust if for horizontally flipped images
+            if (scaleX < 0) {
+                FlipHoriz();
+                isFlippedHorz = true;
+                scaleX = Math.abs(scaleX);
+            }
+            setPadding();
+            //applyLayoutParams();
         }
-        setPadding();
-        //applyLayoutParams();
     }
 }

@@ -232,9 +232,12 @@ public class MainActivity extends Activity {
                 p.setTag(p.getName());
                 p.setPath(path);
                 stage.addView(p);
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(FIRST_RUN, false);
-                editor.apply();
+                puppetsOnStage = new HashSet<>();
+                puppetsOnStage.add(path);
+                SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+                prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                prefEditor.putBoolean(FIRST_RUN, false);
+                prefEditor.apply();
             }
         }
 
@@ -1515,7 +1518,6 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
-                        Log.d(LOG_TAG, "puppet file updated width flip");
                     }
                 }).start();
                 return true;
@@ -1926,7 +1928,7 @@ public class MainActivity extends Activity {
         stage.removeView(p);
     }
     private String getPathFromName(String name){
-        return storageDir.getPath() + "//" + name + getResources().getString(R.string.puppet_extension);
+        return storageDir.getPath() + "/" + name + getResources().getString(R.string.puppet_extension);
     }
     private void moveView(View v, int X, int Y){
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) v
