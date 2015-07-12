@@ -9,6 +9,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import java.io.ByteArrayOutputStream;
@@ -45,6 +46,7 @@ public class Puppet extends View implements Serializable {
     transient private int degrees;
     transient private boolean isFlippedHorz = false;
     transient private boolean isMouthOpen = false;
+    transient private boolean mouthDrawStateChanged = false;
 
 
     // Constructors
@@ -165,6 +167,7 @@ public class Puppet extends View implements Serializable {
     // Public methods
     // Movement methods
     public void OpenMouth(int degrees){
+        if (degrees != this.degrees) mouthDrawStateChanged = true;
         this.degrees = degrees;
         if (degrees > 0)
             isMouthOpen = true;
@@ -185,14 +188,18 @@ public class Puppet extends View implements Serializable {
         else orientation = PROFILE_LEFT;
         setPadding();
         isFlippedHorz = !isFlippedHorz;
+        Log.d(LOG_TAG, "left padding: " + leftClipPadding + ", " + upperLeftPadding );
+        Log.d(LOG_TAG, "top padding: " + topPadding );
+        Log.d(LOG_TAG, "right padding: " + rightClipPadding + ", " + upperRightPadding );
         invalidate();
         requestLayout();
     }
 
     @Override
     protected void onSizeChanged (int w, int h, int oldw, int oldh){
-        if (leftClipPadding == 0 && rightClipPadding == 0 && upperLeftPadding == 0 && upperRightPadding == 0 && lowerLeftPadding == 0 && lowerRightPadding == 0){
+        if (!mouthDrawStateChanged){
             setPadding();
+            mouthDrawStateChanged = false;
         }
     }
     @Override
@@ -249,8 +256,8 @@ public class Puppet extends View implements Serializable {
         else upperRightPadding = lowerRight - upperRight;
 
         // Set final upper and lower padding, minimum of zero
-        //leftClipPadding = Math.max(leftClipPadding, 0);
-        //rightClipPadding = Math.max(rightClipPadding, 0);
+        leftClipPadding = Math.max(leftClipPadding, 0);
+        rightClipPadding = Math.max(rightClipPadding, 0);
         //upperLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "upper left padding = " + upperLeftPadding);
         //lowerLeftPadding += leftClipPadding; //Log.d(LOG_TAG, "lower left padding = " + lowerLeftPadding);
         //upperRightPadding += rightClipPadding; //Log.d(LOG_TAG, "upper right padding = " + upperRightPadding);

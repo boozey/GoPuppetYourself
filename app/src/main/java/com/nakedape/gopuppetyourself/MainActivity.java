@@ -460,7 +460,7 @@ public class MainActivity extends Activity {
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) puppet
                 .getLayoutParams();
         if (puppet.isMouthOpen()){ // Compensate for clip padding
-            layoutParams.leftMargin = X - dx - puppet.getLeftClipPadding() + puppet.getRightClipPadding();
+            layoutParams.leftMargin = X - dx - (int)(puppet.getLeftClipPadding() * puppet.getScaleX());
             layoutParams.topMargin = Y - dy;
             layoutParams.rightMargin = -250;
             layoutParams.bottomMargin = -250;
