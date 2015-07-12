@@ -222,55 +222,6 @@ public class MainActivity extends Activity {
             // other tasks that should only happen on initial app starts
             savedData = new MainActivityDataFrag();
             fm.beginTransaction().add(savedData, "data").commit();
-            // Check if this is the first run of the app
-            isFirstRun = preferences.getBoolean(FIRST_RUN, true);
-            if (isFirstRun) {
-                String path = setupBananaMan();
-                Puppet p = new Puppet(context, null);
-                Utils.ReadPuppetFromFile(p, new File(path));
-                p.setOnTouchListener(headTouchListener);
-                p.setTag(p.getName());
-                p.setPath(path);
-                stage.addView(p);
-                puppetsOnStage = new HashSet<>();
-                puppetsOnStage.add(path);
-                SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
-                prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-                prefEditor.putBoolean(FIRST_RUN, false);
-                prefEditor.apply();
-            }
-        }
-
-        // Load puppets that are on stage
-        puppetsOnStage = (HashSet<String>)preferences.getStringSet(PUPPETS_ON_STAGE, null);
-        if(puppetsOnStage != null) {
-            File file;
-            Object[] puppetPaths = puppetsOnStage.toArray();
-            for (Object o : puppetPaths){
-                String path = (String)o;
-                file = new File(path);
-                Puppet p = new Puppet(context, null);
-                Utils.ReadPuppetFromFile(p, file);
-                if (p.getLowerJawBitmap() != null) {
-                    p.setId(nextPuppetId++);
-                    p.setOnTouchListener(headTouchListener);
-                    p.setTag(p.getName());
-                    p.setPath(path);
-                    if (!p.isOnStage()) p.setVisibility(View.GONE);
-                    if (savedData.layoutParamses.size() > 0) {
-                        p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
-                    }
-                    stage.addView(p);
-                } else {
-                    puppetsOnStage.remove(o);
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-                    editor.apply();
-                }
-            }
-        }
-        else {
-            puppetsOnStage = new HashSet<>();
         }
 
         // Set background
@@ -278,6 +229,44 @@ public class MainActivity extends Activity {
         if (backgroundPath != null){ // Should only be null if user has never set a background
             setBackground(backgroundPath);
         }
+
+        // Check if this is the first run of the app
+        isFirstRun = preferences.getBoolean(FIRST_RUN, true);
+        if (!isFirstRun) {
+            // Load puppets that are on stage
+            puppetsOnStage = (HashSet<String>) preferences.getStringSet(PUPPETS_ON_STAGE, null);
+            if (puppetsOnStage != null) {
+                File file;
+                Object[] puppetPaths = puppetsOnStage.toArray();
+                for (Object o : puppetPaths) {
+                    String path = (String) o;
+                    file = new File(path);
+                    Puppet p = new Puppet(context, null);
+                    Utils.ReadPuppetFromFile(p, file);
+                    if (p.getLowerJawBitmap() != null) {
+                        p.setId(nextPuppetId++);
+                        p.setOnTouchListener(headTouchListener);
+                        p.setTag(p.getName());
+                        p.setPath(path);
+                        if (!p.isOnStage()) p.setVisibility(View.GONE);
+                        if (savedData.layoutParamses.size() > 0) {
+                            p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
+                        }
+                        stage.addView(p);
+                    } else {
+                        puppetsOnStage.remove(o);
+                        SharedPreferences.Editor editor = preferences.edit();
+                        editor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                        editor.apply();
+                    }
+                }
+            } else {
+                puppetsOnStage = new HashSet<>();
+            }
+        } else {
+            firstOnCreate();
+        }
+
     }
     @Override
     protected void onResume(){
@@ -372,20 +361,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void setTouchDelegate(final Puppet p){
-        stage.post(new Runnable() {
-            // Post in the parent's message queue to make sure the parent
-            // lays out its children before we call getHitRect()
-            public void run() {
-                final Rect rect = new Rect();
-                p.getHitRect(rect);
-                rect.top += p.getTopClipPadding();
-                rect.left += p.getLeftClipPadding();
-                rect.right -= p.getRightClipPadding();
-                stage.setTouchDelegate(new TouchDelegate(rect, p));
-            }
-        });
-    }
+    // First run methods
     private String setupBananaMan(){
         Puppet bananaMan = new Puppet(context, null);
         bananaMan.setUpperJawImage(Utils.decodeSampledBitmapFromResource(getResources(), R.drawable.banana_man_top, 100, 100));
@@ -397,6 +373,21 @@ public class MainActivity extends Activity {
         // Save puppet to storage directory
         File saveFile = new File(storageDir, bananaMan.getName() + getResources().getString(R.string.puppet_extension));
         return Utils.WritePuppetToFile(bananaMan, saveFile);
+    }
+    private void firstOnCreate(){
+        String path = setupBananaMan();
+        Puppet p = new Puppet(context, null);
+        Utils.ReadPuppetFromFile(p, new File(path));
+        p.setOnTouchListener(headTouchListener);
+        p.setTag(p.getName());
+        p.setPath(path);
+        stage.addView(p);
+        puppetsOnStage = new HashSet<>();
+        puppetsOnStage.add(path);
+        SharedPreferences.Editor prefEditor = getPreferences(Context.MODE_PRIVATE).edit();
+        prefEditor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+        prefEditor.putBoolean(FIRST_RUN, false);
+        prefEditor.apply();
     }
 
     // Main menu methods
@@ -2082,6 +2073,7 @@ public class MainActivity extends Activity {
         }
         public void add(Puppet p){
             puppets.add(p);
+            notifyDataSetChanged();
         }
         @Override
         public int getCount() {
