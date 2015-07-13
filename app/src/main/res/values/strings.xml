@@ -10,6 +10,7 @@
     <string name="puppet_directory">puppets</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="toast_oom_scaling">Out of memory, scaling image down. </string>
 
     <!-- Puppet popup menu strings -->
     <string name="action_edit_puppet">Edit</string>

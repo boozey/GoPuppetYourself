@@ -149,11 +149,17 @@ public class PuppetDesigner extends View {
         undoStack = new ArrayList<>();
     }
     public void release(){
-        viewBitmap = null;
-        backgroundOriginal = null;
-        backgroundBitmap = null;
-        backgroundUndoStack = null;
-        drawUndoStack = null;
+        if (viewBitmap != null) viewBitmap.recycle();
+        if (backgroundOriginal != null) backgroundOriginal.recycle();
+        if (backgroundBitmap != null) backgroundBitmap.recycle();
+        if (backgroundUndoStack != null) {
+            for (Bitmap b : backgroundUndoStack)
+                b.recycle();
+        }
+        if (drawUndoStack != null) {
+            for (Bitmap b : drawUndoStack)
+                b.recycle();
+        }
     }
 
     public String getMode(){
@@ -1193,6 +1199,7 @@ public class PuppetDesigner extends View {
         return lowerJaw.copy(Bitmap.Config.ARGB_8888, true);
     }
     public void SetNewImage(Bitmap image) {
+        release();
         backgroundBitmap = image.copy(Bitmap.Config.ARGB_8888, true);
         backgroundBitmap.setHasAlpha(true);
         backgroundCanvas = new Canvas(backgroundBitmap);

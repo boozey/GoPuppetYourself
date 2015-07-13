@@ -297,12 +297,19 @@ public class DesignerActivity extends Activity {
 
     private void NewPuppet(Uri imageUri){
         Bitmap bitmap = null;
+        // Release all the memory used by the designer before trying to load a new image
+        designer.release();
         View view = findViewById(R.id.designer_frame_layout);
         try {
-            bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, view.getWidth(), view.getHeight());
+            try {
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, view.getWidth(), view.getHeight());
+            } catch (OutOfMemoryError e) {
+                Toast.makeText(context, getString(R.string.toast_oom_scaling), Toast.LENGTH_LONG).show();
+                bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, view.getWidth() / 2, view.getHeight() / 2);
+            }
         } catch (IOException e){
             e.printStackTrace();
-            Toast.makeText(context, "Unable to load image", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "File loading error", Toast.LENGTH_LONG).show();
         }
         if (bitmap != null){
             if (bitmap.getWidth() > view.getHeight() || bitmap.getHeight() > view.getHeight()){
@@ -317,12 +324,19 @@ public class DesignerActivity extends Activity {
         }
     }
     private void NewPuppet(){
+        // Release all the memory used by the designer before trying to load a new image
+        designer.release();
         // Get the dimensions of the View
         View view = findViewById(R.id.designer_frame_layout);
         int targetW = (int)view.getWidth();
         int targetH = (int)view.getHeight();
-
-        Bitmap bitmap = Utils.decodedSampledBitmapFromFile(new File(cameraCapturePath), targetW, targetH);
+        Bitmap bitmap = null;
+        try {
+            bitmap = Utils.decodedSampledBitmapFromFile(new File(cameraCapturePath), targetW, targetH);
+        } catch (OutOfMemoryError e){
+            Toast.makeText(context, getString(R.string.toast_oom_scaling), Toast.LENGTH_LONG).show();
+            bitmap = Utils.decodedSampledBitmapFromFile(new File(cameraCapturePath), targetW / 2, targetH / 2);
+        }
         if (bitmap != null) {
             if (bitmap.getWidth() > view.getHeight() || bitmap.getHeight() > view.getHeight()){
                 Point dimens = Utils.getScaledDimension(bitmap.getWidth(), bitmap.getHeight(), view.getWidth(), view.getHeight());
