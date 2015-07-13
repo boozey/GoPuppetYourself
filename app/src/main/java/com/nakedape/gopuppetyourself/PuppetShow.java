@@ -25,7 +25,6 @@ public class PuppetShow implements Serializable {
     transient private ArrayList<Bitmap> backgrounds;
     transient private ArrayList<KeyFrame> frameSequence;
     transient public float[] initialXs, initialYs;
-    transient public float[] initialScales;
     transient private int orientation;
     transient private Context context;
     transient int origWidth, origHeight;
@@ -54,8 +53,8 @@ public class PuppetShow implements Serializable {
             p = (Puppet) stage.getChildAt(i);
             puppets.add(p.getBytes());
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) p.getLayoutParams();
-            initialXs[i] = (float) params.leftMargin / stage.getWidth();
-            initialYs[i] = (float) params.topMargin / stage.getHeight();
+            initialXs[i] = (float) params.leftMargin;
+            initialYs[i] = (float) params.topMargin;
         }
     }
     public void SetContext(Context context){
