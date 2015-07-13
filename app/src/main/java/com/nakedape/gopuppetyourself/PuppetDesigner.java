@@ -41,6 +41,7 @@ public class PuppetDesigner extends View {
     private static final int UPPER_JAW_LEFT = 1003;
     private static final int UPPER_JAW_RIGHT = 1004;
     private static final int UPPER_JAW_PIVOT = 1005;
+    private static final int ROTATE_HANDLE = 1006;
     private static final int LOWER_JAW = 2000;
     private static final int LOWER_JAW_TOP = 2001;
     private static final int LOWER_JAW_BOTTOM = 2002;
@@ -87,6 +88,8 @@ public class PuppetDesigner extends View {
     private float prevX = -1, prevY = -1;
     private boolean isCutPath = false, showUpperJawBox = false, showLowerJawBox = false,
             pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isSaved = true;
+    private float rotation = 0;
+    private Point rotateHandle;
 
 
     private int orientation = Puppet.PROFILE_RIGHT;
@@ -114,6 +117,9 @@ public class PuppetDesigner extends View {
         drawPaint.setStyle(Paint.Style.STROKE);
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        // Initialize rotation handle
+        rotateHandle = new Point();
 
         // Setup view with tiled background
         viewBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
@@ -144,6 +150,8 @@ public class PuppetDesigner extends View {
         else {
             cacheDir = context.getCacheDir();
         }
+
+        // Initialize undo stacks
         backgroundUndoStack = new ArrayList<>(5);
         drawUndoStack = new ArrayList<>();
         undoStack = new ArrayList<>();
@@ -1217,12 +1225,14 @@ public class PuppetDesigner extends View {
         tile.draw(viewCanvas);
         Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
         Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
-        int padding = (int)(Math.min(image.getHeight() * 0.1, image.getWidth()) * 0.1);
+        int padding = (int)(Math.min(image.getHeight() * 0.1, image.getWidth()) * 0.2);
         upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
         upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
         lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
+        rotateHandle = new Point(upperJawPivotPoint.x, upperJawPivotPoint.y - 50);
+        rotation = 0;
         invalidate();
         requestLayout();
     }
@@ -1295,7 +1305,12 @@ public class PuppetDesigner extends View {
         designerMode = MODE_SELECT;
     }
     private boolean handleSelectionTouch(MotionEvent event){
-        float x = event.getX(), y = event.getY();
+        float[] point = {event.getX(), event.getY()};
+        Matrix unrotate = new Matrix();
+        unrotate.setRotate(-rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
+        unrotate.mapPoints(point);
+        float x = point[0], y = point[1];
+        //float x = event.getX(), y = event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 prevX = x;
@@ -1341,8 +1356,6 @@ public class PuppetDesigner extends View {
             if (Math.abs(x - upperJawBox.left) < edgeThresh) selectionId = UPPER_JAW_LEFT;
             if (Math.abs(x - upperJawBox.right) < edgeThresh) selectionId = UPPER_JAW_RIGHT;
         }
-        if (Math.abs(x - upperJawPivotPoint.x) < pointThresh && Math.abs(y - upperJawPivotPoint.y) < pointThresh)
-            selectionId = UPPER_JAW_PIVOT;
         if (lowerJawBox.contains((int) x, (int) y)) {
             //selectionId = LOWER_JAW;
             if (Math.abs(y - lowerJawBox.top) < edgeThresh) selectionId = LOWER_JAW_TOP;
@@ -1350,6 +1363,17 @@ public class PuppetDesigner extends View {
             if (Math.abs(x - lowerJawBox.left) < edgeThresh) selectionId = LOWER_JAW_LEFT;
             if (Math.abs(x - lowerJawBox.right) < edgeThresh) selectionId = LOWER_JAW_RIGHT;
         }
+        if (Math.abs(x - upperJawPivotPoint.x) < pointThresh && Math.abs(y - upperJawPivotPoint.y) < pointThresh)
+            selectionId = UPPER_JAW_PIVOT;
+        // Rotation handle coordinates haven't been rotate, so compensate
+        /*float[] point = {x, y};
+        Matrix rotate = new Matrix();
+        rotate.setRotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
+        rotate.mapPoints(point);
+        if (Math.abs(point[0] - rotateHandle.x) < pointThresh && Math.abs(point[1] - rotateHandle.y) < pointThresh)
+            selectionId = ROTATE_HANDLE;*/
+
+
         //if (Math.abs(x - lowerJawPivotPoint.x) < pointThresh && Math.abs(y - lowerJawPivotPoint.y) < pointThresh)
           //  selectionId = LOWER_JAW_PIVOT;
     }
@@ -1393,6 +1417,7 @@ public class PuppetDesigner extends View {
                 upperJawPivotPoint.offset(x2 - x1, y2 - y1);
                 upperJawBox.bottom = upperJawPivotPoint.y;
                 lowerJawBox.top = upperJawPivotPoint.y;
+                rotateHandle.offset(dx, dy);
                 /*if (pivotsSnapped){
                     lowerJawPivotPoint.offset(x2- x1, 0);
                 }*/
@@ -1435,6 +1460,16 @@ public class PuppetDesigner extends View {
                 if (pivotsSnapped){
                     upperJawPivotPoint.offset(dx, 0);
                 }*/
+                break;
+            case ROTATE_HANDLE:
+                rotateHandle.x = x2;
+                rotateHandle.y = y2;
+                float a = rotateHandle.x - upperJawPivotPoint.x;
+                float b = rotateHandle.y - upperJawPivotPoint.y;
+                double rads = Math.atan(a / b);
+                rotation = -(float)Math.toDegrees(rads);
+                break;
+
         }
         prevX = x2; prevY = y2;
         if (lowerJawBox.width() < MIN_BOX_SIZE) {
@@ -1494,17 +1529,22 @@ public class PuppetDesigner extends View {
         if (backgroundBitmap != null)
             canvas.drawBitmap(backgroundBitmap, 0, 0, null);
         canvas.drawBitmap(drawBitmap, 0, 0, null);
-        if (showLowerJawBox) {
+        if (showLowerJawBox || showUpperJawBox) {
+            canvas.save();
+            canvas.rotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
             canvas.drawRect(lowerJawBox, lowerJawPaint);
-            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 16, pivotPaint1);
-            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 12, pivotPaint2);
-            //canvas.drawCircle(lowerJawPivotPoint.x, lowerJawPivotPoint.y, 8, pivotPaint1);
-        }
-        if (showUpperJawBox) {
             canvas.drawRect(upperJawBox, upperJawPaint);
+            canvas.restore();
+            // Draw pivot point
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 16, pivotPaint1);
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
             canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
+            // Draw pivot handle
+            //canvas.drawCircle(rotateHandle.x, rotateHandle.y, 16, pivotPaint1);
+            //canvas.drawCircle(rotateHandle.x, rotateHandle.y, 12, pivotPaint2);
+            //canvas.drawCircle(rotateHandle.x, rotateHandle.y, 8, pivotPaint1);
+            //canvas.drawLine(upperJawPivotPoint.x, upperJawPivotPoint.y, rotateHandle.x, rotateHandle.y, pivotPaint1);
+
         }
         if (designerMode.equals(MODE_CUT_PATH)){
             canvas.drawPath(cutPath, cutPathPaint);
