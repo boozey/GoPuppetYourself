@@ -1530,6 +1530,11 @@ public class MainActivity extends Activity {
                     }
                 }).start();
                 return true;
+            case R.id.action_bring_to_front:
+                RemovePuppetFromStage(selectedPuppet);
+                addPuppetToStage(selectedPuppet, selectedPuppet.getLeft(), selectedPuppet.getTop());
+                if (!isControlPressed) selectedPuppet.setOnTouchListener(headTouchListener);
+                return true;
         }
         return false;
     }
