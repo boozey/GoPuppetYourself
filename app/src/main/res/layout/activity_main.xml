@@ -87,7 +87,7 @@
         android:layout_below="@id/puppet_library_button"
         android:layout_toRightOf="@id/bottom_left_button"
         android:background="@drawable/ic_image_photo_library"
-        android:onClick="ShowPuppetLibrary"/>
+        android:onClick="BackgroundGalleryButtonClick"/>
 
     <SeekBar
         android:layout_width="match_parent"

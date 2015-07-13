@@ -134,6 +134,7 @@ public class MainActivity extends Activity {
     private boolean isPlaying = false;
     private boolean isRecording = false;
     private boolean isBackgroundLibraryOpen = false;
+    private boolean isScaling = false;
     private float lastScaleFactor = 1;
     private boolean scaleUp, scaleDown;
     private DisplayMetrics metrics;
@@ -777,6 +778,8 @@ public class MainActivity extends Activity {
             }
         });
         mainControlButton.startAnimation(fade_out);
+        if (!isScaling)
+            stage.setOnTouchListener(null);
     }
     private void progressBarFadeOut(){
         Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_fade_out);
@@ -959,7 +962,6 @@ public class MainActivity extends Activity {
     } // Called on main control action down
     public void GoToPerformance(View v){
         if (!isLibraryOpen) {
-            stage.setOnClickListener(null);
             //if (puppetMenu != null) puppetMenu.dismiss();
             if (selectedPuppet != null) selectedPuppet.setBackground(null);
             isBackstage = false;
@@ -1048,6 +1050,9 @@ public class MainActivity extends Activity {
     }
 
     // Start background gallery flow
+    public void BackgroundGalleryButtonClick(View v){
+        ShowBackgroundPopup();
+    }
     private void ShowBackgroundPopup(){
         if (!isBackgroundLibraryOpen){
             if (isLibraryOpen) ClosePuppetLibrary();
@@ -1446,7 +1451,11 @@ public class MainActivity extends Activity {
                 if (isRecording)
                     showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
                 Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
-                if (!isControlPressed) GoToPerformance(view);
+                if (!isControlPressed) {
+                    stage.setOnTouchListener(null);
+                    GoToPerformance(null);
+                }
+                isScaling = false;
                 return true;
         }
         return true;
@@ -1499,6 +1508,7 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.action_puppet_scale:
+                stage.setOnTouchListener(scaleListener);
                 selectedPuppet.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -1506,7 +1516,7 @@ public class MainActivity extends Activity {
                     }
                 });
                 lastScaleFactor = selectedPuppet.getScaleX();
-                stage.setOnTouchListener(scaleListener);
+                isScaling = true;
                 Toast.makeText(context, getString(R.string.toast_scale), Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.action_puppet_flip_horz:
