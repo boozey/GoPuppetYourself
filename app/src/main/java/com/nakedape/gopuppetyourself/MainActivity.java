@@ -211,10 +211,14 @@ public class MainActivity extends Activity {
         savedData = (MainActivityDataFrag) fm.findFragmentByTag("data");
         if (savedData != null){ // Load the data
             cameraCapturePath = savedData.cameraCapturePath;
-            if (savedData.currentBackground != null)
+            if (savedData.currentBackground != null) {
                 stage.setBackground(new BitmapDrawable(getResources(), savedData.currentBackground));
-            else
+                stage.setTag(savedData.currentBackgroundPath);
+            }
+            else {
                 stage.setBackground(new ColorDrawable(Color.parseColor("#8B37AF")));
+                stage.setTag("default");
+            }
             if (savedData.puppetShow != null)
                 showRecorder.setShow(savedData.puppetShow);
         }
@@ -375,6 +379,7 @@ public class MainActivity extends Activity {
         return Utils.WritePuppetToFile(bananaMan, saveFile);
     }
     private void firstOnCreate(){
+        stage.setTag("default");
         String path = setupBananaMan();
         Puppet p = new Puppet(context, null);
         Utils.ReadPuppetFromFile(p, new File(path));
@@ -1262,6 +1267,7 @@ public class MainActivity extends Activity {
             }
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
             String path = getNextBackgroundPath();
+            stage.setTag(path);
             Utils.WriteImage(bitmap, path);
             if (isRecording)
                 showRecorder.RecordFrame(showRecorder.getBackgroundFrame(path));
@@ -1277,6 +1283,7 @@ public class MainActivity extends Activity {
             if (isRecording)
                 showRecorder.RecordFrame(showRecorder.getBackgroundFrame(path));
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+            stage.setTag(path);
 
             // Save so that background will persist
             savedData.currentBackground = bitmap;
@@ -1305,6 +1312,7 @@ public class MainActivity extends Activity {
                 }).start();
             }
             stage.setBackground(new BitmapDrawable(getResources(), bitmap));
+            stage.setTag(path);
 
             // Save so that background will persist
             savedData.currentBackground = bitmap;
@@ -1882,6 +1890,7 @@ public class MainActivity extends Activity {
         p.setTag(p.getName());
         String path = getPathFromName(p.getName());
         p.setPath(path);
+        if (isRecording) showRecorder.addPuppetToShow(p);
         p.setOnStage(true);
         p.setVisibility(View.GONE);
         stage.addView(p);

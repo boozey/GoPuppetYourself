@@ -3,6 +3,9 @@ package com.nakedape.gopuppetyourself;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Point;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
@@ -24,8 +27,9 @@ public class PuppetShow implements Serializable {
     transient private ArrayList<byte[]> puppets;
     transient private ArrayList<Bitmap> backgrounds;
     transient private ArrayList<KeyFrame> frameSequence;
+    transient public ArrayList<String> initOffStage;
     transient public float[] initialXs, initialYs;
-    transient private int orientation;
+    transient public ArrayList<Point> initialPositions;
     transient private Context context;
     transient int origWidth, origHeight;
 
@@ -42,19 +46,31 @@ public class PuppetShow implements Serializable {
         puppets = new ArrayList<>();
         backgrounds = new ArrayList<>();
         frameSequence = new ArrayList<>();
+        initOffStage = new ArrayList<>();
 
         if (stage.getBackground() != null){
-            backgrounds.add(Utils.drawableToBitmap(stage.getBackground()));
+            String path = (String)stage.getTag();
+            if (path == null || path.equals("default")) {
+                Bitmap bitmap = Bitmap.createBitmap(stage.getWidth(), stage.getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                canvas.drawColor(Color.parseColor("#8B37AF"));
+                backgrounds.add(bitmap);
+            } else {
+                backgrounds.add(Utils.drawableToBitmap(stage.getBackground()));
+            }
+        } else {
+            Bitmap bitmap = Bitmap.createBitmap(stage.getWidth(), stage.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawColor(Color.parseColor("#8B37AF"));
+            backgrounds.add(bitmap);
         }
-        initialXs = new float[stage.getChildCount()];
-        initialYs = new float[stage.getChildCount()];
         Puppet p;
+        initialPositions = new ArrayList<>(stage.getChildCount());
         for (int i = 0; i < stage.getChildCount(); i++) {
             p = (Puppet) stage.getChildAt(i);
             puppets.add(p.getBytes());
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) p.getLayoutParams();
-            initialXs[i] = (float) params.leftMargin;
-            initialYs[i] = (float) params.topMargin;
+            initialPositions.add(new Point(params.leftMargin, params.topMargin));
         }
     }
     public void SetContext(Context context){
@@ -65,7 +81,17 @@ public class PuppetShow implements Serializable {
     }
 
     public void addPuppet(Puppet puppet){
-        //puppets.add(puppet);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) puppet.getLayoutParams();
+        initialPositions.add(new Point(params.leftMargin, params.topMargin));
+        puppets.add(puppet.getBytes());
+        initOffStage.add(puppet.getName());
+        // Load the new puppet to set initial visibility to zero
+        //Puppet temp = getPuppet(puppets.size() - 1);
+        //temp.setOnStage(false);
+        //puppets.remove(puppets.size() - 1);
+        //puppets.add(temp.getBytes());
+
+        puppet.setOnStage(false);
     }
     public Puppet getPuppet(int index){
         byte[] buffer = puppets.get(index);
@@ -96,11 +122,19 @@ public class PuppetShow implements Serializable {
     public ArrayList<KeyFrame> getFrameSequence(){ return  frameSequence; }
 
     public void writeObject(ObjectOutputStream out) throws IOException {
+        for (int i = 0; i < initialPositions.size(); i++){
+            Point p = initialPositions.get(i);
+            initialXs[i] = p.x;
+            initialYs[i] = p.y;
+        }
         out.writeObject(showName);
         out.writeObject(puppets);
         out.writeObject(frameSequence);
+        initialXs = new float[initialPositions.size()];
+        initialYs = new float[initialPositions.size()];
         out.writeObject(initialXs);
         out.writeObject(initialYs);
+        out.writeObject(initOffStage);
         out.writeInt(backgroundCount());
         for (Bitmap b : backgrounds){
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -116,11 +150,15 @@ public class PuppetShow implements Serializable {
         frameSequence = (ArrayList<KeyFrame>)in.readObject();
         initialXs = (float[])in.readObject();
         initialYs = (float[])in.readObject();
+        initOffStage = (ArrayList<String>)in.readObject();
         int backgroundCount = in.readInt();
         for (int i = 0; i < backgroundCount; i++){
             byte[] bytes = new byte[in.readInt()];
             in.readFully(bytes);
             backgrounds.add(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
+        }
+        for (int i = 0; i < initialXs.length; i++){
+            initialPositions.add(new Point((int)initialXs[i], (int)initialYs[i]));
         }
     }
     public byte[] getAsByteArray(){

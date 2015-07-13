@@ -52,7 +52,7 @@ public class PuppetShowRecorder {
     private String audioFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "//recording.3gp";
     private MediaPlayer mPlayer;
     private int width, height;
-    private PuppetShow puppetShow;
+    public  PuppetShow puppetShow;
     private ArrayList<String> bitmapPaths;
     private float xScaleFactor, yScaleFactor;
 
@@ -140,6 +140,11 @@ public class PuppetShowRecorder {
     public KeyFrame getBackgroundFrame(String bitmapPath){
         bitmapPaths.add(bitmapPath);
         return new KeyFrame(getTimeFromStartMillis(), KeyFrame.SET_BACKGROUND, bitmapPaths.size() - 1);
+    }
+    public void addPuppetToShow(Puppet p){
+        puppetShow.addPuppet(p);
+        if (isRecording)
+            RecordFrame(new KeyFrame(getTimeFromStartMillis(), p.getName(), KeyFrame.VISIBILITY, true));
     }
     public void RecordStop(){
         if (isRecording()) {
@@ -296,10 +301,15 @@ public class PuppetShowRecorder {
                 RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 p.setScaleX(xScaleFactor * p.getScaleX());
                 p.setScaleY(yScaleFactor * p.getScaleY());
-                params.setMargins((int) (puppetShow.initialXs[i] * xScaleFactor), (int) (puppetShow.initialYs[i] * yScaleFactor), -250, -250);
+                Point point = puppetShow.initialPositions.get(i);
+                params.setMargins((int) (point.x * xScaleFactor), (int) (point.y * yScaleFactor), -250, -250);
                 p.setLayoutParams(params);
                 p.setTag(p.getName());
                 stage.addView(p);
+            }
+            // Hide the puppets that aren't initially on stage
+            for (String name : puppetShow.initOffStage){
+                stage.findViewWithTag(name).setVisibility(View.GONE);
             }
             // Set the frame sequence and length
             frameSequence = puppetShow.getFrameSequence();

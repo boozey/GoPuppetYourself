@@ -17,6 +17,7 @@ public class MainActivityDataFrag extends Fragment {
     boolean isBackstage;
     String cameraCapturePath;
     PuppetShow puppetShow;
+    String currentBackgroundPath;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
