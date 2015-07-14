@@ -6,10 +6,12 @@
         android:title="@string/action_puppet_visible"
         android:checkable="true"
         android:checked="true" />
-    <item android:id="@+id/action_puppet_scale"
-        android:title="@string/action_scale" />
     <item android:id="@+id/action_puppet_flip_horz"
         android:title="@string/action_flip_horz"/>
+    <item android:id="@+id/action_puppet_scale"
+        android:title="@string/action_scale" />
+    <item android:id="@+id/action_rotate"
+        android:title="@string/action_rotate"/>
     <item android:id="@+id/action_bring_to_front"
         android:title="@string/action_bring_to_front" />
     <item android:id="@+id/action_remove_puppet"

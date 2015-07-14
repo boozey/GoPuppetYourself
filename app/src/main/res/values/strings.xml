@@ -20,6 +20,7 @@
     <string name="action_scale">Scale</string>
     <string name="action_flip_horz">Flip</string>
     <string name="action_bring_to_front">Bring to front</string>
+    <string name="action_rotate">Rotate</string>
     <string name="toast_scale">Pinch background to shrink or grow</string>
 
     <!-- Puppet library strings -->

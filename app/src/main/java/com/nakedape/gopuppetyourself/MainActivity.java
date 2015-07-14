@@ -136,6 +136,7 @@ public class MainActivity extends Activity {
     private boolean isBackgroundLibraryOpen = false;
     private boolean isScaling = false;
     private float lastScaleFactor = 1;
+    private int lastRotation = 0;
     private boolean scaleUp, scaleDown;
     private DisplayMetrics metrics;
     private String cameraCapturePath;
@@ -143,6 +144,7 @@ public class MainActivity extends Activity {
     private BitmapFileListAdapter backgroundListAdapter;
     private RelativeLayout showStage;
     private boolean isFirstRun;
+    private RotationGestureDetector mRotationDetector;
 
     // Gesture fields
     private GestureDetectorCompat gestureDetector;
@@ -1477,6 +1479,63 @@ public class MainActivity extends Activity {
         return scaleFactor;
     }
 
+    // Rotate puppet listener and methods
+    private View.OnTouchListener rotateListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mRotationDetector.onTouchEvent(motionEvent);
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_UP:
+                    if (!isControlPressed) {
+                        GoToPerformance(null);
+                    }
+                    isScaling = false;
+                    return true;
+            }
+            return false;
+        }
+    };
+    private RotationGestureDetector.OnRotationGestureListener rotationGestureListener = new RotationGestureDetector.OnRotationGestureListener() {
+        @Override
+        public void onRotation(RotationGestureDetector rotationDetector) {
+            selectedPuppet.setRotation(rotationDetector.getAngle());
+            //Log.d(LOG_TAG, "Rotation angle: " + rotationDetector.getAngle());
+        }
+    };
+    private boolean handleRotateTouch(View view, MotionEvent motionEvent){
+        int pointerCount = motionEvent.getPointerCount();
+        switch (motionEvent.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:
+                x1Start = motionEvent.getX();
+                y1Start = motionEvent.getY();
+                return true;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                x2Start = motionEvent.getX(pointerCount - 1);
+                y2Start = motionEvent.getY(pointerCount - 1);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (pointerCount > 1) {
+                    selectedPuppet.setPivotX(x1Start);
+                    selectedPuppet.setPivotY(y1Start);
+                    selectedPuppet.setRotation(getRotation(motionEvent.getRawX(), motionEvent.getRawY()));
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                if (!isControlPressed) {
+                    GoToPerformance(null);
+                }
+                isScaling = false;
+                return true;
+        }
+        return false;
+    }
+    private int getRotation(float x, float y){
+        float a = x - x1Start;
+        float b = y - y1Start;
+        int degrees = -(int)Math.toDegrees(Math.atan(b / a));
+        return lastRotation + degrees;
+    }
+
     // Puppet popup menu methods
     private PopupMenu.OnMenuItemClickListener popupMenuListener = new PopupMenu.OnMenuItemClickListener() {
         @Override
@@ -1485,6 +1544,7 @@ public class MainActivity extends Activity {
         }
     };
     private boolean handlePopupClick(MenuItem menuItem){
+        stage.setOnTouchListener(null);
         switch (menuItem.getItemId()){
             case R.id.action_edit_puppet:
                 EditPuppet(selectedPuppet);
@@ -1534,6 +1594,11 @@ public class MainActivity extends Activity {
                 RemovePuppetFromStage(selectedPuppet);
                 addPuppetToStage(selectedPuppet, selectedPuppet.getLeft(), selectedPuppet.getTop());
                 if (!isControlPressed) selectedPuppet.setOnTouchListener(headTouchListener);
+                return true;
+            case R.id.action_rotate:
+                mRotationDetector = new RotationGestureDetector(rotationGestureListener, selectedPuppet);
+                selectedPuppet.setOnTouchListener(rotateListener);
+                isScaling = true;
                 return true;
         }
         return false;
