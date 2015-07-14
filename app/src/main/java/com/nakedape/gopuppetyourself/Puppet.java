@@ -65,6 +65,8 @@ public class Puppet extends View implements Serializable {
     public int getTotalHeight(){
         return topPadding + upperBitmapHeight + lowerBitmapHeight;
     }
+    public int getScaledWidth(){ return (int)(getTotalWidth() * scaleX);}
+    public int getScaledHeight(){ return (int)(getTotalHeight() * scaleY);}
 
     public boolean isOnStage() {
         return onStage;

@@ -257,7 +257,10 @@ public class MainActivity extends Activity {
                         p.setPath(path);
                         if (!p.isOnStage()) p.setVisibility(View.GONE);
                         if (savedData.layoutParamses.size() > 0) {
-                            p.setLayoutParams(savedData.layoutParamses.get(p.getId()));
+                            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)savedData.layoutParamses.get(p.getId());
+                            params.leftMargin = Utils.getInBounds(params.leftMargin, 0, metrics.widthPixels - p.getScaledWidth());
+                            params.topMargin = Utils.getInBounds(params.topMargin, 0, metrics.heightPixels - p.getScaledHeight());
+                            p.setLayoutParams(params);
                         }
                         stage.addView(p);
                     } else {
