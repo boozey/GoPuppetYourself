@@ -76,21 +76,23 @@ public class RotationGestureDetector {
     }
 
     void getRawPoint(MotionEvent ev, int index, PointF point){
-        final int[] location = { 0, 0 };
-        mView.getLocationOnScreen(location);
+        if (ev.getPointerCount() > index) {
+            final int[] location = {0, 0};
+            mView.getLocationOnScreen(location);
 
-        float x = ev.getX(index);
-        float y = ev.getY(index);
+            float x = ev.getX(index);
+            float y = ev.getY(index);
 
-        double angle = Math.toDegrees(Math.atan2(y, x));
-        angle += mView.getRotation();
+            double angle = Math.toDegrees(Math.atan2(y, x));
+            angle += mView.getRotation();
 
-        final float length = PointF.length(x, y);
+            final float length = PointF.length(x, y);
 
-        x = (float) (length * Math.cos(Math.toRadians(angle))) + location[0];
-        y = (float) (length * Math.sin(Math.toRadians(angle))) + location[1];
+            x = (float) (length * Math.cos(Math.toRadians(angle))) + location[0];
+            y = (float) (length * Math.sin(Math.toRadians(angle))) + location[1];
 
-        point.set(x, y);
+            point.set(x, y);
+        }
     }
 
     private float angleBetweenLines(PointF fPoint, PointF sPoint, PointF nFpoint, PointF nSpoint) {
