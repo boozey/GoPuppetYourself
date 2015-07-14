@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -128,6 +129,18 @@ public class Utils {
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeResource(res, resId, options);
+    }
+
+    public static Bitmap loadScaledBitmap(Resources res, int resId, int maxWidth, int maxHeight){
+        Bitmap b = decodeSampledBitmapFromResource(res, resId, maxWidth, maxHeight);
+        if (b.getHeight() > maxHeight || b.getWidth() > maxWidth) {
+            Point p = getScaledDimension(b.getWidth(), b.getHeight(), maxWidth, maxHeight);
+            float scale = (float)p.x / b.getWidth();
+            Matrix m = new Matrix();
+            m.setScale(scale, scale);
+            b = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, false);
+        }
+        return b;
     }
 
     public static Bitmap decodeSampledBitmapFromContentResolver(ContentResolver r, Uri uri, int reqWidth, int reqHeight) throws IOException{

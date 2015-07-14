@@ -42,7 +42,7 @@
     <string name="alert_dialog_message_unsaved">Do you want to save your changes?</string>
     <string name="toast_magic_erase">Touch to erase a region of similar colors</string>
     <string name="toast_cut_path">Outline the region to cut</string>
-    <string name="toast_profile">Select the direction the puppet is facing</string>
+    <string name="toast_profile">Adjust the shadow to fit the puppet</string>
     <string name="toast_profile_right">Right facing</string>
     <string name="toast_profile_left">Left facing</string>
 
