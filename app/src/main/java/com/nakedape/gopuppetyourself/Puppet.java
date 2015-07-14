@@ -305,8 +305,8 @@ public class Puppet extends View implements Serializable {
             lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
             lowerJawMatrix.postScale(scaleX, scaleY);
         }
-        canvas.drawBitmap(upperJawBitmap, upperJawMatrix, null);
         canvas.drawBitmap(lowerJawBitmap, lowerJawMatrix, null);
+        canvas.drawBitmap(upperJawBitmap, upperJawMatrix, null);
     }
 
 
