@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
@@ -28,9 +29,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.provider.MediaStore;
-import android.support.v4.view.GestureDetectorCompat;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
@@ -147,7 +146,7 @@ public class MainActivity extends Activity {
     private RotationGestureDetector mRotationDetector;
 
     // Gesture fields
-    private GestureDetectorCompat gestureDetector;
+    private GestureDetector gestureDetector;
     private boolean flingRight, flingLeft, flingUp, flingDown, longPress, scrollLeft, scrollRight, scrollUp, scrollDown;
     private float scrollAmount;
 
@@ -175,7 +174,7 @@ public class MainActivity extends Activity {
         backgroundLibraryButton.setVisibility(View.GONE);
         menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
         menuButton.setVisibility(View.GONE);
-        gestureDetector = new GestureDetectorCompat(context, new MyGestureListener());
+        gestureDetector = new GestureDetector(context, new MyGestureListener());
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(context, stage);
@@ -305,7 +304,7 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+        return super.onCreateOptionsMenu(menu);
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

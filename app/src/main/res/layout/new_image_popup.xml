@@ -3,7 +3,7 @@
     android:orientation="vertical" android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
-    android:background="@drawable/puppet_library_background"
+    android:background="@drawable/popup_background_dark"
     android:id="@+id/new_image_popup">
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:textSize="20sp"
-            android:textColor="@color/abc_primary_text_material_dark"
+            android:textColor="@color/white"
             android:text="@string/get_new_image_popup_title"/>
         <ImageButton
             android:id="@+id/new_image_popup_close_button"
@@ -39,7 +39,7 @@
             android:text="Camera"
             android:textColor="@color/white"
             android:layout_gravity="start"
-            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            style="@android:style/Widget.Holo.Button.Borderless"
             android:id="@+id/camera_button"
             android:onClick="NewCameraImageClick" />
     </LinearLayout>
@@ -57,7 +57,7 @@
         android:layout_height="wrap_content"
         android:text="Photo Gallery"
         android:textColor="@color/white"
-        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        style="@android:style/Widget.Holo.Button.Borderless"
         android:id="@+id/gallery_button"
         android:onClick="NewGalleryImageClick" />
         </LinearLayout>
@@ -75,7 +75,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/white"
-        style="@style/Base.Widget.AppCompat.Button.Borderless"
+        style="@android:style/Widget.Holo.Button.Borderless"
         android:text="Blank Image"
         android:id="@+id/blank_image_button"
         android:onClick="NewBlankImageClick"/>
