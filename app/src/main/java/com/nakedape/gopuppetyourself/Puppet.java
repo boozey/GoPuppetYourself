@@ -204,7 +204,7 @@ public class Puppet extends View implements Serializable {
         if (isMouthOpen)
             setMeasuredDimension((int) ((leftClipPadding + upperLeftPadding + upperBitmapWidth + upperRightPadding + rightClipPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
         else
-            setMeasuredDimension((int) ((upperLeftPadding + upperBitmapWidth + upperRightPadding) * scaleX), (int) ((topPadding + upperBitmapHeight + lowerBitmapHeight) * scaleY));
+            setMeasuredDimension((int) ((upperLeftPadding + upperBitmapWidth + upperRightPadding) * scaleX), (int) ((upperBitmapHeight + lowerBitmapHeight) * scaleY));
     }
     private void adjustClipBounds(){
         if (Build.VERSION.SDK_INT > 18) {
@@ -301,10 +301,10 @@ public class Puppet extends View implements Serializable {
             lowerJawMatrix.setTranslate(lowerLeftPadding + leftClipPadding, topPadding + upperJawBitmap.getHeight());
             lowerJawMatrix.postScale(scaleX, scaleY);
         } else {
-            upperJawMatrix.setTranslate(upperLeftPadding, topPadding);
+            upperJawMatrix.setTranslate(upperLeftPadding, 0);
             upperJawMatrix.postRotate(degrees * getPivotDirection(), upperPivotPoint.x + upperLeftPadding, upperPivotPoint.y + topPadding);
             upperJawMatrix.postScale(scaleX, scaleY);
-            lowerJawMatrix.setTranslate(lowerLeftPadding, topPadding + upperJawBitmap.getHeight());
+            lowerJawMatrix.setTranslate(lowerLeftPadding, upperJawBitmap.getHeight());
             lowerJawMatrix.postScale(scaleX, scaleY);
         }
         canvas.drawBitmap(lowerJawBitmap, lowerJawMatrix, null);

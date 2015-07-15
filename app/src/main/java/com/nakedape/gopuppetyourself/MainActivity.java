@@ -182,6 +182,7 @@ public class MainActivity extends Activity {
         // Hid the Action Bar if present
         ActionBar actionBar = getActionBar();
         if (actionBar != null){
+            actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
             actionBar.hide();
         }
 
@@ -491,7 +492,7 @@ public class MainActivity extends Activity {
                 .getLayoutParams();
         if (puppet.isMouthOpen()){ // Compensate for clip padding
             layoutParams.leftMargin = X - dx - (int)(puppet.getLeftClipPadding() * puppet.getScaleX());
-            layoutParams.topMargin = Y - dy;
+            layoutParams.topMargin = Y - dy - (int)(puppet.getTopClipPadding() * puppet.getScaleY());
             layoutParams.rightMargin = -250;
             layoutParams.bottomMargin = -250;
         } else {
