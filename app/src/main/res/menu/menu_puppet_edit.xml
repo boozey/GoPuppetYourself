@@ -1,20 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/action_edit_puppet"
-        android:title="@string/action_edit_puppet"/>
+        android:title="@string/action_edit_puppet"
+        android:icon="@drawable/ic_create_white_24dp"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_visible"
         android:title="@string/action_puppet_visible"
-        android:checkable="true"
-        android:checked="true" />
+        android:icon="@drawable/ic_visibility_white_24dp"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_flip_horz"
-        android:title="@string/action_flip_horz"/>
+        android:title="@string/action_flip_horz"
+        android:icon="@drawable/ic_action_flip_to_front_light"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_scale"
-        android:title="@string/action_scale" />
+        android:title="@string/action_scale"
+        android:icon="@drawable/ic_action_scale_light"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_rotate"
-        android:title="@string/action_rotate"/>
+        android:title="@string/action_rotate"
+        android:icon="@drawable/ic_action_image_rotate_right_light"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_bring_to_front"
-        android:title="@string/action_bring_to_front" />
+        android:title="@string/action_bring_to_front"
+        android:icon="@drawable/ic_action_flip_to_front_light"
+        android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_remove_puppet"
-        android:title="@string/action_delete_remove" />
+        android:title="@string/action_delete_remove"
+        android:icon="@drawable/ic_action_input"
+        android:showAsAction="ifRoom"/>
 
 </menu>

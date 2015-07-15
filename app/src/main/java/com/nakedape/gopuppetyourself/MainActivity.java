@@ -3,6 +3,7 @@ package com.nakedape.gopuppetyourself;
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
@@ -32,6 +33,7 @@ import android.provider.MediaStore;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.DragEvent;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -116,7 +118,7 @@ public class MainActivity extends Activity {
                     });
                     progressBar.startAnimation(fadeOut);
                     SwitchToRecordStage();
-                    mainControlFadeOut();
+                    mainControlFadeOut(1000);
                     isPlaying = false;
             }
         }
@@ -144,6 +146,7 @@ public class MainActivity extends Activity {
     private RelativeLayout showStage;
     private boolean isFirstRun;
     private RotationGestureDetector mRotationDetector;
+    private ActionMode puppetActionMode;
 
     // Gesture fields
     private GestureDetector gestureDetector;
@@ -175,6 +178,12 @@ public class MainActivity extends Activity {
         menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
         menuButton.setVisibility(View.GONE);
         gestureDetector = new GestureDetector(context, new MyGestureListener());
+
+        // Hid the Action Bar if present
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null){
+            actionBar.hide();
+        }
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(context, stage);
@@ -280,7 +289,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume(){
         super.onResume();
-        mainControlFadeOut();
+        mainControlFadeOut(1000);
     }
     @Override
     protected void onDestroy() {
@@ -516,35 +525,35 @@ public class MainActivity extends Activity {
             case MotionEvent.ACTION_UP:
                 if (isPlaying) {
                     StopPlay();
-                    secondControlsFadeOut();
-                    mainControlFadeOut();
+                    secondControlsFadeOut(1000);
+                    mainControlFadeOut(1000);
                     isControlPressed = false;
                     return true;
                 }
                 playButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    secondControlsFadeOut();
+                    secondControlsFadeOut(1000);
                     PlayClick(view);
                     GoToPerformance(view);
-                    mainControlFadeOut();
+                    mainControlFadeOut(1000);
                     isControlPressed = false;
                     return true;
                 }
 
                 recordButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    secondControlsFadeOut();
+                    secondControlsFadeOut(1000);
                     GoToPerformance(view);
                     RecordClick(view);
-                    mainControlFadeOut();
+                    mainControlFadeOut(1000);
                     isControlPressed = false;
                     return true;
                 }
 
                 libraryButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    secondControlsFadeOut();
-                    mainControlFadeOut();
+                    secondControlsFadeOut(1000);
+                    mainControlFadeOut(1000);
                     isControlPressed = false;
                     ShowPuppetLibrary(view);
                     return true;
@@ -552,16 +561,18 @@ public class MainActivity extends Activity {
 
                 backgroundLibraryButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
-                    secondControlsFadeOut();
-                    mainControlFadeOut();
+                    secondControlsFadeOut(1000);
+                    mainControlFadeOut(1000);
                     isControlPressed = false;
                     ShowBackgroundPopup();
                     return true;
                 }
-                secondControlsFadeOut();
-                GoToPerformance(view);
-                mainControlFadeOut();
-                isControlPressed = false;
+                if (puppetActionMode == null) {
+                    secondControlsFadeOut(1000);
+                    GoToPerformance(view);
+                    mainControlFadeOut(1000);
+                    isControlPressed = false;
+                }
                 return true;
         }
         return false;
@@ -674,8 +685,9 @@ public class MainActivity extends Activity {
             isSecondControlShowing = true;
         }
     }
-    private void secondControlsFadeOut(){
-        Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+    private void secondControlsFadeOut(int pause){
+        Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_grow_fade_out);
+        fadeOut.setStartOffset(pause);
         fadeOut.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -695,7 +707,8 @@ public class MainActivity extends Activity {
         });
         recordButton.startAnimation(fadeOut);
 
-        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_grow_fade_out);
+        fadeOut.setStartOffset(pause);
         fadeOut.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -715,7 +728,8 @@ public class MainActivity extends Activity {
         });
         playButton.startAnimation(fadeOut);
 
-        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_grow_fade_out);
+        fadeOut.setStartOffset(pause);
         fadeOut.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -735,7 +749,8 @@ public class MainActivity extends Activity {
         });
         libraryButton.startAnimation(fadeOut);
 
-        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
+        fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_grow_fade_out);
+        fadeOut.setStartOffset(pause);
         fadeOut.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -763,8 +778,9 @@ public class MainActivity extends Activity {
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
         mainControlButton.startAnimation(fadeIn);
     }
-    private void mainControlFadeOut(){
-        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_grow_fade_out);
+    private void mainControlFadeOut(int pause){
+        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_grow_fade_out);
+        fade_out.setStartOffset(pause);
         fade_out.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -782,8 +798,6 @@ public class MainActivity extends Activity {
             }
         });
         mainControlButton.startAnimation(fade_out);
-        if (!isScaling)
-            stage.setOnTouchListener(null);
     }
     private void progressBarFadeOut(){
         Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_fade_out);
@@ -826,8 +840,8 @@ public class MainActivity extends Activity {
             showRecorder.FinalizeRecording();
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.control_button_background));
             recordButton.setBackground(getResources().getDrawable(R.drawable.ic_action_rec));
-            mainControlFadeOut();
-            secondControlsFadeOut();
+            mainControlFadeOut(1000);
+            secondControlsFadeOut(1000);
             isRecording = false;
         }
     }
@@ -943,8 +957,8 @@ public class MainActivity extends Activity {
                 }
             });
             progressBar.startAnimation(fadeOut);
-            mainControlFadeOut();
-            secondControlsFadeOut();
+            mainControlFadeOut(1000);
+            secondControlsFadeOut(1000);
             isPlaying = false;
         }
     }
@@ -965,9 +979,12 @@ public class MainActivity extends Activity {
         }
     } // Called on main control action down
     public void GoToPerformance(View v){
-        if (!isLibraryOpen) {
+        if (!isLibraryOpen && puppetActionMode == null) {
             //if (puppetMenu != null) puppetMenu.dismiss();
-            if (selectedPuppet != null) selectedPuppet.setBackground(null);
+            if (selectedPuppet != null) {
+                selectedPuppet.setBackground(null);
+                selectedPuppet = null;
+            }
             isBackstage = false;
             if (!isPlaying) {
                 for (int i = 0; i < stage.getChildCount(); i++) {
@@ -1020,26 +1037,20 @@ public class MainActivity extends Activity {
         final int Y = (int) event.getRawY();
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
+                selectedPuppet = view;
+                selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
                 RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
                 dx = X - lParams.leftMargin;
                 dy = Y - lParams.topMargin;
                 lastScaleFactor = view.getScaleX();
+                if (puppetActionMode == null){
+                    puppetActionMode = startActionMode(puppetActionModeCallback);
+                } else if (!selectedPuppet.equals(view)){
+                    puppetActionMode.finish();
+                    puppetActionMode = startActionMode(puppetActionModeCallback);
+                }
                 break;
             case MotionEvent.ACTION_UP:
-                if (selectedPuppet != null) {
-                    selectedPuppet.setBackground(null);
-                }
-                    selectedPuppet = (Puppet) view;
-                    selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
-                    if (puppetMenu != null) puppetMenu.dismiss();
-                    puppetMenu = new PopupMenu(context, selectedPuppet);
-                    puppetMenu.inflate(R.menu.menu_puppet_edit);
-                    puppetMenu.setOnMenuItemClickListener(popupMenuListener);
-                    if (!selectedPuppet.isOnStage()) {
-                        MenuItem item = puppetMenu.getMenu().findItem(R.id.action_puppet_visible);
-                        item.setChecked(false);
-                    }
-                    puppetMenu.show();
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
                 break;
@@ -1052,6 +1063,208 @@ public class MainActivity extends Activity {
         stage.invalidate();
         return true;
     }
+    // Puppet ActionMode methods
+    private ActionMode.Callback puppetActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+            // Inflate a menu resource providing context menu items
+            actionMode.getMenuInflater().inflate(R.menu.menu_puppet_edit, menu);
+            stage.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent e) {
+                    if (puppetActionMode != null)
+                        puppetActionMode.finish();
+                    return true;
+                }
+            });
+            ActionBar actionBar = getActionBar();
+            if (actionBar != null){
+                actionBar.show();
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+            if (!selectedPuppet.isOnStage()) {
+                MenuItem visibilityItem = menu.findItem(R.id.action_puppet_visible);
+                visibilityItem.setIcon(getResources().getDrawable(R.drawable.ic_visibility_off_white_24dp));
+            }
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            switch (menuItem.getItemId()){
+                case R.id.action_edit_puppet:
+                    EditPuppet(selectedPuppet);
+                    actionMode.finish();
+                    return true;
+                case R.id.action_remove_puppet:
+                    RemovePuppetFromStage(selectedPuppet);
+                    selectedPuppet = null;
+                    actionMode.finish();
+                    return true;
+                case R.id.action_puppet_visible:
+                    if (selectedPuppet.isOnStage()){
+                        if (isRecording)
+                            showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), false));
+                        selectedPuppet.setOnStage(false);
+                    }
+                    else {
+                        if (isRecording)
+                            showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), true));
+                        selectedPuppet.setOnStage(true);
+                    }
+                    actionMode.finish();
+                    return true;
+                case R.id.action_puppet_scale:
+                    stage.setOnTouchListener(scaleListener);
+                    selectedPuppet.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View view, MotionEvent motionEvent) {
+                            return false;
+                        }
+                    });
+                    lastScaleFactor = selectedPuppet.getScaleX();
+                    isScaling = true;
+                    Toast.makeText(context, getString(R.string.toast_scale), Toast.LENGTH_SHORT).show();
+                    return true;
+                case R.id.action_puppet_flip_horz:
+                    if (isRecording)
+                        showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                    selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                        }
+                    }).start();
+                    actionMode.finish();
+                    return true;
+                case R.id.action_bring_to_front:
+                    RemovePuppetFromStage(selectedPuppet);
+                    addPuppetToStage(selectedPuppet, selectedPuppet.getLeft(), selectedPuppet.getTop());
+                    if (!isControlPressed) selectedPuppet.setOnTouchListener(headTouchListener);
+                    actionMode.finish();
+                    return true;
+                case R.id.action_rotate:
+                    mRotationDetector = new RotationGestureDetector(rotationGestureListener, selectedPuppet);
+                    selectedPuppet.setOnTouchListener(rotateListener);
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode actionMode) {
+            puppetActionMode = null;
+            selectedPuppet.setBackground(null);
+            selectedPuppet = null;
+            stage.setOnClickListener(null);
+            GoToPerformance(null);
+            ActionBar actionBar = getActionBar();
+            if (actionBar != null){
+                actionBar.hide();
+            }
+            secondControlsFadeOut(0);
+            mainControlFadeOut(0);
+            isControlPressed = false;
+        }
+    };
+    public void EditPuppet(Puppet p){
+        Intent intent = new Intent(this, DesignerActivity.class);
+        for (int i = 0; i < stage.getChildCount(); i++){
+            if (stage.getChildAt(i).equals(p)) {
+                intent.putExtra(PUPPET_INDEX, i);
+            }
+        }
+        intent.putExtra(PUPPET_PATH, p.getPath());
+        startActivityForResult(intent, REQUEST_EDIT);
+    }
+
+    // Scale puppet listener and methods
+    private View.OnTouchListener scaleListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            return handleScaleTouch(view, motionEvent);
+        }
+    };
+    private boolean handleScaleTouch(View view, MotionEvent motionEvent){
+        int pointerCount = motionEvent.getPointerCount();
+        switch (motionEvent.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:
+                x1Start = motionEvent.getX();
+                y1Start = motionEvent.getY();
+                return true;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                x1Start = motionEvent.getX(pointerCount - 1);
+                x2Start = motionEvent.getX(pointerCount - 2);
+                y1Start = motionEvent.getY(pointerCount - 1);
+                y2Start = motionEvent.getY(pointerCount - 2);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (pointerCount > 1) {
+                    selectedPuppet.setScaleX(getScaleFactor(motionEvent.getX(pointerCount - 1), motionEvent.getY(pointerCount - 1),
+                            motionEvent.getX(pointerCount - 2), motionEvent.getY(pointerCount - 2)));
+                    selectedPuppet.setScaleY(Math.copySign(selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                    if (isRecording)
+                        showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                if (isRecording)
+                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
+                if (!isControlPressed) {
+                    stage.setOnTouchListener(null);
+                    GoToPerformance(null);
+                }
+                isScaling = false;
+                return true;
+        }
+        return true;
+    }
+    private float getScaleFactor(float x1, float y1, float x2, float y2){
+        float dXInit = x2Start - x1Start;
+        float dYInit = y2Start - y1Start;
+        float startDistance = (float)Math.sqrt(dXInit*dXInit + dYInit*dYInit); // Distance between two pointers to start
+        float dX = x2 - x1;
+        float dY = y2 - y1;
+        float currentDistance = (float)Math.sqrt(dX*dX + dY*dY); // Current distance between two pointers
+        float scaleAmount = currentDistance - startDistance; // Neg = shrink, pos = grow
+        float scaleFactor =  Math.abs(lastScaleFactor) + scaleAmount / metrics.densityDpi;
+        // Make sure scale factor is reasonable between 1/5 and 5
+        scaleFactor = Math.max(scaleFactor, 0.2f);
+        scaleFactor = Math.min(scaleFactor, 5);
+        // Set the sign to what it was originally to keep left/right orientation the same
+        scaleFactor = Math.copySign(scaleFactor, lastScaleFactor);
+        return scaleFactor;
+    }
+
+    // Rotate puppet listener and methods
+    private View.OnTouchListener rotateListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mRotationDetector.onTouchEvent(motionEvent);
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_UP:
+                    if (!isControlPressed) {
+                        GoToPerformance(null);
+                    }
+                    isScaling = false;
+                    return true;
+            }
+            return false;
+        }
+    };
+    private RotationGestureDetector.OnRotationGestureListener rotationGestureListener = new RotationGestureDetector.OnRotationGestureListener() {
+        @Override
+        public void onRotation(RotationGestureDetector rotationDetector) {
+            selectedPuppet.setRotation(rotationDetector.getAngle());
+            //Log.d(LOG_TAG, "Rotation angle: " + rotationDetector.getAngle());
+        }
+    };
 
     // Start background gallery flow
     public void BackgroundGalleryButtonClick(View v){
@@ -1060,6 +1273,7 @@ public class MainActivity extends Activity {
     private void ShowBackgroundPopup(){
         if (!isBackgroundLibraryOpen){
             if (isLibraryOpen) ClosePuppetLibrary();
+            if (puppetActionMode != null) puppetActionMode.finish();
             isBackgroundLibraryOpen = true;
 
             // Set position of the popup
@@ -1422,204 +1636,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Scale puppet listener and methods
-    private View.OnTouchListener scaleListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            return handleScaleTouch(view, motionEvent);
-        }
-    };
-    private boolean handleScaleTouch(View view, MotionEvent motionEvent){
-        int pointerCount = motionEvent.getPointerCount();
-        switch (motionEvent.getActionMasked()){
-            case MotionEvent.ACTION_DOWN:
-                x1Start = motionEvent.getX();
-                y1Start = motionEvent.getY();
-                return true;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                    x1Start = motionEvent.getX(pointerCount - 1);
-                    x2Start = motionEvent.getX(pointerCount - 2);
-                    y1Start = motionEvent.getY(pointerCount - 1);
-                    y2Start = motionEvent.getY(pointerCount - 2);
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                if (pointerCount > 1) {
-                    selectedPuppet.setScaleX(getScaleFactor(motionEvent.getX(pointerCount - 1), motionEvent.getY(pointerCount - 1),
-                            motionEvent.getX(pointerCount - 2), motionEvent.getY(pointerCount - 2)));
-                    selectedPuppet.setScaleY(Math.copySign(selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                    if (isRecording)
-                        showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                }
-                return true;
-            case MotionEvent.ACTION_UP:
-                if (isRecording)
-                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
-                if (!isControlPressed) {
-                    stage.setOnTouchListener(null);
-                    GoToPerformance(null);
-                }
-                isScaling = false;
-                return true;
-        }
-        return true;
-    }
-    private float getScaleFactor(float x1, float y1, float x2, float y2){
-        float dXInit = x2Start - x1Start;
-        float dYInit = y2Start - y1Start;
-        float startDistance = (float)Math.sqrt(dXInit*dXInit + dYInit*dYInit); // Distance between two pointers to start
-        float dX = x2 - x1;
-        float dY = y2 - y1;
-        float currentDistance = (float)Math.sqrt(dX*dX + dY*dY); // Current distance between two pointers
-        float scaleAmount = currentDistance - startDistance; // Neg = shrink, pos = grow
-        float scaleFactor =  Math.abs(lastScaleFactor) + scaleAmount / metrics.densityDpi;
-        // Make sure scale factor is reasonable between 1/5 and 5
-        scaleFactor = Math.max(scaleFactor, 0.2f);
-        scaleFactor = Math.min(scaleFactor, 5);
-        // Set the sign to what it was originally to keep left/right orientation the same
-        scaleFactor = Math.copySign(scaleFactor, lastScaleFactor);
-        return scaleFactor;
-    }
-
-    // Rotate puppet listener and methods
-    private View.OnTouchListener rotateListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            mRotationDetector.onTouchEvent(motionEvent);
-            switch (motionEvent.getAction()){
-                case MotionEvent.ACTION_UP:
-                    if (!isControlPressed) {
-                        GoToPerformance(null);
-                    }
-                    isScaling = false;
-                    return true;
-            }
-            return false;
-        }
-    };
-    private RotationGestureDetector.OnRotationGestureListener rotationGestureListener = new RotationGestureDetector.OnRotationGestureListener() {
-        @Override
-        public void onRotation(RotationGestureDetector rotationDetector) {
-            selectedPuppet.setRotation(rotationDetector.getAngle());
-            //Log.d(LOG_TAG, "Rotation angle: " + rotationDetector.getAngle());
-        }
-    };
-    private boolean handleRotateTouch(View view, MotionEvent motionEvent){
-        int pointerCount = motionEvent.getPointerCount();
-        switch (motionEvent.getActionMasked()){
-            case MotionEvent.ACTION_DOWN:
-                x1Start = motionEvent.getX();
-                y1Start = motionEvent.getY();
-                return true;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                x2Start = motionEvent.getX(pointerCount - 1);
-                y2Start = motionEvent.getY(pointerCount - 1);
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                if (pointerCount > 1) {
-                    selectedPuppet.setPivotX(x1Start);
-                    selectedPuppet.setPivotY(y1Start);
-                    selectedPuppet.setRotation(getRotation(motionEvent.getRawX(), motionEvent.getRawY()));
-                }
-                return true;
-            case MotionEvent.ACTION_UP:
-                if (!isControlPressed) {
-                    GoToPerformance(null);
-                }
-                isScaling = false;
-                return true;
-        }
-        return false;
-    }
-    private int getRotation(float x, float y){
-        float a = x - x1Start;
-        float b = y - y1Start;
-        int degrees = -(int)Math.toDegrees(Math.atan(b / a));
-        return lastRotation + degrees;
-    }
-
-    // Puppet popup menu methods
-    private PopupMenu.OnMenuItemClickListener popupMenuListener = new PopupMenu.OnMenuItemClickListener() {
-        @Override
-        public boolean onMenuItemClick(MenuItem menuItem) {
-            return handlePopupClick(menuItem);
-        }
-    };
-    private boolean handlePopupClick(MenuItem menuItem){
-        stage.setOnTouchListener(null);
-        switch (menuItem.getItemId()){
-            case R.id.action_edit_puppet:
-                EditPuppet(selectedPuppet);
-                return true;
-            case R.id.action_remove_puppet:
-                RemovePuppetFromStage(selectedPuppet);
-                selectedPuppet = null;
-                return true;
-            case R.id.action_puppet_visible:
-                if (menuItem.isChecked()){
-                    if (isRecording)
-                        showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), false));
-                    selectedPuppet.setOnStage(false);
-                    menuItem.setChecked(false);
-                }
-                else {
-                    if (isRecording)
-                        showRecorder.RecordFrame(showRecorder.getVisiblilityFrame(selectedPuppet.getName(), true));
-                    selectedPuppet.setOnStage(true);
-                    menuItem.setChecked(true);
-                }
-                return true;
-            case R.id.action_puppet_scale:
-                stage.setOnTouchListener(scaleListener);
-                selectedPuppet.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View view, MotionEvent motionEvent) {
-                        return false;
-                    }
-                });
-                lastScaleFactor = selectedPuppet.getScaleX();
-                isScaling = true;
-                Toast.makeText(context, getString(R.string.toast_scale), Toast.LENGTH_SHORT).show();
-                return true;
-            case R.id.action_puppet_flip_horz:
-                if (isRecording)
-                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), -selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                selectedPuppet.setScaleX(-selectedPuppet.getScaleX());
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
-                    }
-                }).start();
-                return true;
-            case R.id.action_bring_to_front:
-                RemovePuppetFromStage(selectedPuppet);
-                addPuppetToStage(selectedPuppet, selectedPuppet.getLeft(), selectedPuppet.getTop());
-                if (!isControlPressed) selectedPuppet.setOnTouchListener(headTouchListener);
-                return true;
-            case R.id.action_rotate:
-                mRotationDetector = new RotationGestureDetector(rotationGestureListener, selectedPuppet);
-                selectedPuppet.setOnTouchListener(rotateListener);
-                isScaling = true;
-                return true;
-        }
-        return false;
-    }
-    public void EditPuppet(Puppet p){
-        Intent intent = new Intent(this, DesignerActivity.class);
-        for (int i = 0; i < stage.getChildCount(); i++){
-            if (stage.getChildAt(i).equals(p)) {
-                intent.putExtra(PUPPET_INDEX, i);
-            }
-        }
-        intent.putExtra(PUPPET_PATH, p.getPath());
-        startActivityForResult(intent, REQUEST_EDIT);
-    }
 
     // Puppet Library methods
     public void ShowPuppetLibrary(View v){
         if (!isLibraryOpen) {
             if (isBackgroundLibraryOpen) CloseBGPopup();
+            if (puppetActionMode != null) puppetActionMode.finish();
             isLibraryOpen = true;
             // Prepare library views
             final View layout = getLayoutInflater().inflate(R.layout.puppet_library, null);
