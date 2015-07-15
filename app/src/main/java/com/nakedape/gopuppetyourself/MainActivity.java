@@ -967,6 +967,7 @@ public class MainActivity extends Activity {
     public void GoBackstage(View v){
         isBackstage = true;
         savedData.isBackstage = isBackstage;
+        selectedPuppet = null;
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(backstageListener);
             if (stage.getChildAt(i).getVisibility() == View.GONE) {
@@ -983,7 +984,6 @@ public class MainActivity extends Activity {
             //if (puppetMenu != null) puppetMenu.dismiss();
             if (selectedPuppet != null) {
                 selectedPuppet.setBackground(null);
-                selectedPuppet = null;
             }
             isBackstage = false;
             if (!isPlaying) {
@@ -1160,7 +1160,6 @@ public class MainActivity extends Activity {
         public void onDestroyActionMode(ActionMode actionMode) {
             puppetActionMode = null;
             selectedPuppet.setBackground(null);
-            selectedPuppet = null;
             stage.setOnClickListener(null);
             GoToPerformance(null);
             ActionBar actionBar = getActionBar();
