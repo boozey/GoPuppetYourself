@@ -182,7 +182,6 @@ public class MainActivity extends Activity {
         // Hid the Action Bar if present
         ActionBar actionBar = getActionBar();
         if (actionBar != null){
-            actionBar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE);
             actionBar.hide();
         }
 
@@ -249,36 +248,66 @@ public class MainActivity extends Activity {
         // Check if this is the first run of the app
         isFirstRun = preferences.getBoolean(FIRST_RUN, true);
         if (!isFirstRun) {
-            // Load puppets that are on stage
+            // Load puppets that are on stage in a separate thread to show the UI faster
             puppetsOnStage = (HashSet<String>) preferences.getStringSet(PUPPETS_ON_STAGE, null);
             if (puppetsOnStage != null) {
-                File file;
-                Object[] puppetPaths = puppetsOnStage.toArray();
-                for (Object o : puppetPaths) {
-                    String path = (String) o;
-                    file = new File(path);
-                    Puppet p = new Puppet(context, null);
-                    Utils.ReadPuppetFromFile(p, file);
-                    if (p.getLowerJawBitmap() != null) {
-                        p.setId(nextPuppetId++);
-                        p.setOnTouchListener(headTouchListener);
-                        p.setTag(p.getName());
-                        p.setPath(path);
-                        if (!p.isOnStage()) p.setVisibility(View.GONE);
-                        if (savedData.layoutParamses.size() > 0) {
-                            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)savedData.layoutParamses.get(p.getId());
-                            params.leftMargin = Utils.getInBounds(params.leftMargin, 0, metrics.widthPixels - p.getScaledWidth());
-                            params.topMargin = Utils.getInBounds(params.topMargin, 0, metrics.heightPixels - p.getScaledHeight());
-                            p.setLayoutParams(params);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        File file;
+                        Object[] puppetPaths = puppetsOnStage.toArray();
+                        for (Object o : puppetPaths) {
+                            String path = (String) o;
+                            file = new File(path);
+                            final Puppet p = new Puppet(context, null);
+                            Utils.ReadPuppetFromFile(p, file);
+                            if (p.getLowerJawBitmap() != null) {
+                                p.setId(nextPuppetId++);
+                                p.setOnTouchListener(headTouchListener);
+                                p.setTag(p.getName());
+                                p.setPath(path);
+                                if (savedData.layoutParamses.size() > 0) {
+                                    RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)savedData.layoutParamses.get(p.getId());
+                                    params.leftMargin = Utils.getInBounds(params.leftMargin, 0, metrics.widthPixels - p.getScaledWidth());
+                                    params.topMargin = Utils.getInBounds(params.topMargin, 0, metrics.heightPixels - p.getScaledHeight());
+                                    p.setLayoutParams(params);
+                                }
+                                p.setVisibility(View.GONE);
+                                stage.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        stage.addView(p);
+                                        if (p.isOnStage()) {
+                                            Animation popIn = AnimationUtils.loadAnimation(context, R.anim.anim_pop_in);
+                                            popIn.setAnimationListener(new Animation.AnimationListener() {
+                                                @Override
+                                                public void onAnimationStart(Animation animation) {
+                                                    p.setVisibility(View.VISIBLE);
+                                                }
+
+                                                @Override
+                                                public void onAnimationEnd(Animation animation) {
+                                                    p.setVisibility(View.VISIBLE);
+                                                }
+
+                                                @Override
+                                                public void onAnimationRepeat(Animation animation) {
+
+                                                }
+                                            });
+                                            p.startAnimation(popIn);
+                                        }
+                                    }
+                                });
+                            } else {
+                                puppetsOnStage.remove(o);
+                                SharedPreferences.Editor editor = getPreferences(Context.MODE_PRIVATE).edit();
+                                editor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
+                                editor.apply();
+                            }
                         }
-                        stage.addView(p);
-                    } else {
-                        puppetsOnStage.remove(o);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putStringSet(PUPPETS_ON_STAGE, puppetsOnStage);
-                        editor.apply();
                     }
-                }
+                }).start();
             } else {
                 puppetsOnStage = new HashSet<>();
             }
@@ -313,7 +342,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        //getMenuInflater().inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
     }
     @Override
@@ -1061,7 +1090,6 @@ public class MainActivity extends Activity {
                 moveView(view, X, Y);
                 break;
         }
-        stage.invalidate();
         return true;
     }
     // Puppet ActionMode methods
@@ -1091,7 +1119,7 @@ public class MainActivity extends Activity {
                 MenuItem visibilityItem = menu.findItem(R.id.action_puppet_visible);
                 visibilityItem.setIcon(getResources().getDrawable(R.drawable.ic_visibility_off_white_24dp));
             }
-            return false;
+            return true;
         }
 
         @Override
