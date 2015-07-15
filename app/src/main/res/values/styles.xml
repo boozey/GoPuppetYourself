@@ -12,6 +12,9 @@
     <style name="MyActionBar"
         parent="@android:style/Theme.Holo">
         <item name="android:background">@drawable/actionbar_background</item>
+        <item name="android:itemBackground">@drawable/actionbar_background</item>
+        <item name="android:actionDropDownStyle">@drawable/actionbar_background</item>
+        <item name="android:popupBackground">@drawable/actionbar_background</item>
     </style>
 
 

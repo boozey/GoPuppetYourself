@@ -1159,7 +1159,8 @@ public class MainActivity extends Activity {
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
             puppetActionMode = null;
-            selectedPuppet.setBackground(null);
+            if (selectedPuppet != null)
+                selectedPuppet.setBackground(null);
             stage.setOnClickListener(null);
             GoToPerformance(null);
             ActionBar actionBar = getActionBar();
