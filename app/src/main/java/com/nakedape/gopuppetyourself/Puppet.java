@@ -47,7 +47,7 @@ public class Puppet extends View implements Serializable {
     transient private boolean isFlippedHorz = false;
     transient private boolean isMouthOpen = false;
     transient private boolean mouthDrawStateChanged = false;
-    transient private int serializationVersion = 1;
+    transient private int serializationVersion = 2;
 
 
     // Constructors
@@ -370,12 +370,13 @@ public class Puppet extends View implements Serializable {
         byteLength = stream.toByteArray().length;
         out.writeInt(byteLength);
         out.write(stream.toByteArray());
-        //Log.d(LOG_TAG, "Byte array size: " + stream.toByteArray().length);
+
+        out.writeFloat(getRotation());
 
     }
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
         serializationVersion = in.readInt();
-        if (serializationVersion == 1) {
+        if (serializationVersion >= 1) {
             name = (String) in.readObject();
             orientation = in.readInt();
             onStage = in.readBoolean();
@@ -402,6 +403,9 @@ public class Puppet extends View implements Serializable {
             }
             setPadding();
             //applyLayoutParams();
+        }
+        if (serializationVersion >= 2){
+            setRotation(in.readFloat());
         }
     }
 }

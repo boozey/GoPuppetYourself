@@ -402,6 +402,7 @@ public class DesignerActivity extends Activity {
         // Create puppet
         puppet = new Puppet(context, null);
         puppet.setOrientation(designer.getOrientation());
+        puppet.setRotation(designer.getRotation());
         puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         puppet.setName(puppetName);
         // Save puppet to storage directory

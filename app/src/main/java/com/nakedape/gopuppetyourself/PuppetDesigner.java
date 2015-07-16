@@ -231,6 +231,9 @@ public class PuppetDesigner extends View {
         }
         rotation = 0;
     }
+    public float getRotation(){
+        return rotation;
+    }
 
     // Undo methods
     private void addBackgroundUndo(){
