@@ -348,6 +348,7 @@ public class Puppet extends View implements Serializable {
     }
 
     public void writeObject(ObjectOutputStream out) throws IOException {
+        // Serialization version 1
         out.writeInt(serializationVersion);
         out.writeObject(name);
         out.writeInt(orientation);
@@ -371,6 +372,7 @@ public class Puppet extends View implements Serializable {
         out.writeInt(byteLength);
         out.write(stream.toByteArray());
 
+        // Serialization version 2
         out.writeFloat(getRotation());
 
     }
