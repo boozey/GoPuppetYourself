@@ -8,6 +8,10 @@
         <item name="android:windowActionBarOverlay">true</item>
     </style>
 
+    <style name="DesignerTheme" parent="android:Theme.Holo.Light">
+
+    </style>
+
     <!-- ActionBar styles -->
     <style name="MyActionBar"
         parent="@android:style/Theme.Holo">

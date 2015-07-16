@@ -12,7 +12,7 @@
     <string name="no">No</string>
     <string name="toast_oom_scaling">Out of memory, scaling image down. </string>
 
-    <!-- Puppet popup menu strings -->
+    <!-- Puppet ActionMode strings -->
     <string name="action_edit_puppet">Edit</string>
     <string name="action_puppet_visible">Visible in scene</string>
     <string name="action_clone_puppet">Clone</string>
@@ -46,4 +46,18 @@
     <string name="toast_profile_right">Right facing</string>
     <string name="toast_profile_left">Left facing</string>
 
+    <!-- Designer ActionMode Strings -->
+    <string name="action_draw">Draw</string>
+    <string name="action_edit_image">Image</string>
+    <string name="action_edit_orientation">Orientation</string>
+
+    <string name="action_palette">Palette</string>
+    <string name="action_brush_size">Brush size</string>
+
+    <string name="action_rotate_right">Rotate right</string>
+    <string name="action_rotate_left">Rotate left</string>
+    <string name="action_erase">Erase</string>
+    <string name="action_magic_erase">Erase region</string>
+    <string name="action_cut_path">Smart cut</string>
+    <string name="action_heal">Heal</string>
 </resources>

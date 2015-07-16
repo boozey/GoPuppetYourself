@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/action_profile_left"
+        android:title="@string/toast_profile_left"
+        android:icon="@drawable/ic_action_profile_left"
+        android:showAsAction="always" />
+    <item android:id="@+id/action_profile_right"
+        android:title="@string/toast_profile_right"
+        android:icon="@drawable/ic_action_profile_right"
+        android:showAsAction="always"/>
+</menu>

@@ -2,292 +2,13 @@
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.nakedape.gopuppetyourself.DesignerActivity"
-    android:id="@+id/relative_layout"
-    android:orientation="vertical">
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:id="@+id/puppet_name"
-        android:textSize="24sp"
-        android:hint="@string/puppet_name_hint" />
-    <!-- Navigation Button Bar Layout -->
-    <LinearLayout
-        android:layout_height="wrap_content"
-        android:layout_width="match_parent"
-        android:layout_below="@id/puppet_name"
-        android:orientation="horizontal"
-        android:id="@+id/button_bar">
-
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/nav_button"
-            android:background="@drawable/ic_action_navigation_menu"
-            android:visibility="visible"
-            android:onClick="ControlButtonClick"/>
-
-        <!-- Main Button Bar Layout -->
-        <RelativeLayout
-            android:layout_height="wrap_content"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/main_buttons"
-            android:visibility="visible">
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/palette_button"
-                android:background="@drawable/ic_action_image_brush"
-                android:onClick="BrushClick"
-                android:layout_centerVertical="true" />
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/palette_button"
-                android:layout_toRightOf="@id/palette_button"
-                android:id="@+id/background_button"
-                android:background="@drawable/ic_action_image_nature_people"
-                android:layout_centerVertical="true"
-                android:onClick="BackgroundButtonClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/background_button"
-                android:layout_toRightOf="@id/background_button"
-                android:id="@+id/portrait_edit_button"
-                android:background="@drawable/ic_action_profile_right"
-                android:onClick="PortraitButtonClick"/>
-        </RelativeLayout>
-
-        <!-- Brush Bar Layout -->
-        <RelativeLayout
-            android:layout_height="wrap_content"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/brush_bar"
-            android:visibility="gone">
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@id/palette_button"
-                android:background="@drawable/ic_action_image_palette"
-                android:onClick="BrushClick"
-                android:layout_centerVertical="true" />
-            <ImageButton
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/palette_button"
-                android:layout_toRightOf="@id/palette_button"
-                android:id="@+id/brush_size"
-                android:background="@drawable/black_oval"
-                android:layout_margin="2dp"/>
-            <SeekBar
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/brush_size"
-                android:layout_toRightOf="@id/brush_size"
-                android:id="@+id/brush_slider"/>
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:id="@+id/palette_close_button"
-                style="?android:buttonBarButtonStyle"
-                android:text="Done"
-                android:onClick="BrushBarDoneClick"
-                android:visibility="gone"/>
-        </RelativeLayout>
-
-        <!-- Background Bar Layout -->
-        <LinearLayout
-            android:layout_height="wrap_content"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/background_button_bar"
-            android:visibility="gone">
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/flip_horz_button"
-                android:background="@drawable/ic_action_image_flip_horz"
-                android:onClick="FlipHorzClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/rotate_left_button"
-                android:background="@drawable/ic_action_image_rotate_left"
-                android:onClick="RotateLeftClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/rotate_right_button"
-                android:background="@drawable/ic_action_image_rotate_right"
-                android:onClick="RotatRightClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/erase_background_button"
-                android:background="@drawable/ic_action_erase_background"
-                android:onClick="EraseBackGroundClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/magic_erase_background_button"
-                android:background="@drawable/ic_action_magic_erase_background"
-                android:onClick="MagicEraseBGClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/cut_path_button"
-                android:background="@drawable/ic_action_cut"
-                android:onClick="CutPathClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/heal_button"
-                android:background="@drawable/ic_action_image_healing"
-                android:onClick="HealClick"/>
-
-        </LinearLayout>
-
-        <!-- Background Erase Bar Layout-->
-        <RelativeLayout
-            android:layout_height="wrap_content"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/bg_erase_bar"
-            android:visibility="gone">
-            <ImageButton
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:layout_centerVertical="true"
-                android:id="@+id/erase_brush_size"
-                android:background="@drawable/palette_brush_size"
-                android:layout_margin="2dp"/>
-            <SeekBar
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/erase_brush_size"
-                android:layout_toRightOf="@id/erase_brush_size"
-                android:id="@+id/erase_brush_slider"/>
-        </RelativeLayout>
-
-        <!-- Magic Erase Bar Layout -->
-        <RelativeLayout
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/magic_erase_bar"
-            android:visibility="gone">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentLeft="true"
-                android:layout_centerVertical="true"
-                android:id="@+id/threshold_text"
-                android:text="50"/>
-            <SeekBar
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/threshold_text"
-                android:layout_toRightOf="@id/threshold_text"
-                android:id="@+id/magic_erase_slider"
-                android:progress="50"
-                android:max="100"/>
-        </RelativeLayout>
-
-        <!-- Heal button bar -->
-        <RelativeLayout
-            android:layout_height="wrap_content"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/heal_button_bar"
-            android:visibility="gone">
-            <ImageButton
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp"
-                android:layout_centerVertical="true"
-                android:id="@+id/heal_brush_size"
-                android:background="@drawable/ic_action_erase_background"
-                android:layout_margin="2dp"/>
-            <SeekBar
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/heal_brush_size"
-                android:layout_toRightOf="@id/heal_brush_size"
-                android:id="@+id/heal_brush_slider"/>
-        </RelativeLayout>
-
-        <!-- Portrait Adjustment Bar Layout-->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:id="@+id/portrait_bar"
-            android:visibility="gone">
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:id="@+id/portrait_left_button"
-                android:background="@drawable/ic_action_profile_left"
-                android:onClick="LeftPortraitClick"/>
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:id="@+id/portrait_right_button"
-                android:background="@drawable/ic_action_profile_right_selected"
-                android:onClick="RightPortraitClick"/>
-
-        </LinearLayout>
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:id="@+id/save_button"
-            style="?android:buttonBarButtonStyle"
-            android:text="Save"
-            android:onClick="Save"/>
-
-    </LinearLayout>
+    android:id="@+id/relative_layout">
 
     <!-- Puppet Designer Layout -->
     <FrameLayout
         android:id="@+id/designer_frame_layout"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_below="@id/button_bar"
         android:padding="16dp"
         android:background="@color/light_grey">
         <com.nakedape.gopuppetyourself.PuppetDesigner
@@ -299,11 +20,22 @@
             android:background="@color/white"/>
     </FrameLayout>
     <ImageButton
+        android:id="@+id/undo_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/button_bar"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
         android:background="@drawable/selector_undo_button"
-        android:onClick="UndoButtonClick"/>
+        android:onClick="UndoButtonClick"
+        android:visibility="gone"/>
+    <EditText
+        android:id="@+id/puppet_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:textSize="24sp"
+        android:hint="@string/puppet_name_hint" />
 
 
 </RelativeLayout>

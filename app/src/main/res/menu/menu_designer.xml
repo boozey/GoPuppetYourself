@@ -2,6 +2,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.nakedape.gopuppetyourself.DesignerActivity">
+    <item android:id="@+id/action_draw"
+        android:title="@string/action_draw"
+        android:icon="@drawable/ic_action_image_brush"
+        android:showAsAction="always" />
+    <item android:id="@+id/action_edit_image"
+        android:title="@string/action_edit_image"
+        android:icon="@drawable/ic_action_image_nature_people"
+        android:showAsAction="always" />
+    <item android:id="@+id/action_edit_orientation"
+        android:title="@string/action_edit_orientation"
+        android:icon="@drawable/ic_action_profile_right"
+        android:showAsAction="always"/>
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" android:showAsAction="never" />
 </menu>
