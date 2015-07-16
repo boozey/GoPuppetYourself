@@ -342,7 +342,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
     }
     @Override
@@ -1067,17 +1067,20 @@ public class MainActivity extends Activity {
         final int Y = (int) event.getRawY();
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
-                selectedPuppet = view;
-                selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
                 RelativeLayout.LayoutParams lParams = (RelativeLayout.LayoutParams) view.getLayoutParams();
                 dx = X - lParams.leftMargin;
                 dy = Y - lParams.topMargin;
                 lastScaleFactor = view.getScaleX();
-                if (puppetActionMode == null){
+                if (selectedPuppet == null){
+                    selectedPuppet = view;
+                    selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
                     puppetActionMode = startActionMode(puppetActionModeCallback);
                 } else if (!selectedPuppet.equals(view)){
-                    puppetActionMode.finish();
-                    puppetActionMode = startActionMode(puppetActionModeCallback);
+                    selectedPuppet.setBackground(null);
+                    view.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
+                    selectedPuppet = view;
+                    if (puppetActionMode == null)
+                        puppetActionMode = startActionMode(puppetActionModeCallback);
                 }
                 break;
             case MotionEvent.ACTION_UP:
