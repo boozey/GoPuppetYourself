@@ -1090,9 +1090,10 @@ public class MainActivity extends Activity {
             case MotionEvent.ACTION_POINTER_UP:
                 break;
             case MotionEvent.ACTION_MOVE:
-                moveView(view, X, Y);
+                moveView(selectedPuppet, X, Y);
                 break;
         }
+
         return true;
     }
     // Puppet ActionMode methods
