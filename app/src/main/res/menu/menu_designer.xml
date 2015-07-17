@@ -14,4 +14,12 @@
         android:title="@string/action_edit_orientation"
         android:icon="@drawable/ic_action_profile_right"
         android:showAsAction="always"/>
+    <item android:id="@+id/action_new_image"
+        android:title="@string/action_new_image"
+        android:icon="@drawable/ic_action_new_image"
+        android:showAsAction="ifRoom"/>
+    <item android:id="@+id/action_save"
+        android:title="@string/action_save"
+        android:icon="@drawable/ic_action_content_save"
+        android:showAsAction="ifRoom"/>
 </menu>

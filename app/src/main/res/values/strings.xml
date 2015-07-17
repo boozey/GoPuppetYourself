@@ -37,7 +37,7 @@
     <string name="alert_dialog_message_overwrite">A puppet already exists with this name.  Do you want to overwrite it?</string>
     <string name="puppet_name_hint">Name this puppet</string>
     <string name="get_new_image_popup_title">Get new image</string>
-    <string name="action_new_image">New background</string>
+    <string name="action_new_image">New image</string>
     <string name="alert_dialog_title_unsaved">Wait a minute&#8230;</string>
     <string name="alert_dialog_message_unsaved">Do you want to save your changes?</string>
     <string name="toast_magic_erase">Touch to erase a region of similar colors</string>
@@ -50,6 +50,7 @@
     <string name="action_draw">Draw</string>
     <string name="action_edit_image">Image</string>
     <string name="action_edit_orientation">Orientation</string>
+    <string name="action_save">Save</string>
 
     <string name="action_palette">Palette</string>
     <string name="action_brush_size">Brush size</string>

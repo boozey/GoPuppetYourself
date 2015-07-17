@@ -76,9 +76,9 @@ public class DesignerActivity extends Activity {
     private int stageIndex = -1;
     private String cameraCapturePath;
     private ActionMode mActionMode;
+    private Menu actionBarMenu;
     private View brushSizeBar;
     private View undoButton;
-    private boolean isSecondActionMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,8 +136,8 @@ public class DesignerActivity extends Activity {
         }
     }
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
         if (isFinishing()){ // Release resources used by puppet designer
             designer.release();
         }
@@ -147,6 +147,17 @@ public class DesignerActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_designer, menu);
+        actionBarMenu = menu;
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu){
+        MenuItem profileItem = menu.findItem(R.id.action_edit_orientation);
+        if (designer.getOrientation() == Puppet.PROFILE_RIGHT)
+            profileItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_right));
+        else
+            profileItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_left));
         return true;
     }
 
@@ -164,15 +175,21 @@ public class DesignerActivity extends Activity {
                 if (mActionMode != null) mActionMode.finish();
                 mActionMode = startActionMode(drawActionCallback);
                 designer.setIsDrawMode(true);
-                break;
+                return true;
             case R.id.action_edit_image:
                 if (mActionMode != null) mActionMode.finish();
                 mActionMode = startActionMode(imageActionCallback);
-                break;
+                return true;
             case R.id.action_edit_orientation:
                 if (mActionMode != null) mActionMode.finish();
                 mActionMode = startActionMode(protraitActionCallback);
-                break;
+                return true;
+            case R.id.action_save:
+                Save();
+                return true;
+            case R.id.action_new_image:
+                ShowGetNewImagePopup(0);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -213,7 +230,7 @@ public class DesignerActivity extends Activity {
                     builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            Save(null);
+                            Save();
                         }
                     });
                     AlertDialog dialog = builder.create();
@@ -367,7 +384,7 @@ public class DesignerActivity extends Activity {
         }
     }
 
-    public void Save(View v){
+    private void Save(){
         EditText text = (EditText)findViewById(R.id.puppet_name);
         String newName = text.getText().toString();
         // If there is no name set the puppet's name to unnamed
@@ -816,6 +833,7 @@ public class DesignerActivity extends Activity {
             set.setTarget(brushSizeBar);
             brushSizeBar.setVisibility(View.VISIBLE);
             set.start();
+            undoButton.bringToFront();
         }
     }
     private void hideBrushSizeBar(){
@@ -874,18 +892,23 @@ public class DesignerActivity extends Activity {
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            MenuItem portraitItem = actionBarMenu.findItem(R.id.action_edit_orientation);
             switch (menuItem.getItemId()){
                 case R.id.action_profile_right:
                     designer.setOrientation(Puppet.PROFILE_RIGHT);
                     menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_right_selected));
                     MenuItem leftProfile = actionMode.getMenu().findItem(R.id.action_profile_left);
                     leftProfile.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_left));
+                    // Set icon in ActionBar
+                    portraitItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_right));
                     return true;
                 case R.id.action_profile_left:
                     designer.setOrientation(Puppet.PROFILE_LEFT);
                     menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_left_selected));
                     MenuItem rightProfile = actionMode.getMenu().findItem(R.id.action_profile_right);
                     rightProfile.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_right));
+                    // Set icon in ActionBar
+                    portraitItem.setIcon(getResources().getDrawable(R.drawable.ic_action_profile_left));
                     return true;
             }
             return false;
@@ -898,11 +921,6 @@ public class DesignerActivity extends Activity {
             showNameBar();
         }
     };
-
-    // Root control button methods
-    public void ControlButtonClick(View v){
-        ShowGetNewImagePopup(0);
-    }
 
     // Undo methods
     public void UndoButtonClick(View v){
