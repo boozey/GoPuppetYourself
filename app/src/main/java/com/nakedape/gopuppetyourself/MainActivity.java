@@ -1176,8 +1176,10 @@ public class MainActivity extends Activity {
                     actionMode.finish();
                     return true;
                 case R.id.action_bring_to_front:
-                    RemovePuppetFromStage(selectedPuppet);
-                    addPuppetToStage(selectedPuppet, selectedPuppet.getLeft(), selectedPuppet.getTop());
+                    selectedPuppet.bringToFront();
+                    AnimatorSet popIn = (AnimatorSet)AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+                    popIn.setTarget(selectedPuppet);
+                    popIn.start();
                     if (!isControlPressed) selectedPuppet.setOnTouchListener(headTouchListener);
                     actionMode.finish();
                     return true;
@@ -1875,6 +1877,7 @@ public class MainActivity extends Activity {
         String[] mime_type = {ClipDescription.MIMETYPE_TEXT_PLAIN};
         ClipData dragData = new ClipData("PUPPET_INDEX", mime_type, indexItem);
         View.DragShadowBuilder myShadow = new PuppetDragShadowBuilder(p);
+        Log.d(LOG_TAG, "drag test: " + myShadow.toString());
         p.startDrag(dragData,  // the data to be dragged
                 myShadow,  // the drag shadow builder
                 null,      // no need to use local data
@@ -2013,17 +2016,19 @@ public class MainActivity extends Activity {
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setMargins(x, y, -250, -250);
         p.setLayoutParams(params);
-        p.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                switch (motionEvent.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        StartStageDrag((Puppet) view);
-                        break;
+        if (isLibraryOpen) {
+            p.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    switch (motionEvent.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            StartStageDrag((Puppet) view);
+                            break;
+                    }
+                    return true;
                 }
-                return true;
-            }
-        });
+            });
+        }
         p.setTag(p.getName());
         String path = getPathFromName(p.getName());
         p.setPath(path);
