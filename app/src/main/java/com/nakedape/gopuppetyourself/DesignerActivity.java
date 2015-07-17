@@ -518,6 +518,7 @@ public class DesignerActivity extends Activity {
 
             // Configure brush bar view
             View brushBar = getLayoutInflater().inflate(R.layout.brush_size_bar, null);
+            brushBar.findViewById(R.id.close_button).setVisibility(View.GONE);
 
             // Set slider to current value
             SeekBar slider = (SeekBar)brushBar.findViewById(R.id.brush_slider);
@@ -530,6 +531,10 @@ public class DesignerActivity extends Activity {
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)view.getLayoutParams();
             params.width = paletteBrushSize;
             params.height = paletteBrushSize;
+            params.width = paletteBrushSize;
+            params.height = paletteBrushSize;
+            int margin = (MAX_BRUSH_SIZE - paletteBrushSize) / 2;
+            params.setMargins(margin, margin, margin, margin);
             view.setLayoutParams(params);
 
             // Listener to update brush view and palatteBrushSize
@@ -541,6 +546,10 @@ public class DesignerActivity extends Activity {
                     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) view.getLayoutParams();
                     params.width = i;
                     params.height = i;
+                    params.width = paletteBrushSize;
+                    params.height = paletteBrushSize;
+                    int margin = (MAX_BRUSH_SIZE - paletteBrushSize) / 2;
+                    params.setMargins(margin, margin, margin, margin);
                     view.setLayoutParams(params);
                 }
 
@@ -555,7 +564,11 @@ public class DesignerActivity extends Activity {
                 }
             });
 
+            brushBar.setAlpha(0f);
             actionMode.setCustomView(brushBar);
+            AnimatorSet fadeIn = (AnimatorSet)AnimatorInflater.loadAnimator(context, R.animator.fade_in);
+            fadeIn.setTarget(brushBar);
+            fadeIn.start();
             return true;
         }
 
@@ -748,6 +761,13 @@ public class DesignerActivity extends Activity {
         if (brushSizeBar.getVisibility() != View.VISIBLE) {
             // Configure brush bar view
             brushSizeBar.setBackground(new ColorDrawable(Color.WHITE));
+            View closeButton = brushSizeBar.findViewById(R.id.close_button);
+            closeButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    hideBrushSizeBar();
+                }
+            });
 
             // Set slider to current value
             SeekBar slider = (SeekBar) brushSizeBar.findViewById(R.id.brush_slider);
@@ -760,6 +780,8 @@ public class DesignerActivity extends Activity {
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) brushSize.getLayoutParams();
             params.width = paletteBrushSize;
             params.height = paletteBrushSize;
+            int margin = (MAX_BRUSH_SIZE - paletteBrushSize) / 2;
+            params.setMargins(margin, margin, margin, margin);
             brushSize.setLayoutParams(params);
 
             // Listener to update brush view and palatteBrushSize
@@ -771,6 +793,8 @@ public class DesignerActivity extends Activity {
                     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) brushSize.getLayoutParams();
                     params.width = i;
                     params.height = i;
+                    int margin = (MAX_BRUSH_SIZE - i) / 2;
+                    params.setMargins(margin, margin, margin, margin);
                     brushSize.setLayoutParams(params);
                 }
 
@@ -832,6 +856,7 @@ public class DesignerActivity extends Activity {
             actionMode.getMenuInflater().inflate(R.menu.menu_designer_portrait, menu);
             hideNameBar();
             hideUndoButton();
+            designer.setSelectionMode();
             return true;
         }
 
@@ -869,6 +894,7 @@ public class DesignerActivity extends Activity {
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
             mActionMode = null;
+            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
             showNameBar();
         }
     };

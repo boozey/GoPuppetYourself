@@ -177,6 +177,15 @@ public class PuppetDesigner extends View {
     }
     public void setMode(String mode){
         designerMode = mode;
+        switch (mode){
+            case MODE_SELECT:
+                setSelectionMode();
+                break;
+            case MODE_NO_TOUCH:
+                showLowerJawBox = false;
+                showUpperJawBox = false;
+                invalidate();
+        }
     }
     public boolean isSaved(){
         return isSaved;
@@ -1286,6 +1295,7 @@ public class PuppetDesigner extends View {
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
+        isSaved = false;
         invalidate();
         requestLayout();
     }
@@ -1367,12 +1377,15 @@ public class PuppetDesigner extends View {
     }
 
     // Selection mode methods
-    public void setSelectionMode(boolean isSelectionMode){
+    public void setSelectionMode(){
         designerMode = MODE_SELECT;
         if (upperProfileBitmap == null || lowerProfileBitmap == null) {
             upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, upperJawBox.width(), upperJawBox.height());
             lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, lowerJawBox.width(), lowerJawBox.height());
         }
+        showLowerJawBox = true;
+        showUpperJawBox = true;
+        invalidate();
     }
     private boolean handleSelectionTouch(MotionEvent event){
         float[] point = {event.getX(), event.getY()};

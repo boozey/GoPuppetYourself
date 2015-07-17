@@ -5,7 +5,8 @@
     android:minWidth="200dp"
     android:gravity="center_vertical"
     android:paddingLeft="16dp"
-    android:paddingRight="16dp">
+    android:paddingRight="12dp"
+    android:paddingEnd="12dp">
     <SeekBar
         android:layout_width="0dp"
         android:layout_weight="1"
@@ -21,4 +22,11 @@
         android:id="@+id/brush_size"
         android:background="@drawable/black_oval"
         android:layout_margin="2dp"/>
+    <ImageButton
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/ic_tool_close"/>
 </LinearLayout>
