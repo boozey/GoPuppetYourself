@@ -141,6 +141,9 @@ public class PuppetShowRecorder {
         bitmapPaths.add(bitmapPath);
         return new KeyFrame(getTimeFromStartMillis(), KeyFrame.SET_BACKGROUND, bitmapPaths.size() - 1);
     }
+    public KeyFrame getRotateFrame(String puppetId, float degrees){
+        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.ROTATE, degrees);
+    }
     public void addPuppetToShow(Puppet p){
         puppetShow.addPuppet(p);
         if (isRecording)
@@ -458,6 +461,15 @@ public class PuppetShowRecorder {
                                     p.setVisibility(View.VISIBLE);
                                 else
                                     p.setVisibility(View.GONE);
+                            }
+                        });
+                        break;
+                    case KeyFrame.ROTATE:
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                p.setRotation(frame.x);
+                                Log.d(LOG_TAG, "Rotate frame: " + frame.x);
                             }
                         });
                         break;

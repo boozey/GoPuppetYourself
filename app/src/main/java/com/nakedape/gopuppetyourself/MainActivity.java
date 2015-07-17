@@ -1296,7 +1296,10 @@ public class MainActivity extends Activity {
     private RotationGestureDetector.OnRotationGestureListener rotationGestureListener = new RotationGestureDetector.OnRotationGestureListener() {
         @Override
         public void onRotation(RotationGestureDetector rotationDetector) {
-            selectedPuppet.setRotation(rotationDetector.getAngle());
+            float angle = rotationDetector.getAngle();
+            selectedPuppet.setRotation(angle);
+            if (isRecording)
+                showRecorder.RecordFrame(showRecorder.getRotateFrame(selectedPuppet.getName(), angle));
             //Log.d(LOG_TAG, "Rotation angle: " + rotationDetector.getAngle());
         }
     };

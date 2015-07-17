@@ -13,6 +13,7 @@ public class KeyFrame implements Serializable {
     public final static int SET_SCALE = 1004;
     public final static int VISIBILITY = 1005;
     public final static int SET_BACKGROUND = 1006;
+    public final static int ROTATE = 1007;
     public final static int END = 9000;
 
     private final static int UNSET = -1;
@@ -60,6 +61,12 @@ public class KeyFrame implements Serializable {
         this.puppetId = puppetId;
         this.eventType = eventType;
         this.visible = visible;
+    }
+    public KeyFrame(long time, String puppetId, int eventType, float decimal){
+        this.time = time;
+        this.puppetId = puppetId;
+        this.eventType = eventType;
+        this.x = decimal;
     }
 
     public static KeyFrame getStartFrame(){
