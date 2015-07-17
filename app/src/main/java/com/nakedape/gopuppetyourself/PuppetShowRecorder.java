@@ -469,7 +469,6 @@ public class PuppetShowRecorder {
                             @Override
                             public void run() {
                                 p.setRotation(frame.x);
-                                Log.d(LOG_TAG, "Rotate frame: " + frame.x);
                             }
                         });
                         break;
