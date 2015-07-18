@@ -28,14 +28,11 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -608,7 +605,7 @@ public class DesignerActivity extends Activity {
         public void onDestroyActionMode(ActionMode actionMode) {
             mActionMode = null;
             cancelPopup();
-            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
+            designer.setMode(PuppetDesigner.MODE_PAN_ZOOM);
             hideUndoButton();
             showNameBar();
         }
@@ -769,7 +766,7 @@ public class DesignerActivity extends Activity {
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
             mActionMode = null;
-            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
+            designer.setMode(PuppetDesigner.MODE_PAN_ZOOM);
             hideBrushSizeBar();
             showNameBar();
         }
@@ -917,7 +914,7 @@ public class DesignerActivity extends Activity {
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
             mActionMode = null;
-            designer.setMode(PuppetDesigner.MODE_NO_TOUCH);
+            designer.setMode(PuppetDesigner.MODE_PAN_ZOOM);
             showNameBar();
         }
     };

@@ -18,6 +18,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import java.io.File;
@@ -58,8 +59,8 @@ public class PuppetDesigner extends View {
     public static final String MODE_MAGIC_ERASE = "magic_erase";
     public static final String MODE_CUT_PATH = "cut_path";
     public static final String MODE_HEAL = "heal";
-    public static final String MODE_NO_TOUCH = "no_touch";
-    public String designerMode = MODE_SELECT;
+    public static final String MODE_PAN_ZOOM = "pan_zoom";
+    public String designerMode = MODE_PAN_ZOOM;
 
     // Undo id strings
     private static final String UNDO_BACKGROUND = "background";
@@ -93,6 +94,10 @@ public class PuppetDesigner extends View {
     private Point rotateHandle;
     private float rotateHandleLengthScale = 0.30859375f;
     private int orientation = Puppet.PROFILE_RIGHT;
+    private float x1Start, x2Start, y1Start, y2Start, zoomFactor;
+    private Point zoomPoint;
+    private Matrix zoomMatrix;
+    private ScaleGestureDetector scaleGestureDetector;
 
     public PuppetDesigner(Context context, AttributeSet attrs){
         super(context, attrs);
@@ -136,6 +141,13 @@ public class PuppetDesigner extends View {
         drawBitmap.setHasAlpha(true);
         drawCanvas = new Canvas(drawBitmap);
         drawPath = new Path();
+
+        // Initialize zoom
+        zoomFactor = 1f;
+        zoomMatrix = new Matrix();
+        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        scaleGestureDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         // Set initial positions of jaw boxes
         upperJawBox = new Rect(40, 40, viewBitmap.getWidth() - 40, viewBitmap.getHeight() / 2);
@@ -181,9 +193,10 @@ public class PuppetDesigner extends View {
             case MODE_SELECT:
                 setSelectionMode();
                 break;
-            case MODE_NO_TOUCH:
+            case MODE_PAN_ZOOM:
                 showLowerJawBox = false;
                 showUpperJawBox = false;
+                setPanZoomMode();
                 invalidate();
         }
     }
@@ -320,7 +333,11 @@ public class PuppetDesigner extends View {
         }
     }
     private boolean handleHealTouch(MotionEvent event){
-        int x = (int)event.getX(), y = (int)event.getY();
+        float [] point = {event.getX(), event.getY()};
+        Matrix unZoom = new Matrix(zoomMatrix);
+        unZoom.invert(unZoom);
+        unZoom.mapPoints(point);
+        int x = (int)point[0], y = (int)point[1];
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
                 addBackgroundUndo();
@@ -353,7 +370,11 @@ public class PuppetDesigner extends View {
     }
     private boolean handleCutPathTouch(MotionEvent event){
         if (backgroundBitmap != null) {
-            float x = event.getX(), y = event.getY();
+            float [] point = {event.getX(), event.getY()};
+            Matrix unZoom = new Matrix(zoomMatrix);
+            unZoom.invert(unZoom);
+            unZoom.mapPoints(point);
+            float x = point[0], y = point[1];
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startCutPathFlow();
@@ -686,13 +707,18 @@ public class PuppetDesigner extends View {
     }
     private boolean handleMagicEraseTouch(MotionEvent event){
         if (backgroundBitmap != null) {
+            float [] point = {event.getX(), event.getY()};
+            Matrix unZoom = new Matrix(zoomMatrix);
+            unZoom.invert(unZoom);
+            unZoom.mapPoints(point);
+            float x = point[0], y = point[1];
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     addBackgroundUndo();
-                    magicErase((int) event.getX(), (int) event.getY());
+                    magicErase((int) x, (int) y);
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    magicErase((int) event.getX(), (int) event.getY());
+                    magicErase((int) x, (int) y);
                     return true;
                 default:
                     return false;
@@ -1017,7 +1043,11 @@ public class PuppetDesigner extends View {
         return isDrawMode;
     }
     private boolean handleDrawTouch(MotionEvent event){
-        float x = event.getX(), y = event.getY();
+        float [] point = {event.getX(), event.getY()};
+        Matrix unZoom = new Matrix(zoomMatrix);
+        unZoom.invert(unZoom);
+        unZoom.mapPoints(point);
+        float x = point[0], y = point[1];
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 addDrawUndo();
@@ -1090,7 +1120,11 @@ public class PuppetDesigner extends View {
         drawPaint.setXfermode(null);
     }
     private boolean handleBackgroundEraseTouch(MotionEvent event){
-        float x = event.getX(), y = event.getY();
+        float [] point = {event.getX(), event.getY()};
+        Matrix unZoom = new Matrix(zoomMatrix);
+        unZoom.invert(unZoom);
+        unZoom.mapPoints(point);
+        float x = point[0], y = point[1];
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 prevX = x;
@@ -1283,8 +1317,8 @@ public class PuppetDesigner extends View {
         tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
         tile.setBounds(viewCanvas.getClipBounds());
         tile.draw(viewCanvas);
-        Log.d(LOG_TAG, "Image width, height = " + String.valueOf(image.getWidth()) + ", " + String.valueOf(image.getHeight()));
-        Log.d(LOG_TAG, "View width, height = " + String.valueOf(getWidth()) + ", " + String.valueOf(getHeight()));
+
+        // Set initial positions of UI elements
         int padding = (int)(Math.min(image.getHeight() * 0.1, image.getWidth()) * 0.2);
         upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
         upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
@@ -1295,7 +1329,10 @@ public class PuppetDesigner extends View {
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
+        zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         isSaved = false;
+
         invalidate();
         requestLayout();
     }
@@ -1318,7 +1355,7 @@ public class PuppetDesigner extends View {
         drawPath = new Path();
         backgroundBitmap = null;
 
-        // Set initial positions of jaw boxes
+        // Set initial positions of UI elements
         int padding = (int)(Math.min(drawBitmap.getHeight() * 0.1, drawBitmap.getWidth()) * 0.1);
         upperJawBox = new Rect(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
         upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, upperJawBox.bottom);
@@ -1328,6 +1365,8 @@ public class PuppetDesigner extends View {
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
+        zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
 
         invalidate();
         requestLayout();
@@ -1580,6 +1619,50 @@ public class PuppetDesigner extends View {
         invalidate();
     }
 
+    // Pan/Zoom methods
+    private void setPanZoomMode(){
+        designerMode = MODE_PAN_ZOOM;
+    }
+    private boolean handlePanZoomTouch(MotionEvent motionEvent){
+        scaleGestureDetector.onTouchEvent(motionEvent);
+        int pointerCount = motionEvent.getPointerCount();
+        float [] point = {motionEvent.getX(), motionEvent.getY()};
+        Matrix unZoom = new Matrix(zoomMatrix);
+        unZoom.invert(unZoom);
+        unZoom.mapPoints(point);
+        float x = point[0], y = point[1];
+        switch (motionEvent.getActionMasked()){
+            case MotionEvent.ACTION_DOWN:
+                x1Start = x;
+                y1Start = y;
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (pointerCount == 1) {
+                    zoomPoint.offset(-(int) (x - x1Start), -(int) (y - y1Start));
+                    zoomPoint.x = Math.max(0, Math.min(zoomPoint.x, drawBitmap.getWidth() - 1));
+                    zoomPoint.y = Math.max(0, Math.min(zoomPoint.y, drawBitmap.getHeight() - 1));
+                    Log.d(LOG_TAG, "zoom point: " + zoomPoint.x + ", " + zoomPoint.y);
+                    zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
+                    invalidate();
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                return true;
+        }
+        return true;
+    }
+    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            zoomFactor *= detector.getScaleFactor();
+            // Don't let the object get too small or too large.
+            zoomFactor = Math.max(1f, Math.min(zoomFactor, 5.0f));
+            zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
+            invalidate();
+            return true;
+        }
+    }
+
     // Class overrides
     @Override
     public boolean onTouchEvent(MotionEvent event){
@@ -1599,6 +1682,8 @@ public class PuppetDesigner extends View {
                 return handleCutPathTouch(event);
             case MODE_HEAL:
                 return handleHealTouch(event);
+            case MODE_PAN_ZOOM:
+                return handlePanZoomTouch(event);
             default:
                 return false;
         }
@@ -1613,9 +1698,10 @@ public class PuppetDesigner extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawBitmap(viewBitmap, 0, 0, null);
-        if (backgroundBitmap != null)
-            canvas.drawBitmap(backgroundBitmap, 0, 0, null);
-        canvas.drawBitmap(drawBitmap, 0, 0, null);
+        if (backgroundBitmap != null) {
+            canvas.drawBitmap(backgroundBitmap, zoomMatrix, null);
+        }
+        canvas.drawBitmap(drawBitmap, zoomMatrix, null);
         if (showLowerJawBox || showUpperJawBox) {
             canvas.save();
             canvas.rotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
