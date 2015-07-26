@@ -41,6 +41,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
@@ -146,6 +147,7 @@ public class MainActivity extends Activity {
     private RelativeLayout showStage;
     private boolean isFirstRun;
     private RotationGestureDetector mRotationDetector;
+    private ScaleGestureDetector mScaleDetector;
     private ActionMode puppetActionMode;
 
     // Gesture fields
@@ -178,6 +180,7 @@ public class MainActivity extends Activity {
         menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
         menuButton.setVisibility(View.GONE);
         gestureDetector = new GestureDetector(context, new MyGestureListener());
+        mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         // Hid the Action Bar if present
         ActionBar actionBar = getActionBar();
@@ -1152,16 +1155,9 @@ public class MainActivity extends Activity {
                     actionMode.finish();
                     return true;
                 case R.id.action_puppet_scale:
-                    stage.setOnTouchListener(scaleListener);
-                    selectedPuppet.setOnTouchListener(new View.OnTouchListener() {
-                        @Override
-                        public boolean onTouch(View view, MotionEvent motionEvent) {
-                            return false;
-                        }
-                    });
+                    selectedPuppet.setOnTouchListener(scaleListener);
                     lastScaleFactor = selectedPuppet.getScaleX();
                     isScaling = true;
-                    Toast.makeText(context, getString(R.string.toast_scale), Toast.LENGTH_SHORT).show();
                     return true;
                 case R.id.action_puppet_flip_horz:
                     if (isRecording)
@@ -1222,59 +1218,31 @@ public class MainActivity extends Activity {
     private View.OnTouchListener scaleListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            return handleScaleTouch(view, motionEvent);
+            mScaleDetector.onTouchEvent(motionEvent);
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_UP:
+                    if (!isControlPressed) {
+                        GoToPerformance(null);
+                    }
+                    isScaling = false;
+                    return true;
+            }
+            return false;
         }
     };
-    private boolean handleScaleTouch(View view, MotionEvent motionEvent){
-        int pointerCount = motionEvent.getPointerCount();
-        switch (motionEvent.getActionMasked()){
-            case MotionEvent.ACTION_DOWN:
-                x1Start = motionEvent.getX();
-                y1Start = motionEvent.getY();
-                return true;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                x1Start = motionEvent.getX(pointerCount - 1);
-                x2Start = motionEvent.getX(pointerCount - 2);
-                y1Start = motionEvent.getY(pointerCount - 1);
-                y2Start = motionEvent.getY(pointerCount - 2);
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                if (pointerCount > 1) {
-                    selectedPuppet.setScaleX(getScaleFactor(motionEvent.getX(pointerCount - 1), motionEvent.getY(pointerCount - 1),
-                            motionEvent.getX(pointerCount - 2), motionEvent.getY(pointerCount - 2)));
-                    selectedPuppet.setScaleY(Math.copySign(selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                    if (isRecording)
-                        showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                }
-                return true;
-            case MotionEvent.ACTION_UP:
-                if (isRecording)
-                    showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
-                Utils.WritePuppetToFile(selectedPuppet, new File(selectedPuppet.getPath()));
-                if (!isControlPressed) {
-                    stage.setOnTouchListener(null);
-                    GoToPerformance(null);
-                }
-                isScaling = false;
-                return true;
+    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            lastScaleFactor *= detector.getScaleFactor();
+            // Don't let the object get too small or too large.
+            lastScaleFactor = Math.max(0.2f, Math.min(lastScaleFactor, 5.0f));
+            selectedPuppet.setScaleX(lastScaleFactor);
+            selectedPuppet.setScaleY(lastScaleFactor);
+            if (isRecording)
+                showRecorder.RecordFrame(showRecorder.getScaleFrame(selectedPuppet.getName(), selectedPuppet.getScaleX(), selectedPuppet.getScaleY()));
+            selectedPuppet.requestLayout();
+            return true;
         }
-        return true;
-    }
-    private float getScaleFactor(float x1, float y1, float x2, float y2){
-        float dXInit = x2Start - x1Start;
-        float dYInit = y2Start - y1Start;
-        float startDistance = (float)Math.sqrt(dXInit*dXInit + dYInit*dYInit); // Distance between two pointers to start
-        float dX = x2 - x1;
-        float dY = y2 - y1;
-        float currentDistance = (float)Math.sqrt(dX*dX + dY*dY); // Current distance between two pointers
-        float scaleAmount = currentDistance - startDistance; // Neg = shrink, pos = grow
-        float scaleFactor =  Math.abs(lastScaleFactor) + scaleAmount / metrics.densityDpi;
-        // Make sure scale factor is reasonable between 1/5 and 5
-        scaleFactor = Math.max(scaleFactor, 0.2f);
-        scaleFactor = Math.min(scaleFactor, 5);
-        // Set the sign to what it was originally to keep left/right orientation the same
-        scaleFactor = Math.copySign(scaleFactor, lastScaleFactor);
-        return scaleFactor;
     }
 
     // Rotate puppet listener and methods
