@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Go Puppet Yourself!</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_designer">Diseñador Títere</string>
+
+    <!-- Misc string -->
+    <string name="default_puppet_name">Sin Nombre</string>
+    <string name="puppet_extension">.puppet</string>
+    <string name="puppet_directory">puppets</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+    <string name="toast_oom_scaling">Fuera de la memoria, la ampliación imagen hacia abajo. </string>
+
+    <!-- Puppet ActionMode strings -->
+    <string name="action_edit_puppet">Editar</string>
+    <string name="action_puppet_visible">Visible en escena</string>
+    <string name="action_delete_remove">Retorno a la biblioteca</string>
+    <string name="action_scale">Extensión</string>
+    <string name="action_flip_horz">Dar La Vuelta</string>
+    <string name="action_bring_to_front">Trae al frente</string>
+    <string name="action_rotate">Girar</string>
+
+    <!-- Puppet library strings -->
+    <string name="puppet_library_title">Títere Biblioteca</string>
+    <string name="alert_dialog_title_delete">Eliminar de títere</string>
+    <string name="alert_dialog_message_delete">¿Seguro que quieres eliminar permanentemente esta títere?</string>
+    <string name="trash_click_message">Arrastre un elemento a la papelera para eliminarlo</string>
+
+    <!-- Background library strings -->
+    <string name="background_library_title">Biblioteca de fondo</string>
+
+    <!-- Designer Activity Strings -->
+    <string name="alert_dialog_title_overwrite">Espera un minuto&#8230;</string>
+    <string name="alert_dialog_message_overwrite">Un títere ya existe con este nombre. ¿Quieres sobreescribirlo?</string>
+    <string name="puppet_name_hint">Nombre esta títere</string>
+    <string name="get_new_image_popup_title">Obtener nueva imagen</string>
+    <string name="action_new_image">Nueva imagen</string>
+    <string name="alert_dialog_title_unsaved">Espera un minuto&#8230;</string>
+    <string name="alert_dialog_message_unsaved">¿Quieres guardar los cambios?</string>
+    <string name="toast_magic_erase">Toque para borrar una región de colores similares</string>
+    <string name="toast_cut_path">Esquema de la región para cortar</string>
+    <string name="toast_profile">Ajustar la sombra para adaptarse a la títere</string>
+    <string name="toast_profile_right">Mirando hacia la derecha</string>
+    <string name="toast_profile_left">Mirando hacia la izquierda</string>
+
+    <!-- Designer ActionMode Strings -->
+    <string name="action_draw">Dibujar</string>
+    <string name="action_edit_image">Imagen</string>
+    <string name="action_edit_orientation">La orientación</string>
+    <string name="action_save">Mantener</string>
+
+    <string name="action_palette">Palette</string>
+    <string name="action_brush_size">Tamaño del pincel</string>
+
+    <string name="action_rotate_right">Gira a la derecha</string>
+    <string name="action_rotate_left">Girar a la izquierda</string>
+    <string name="action_erase">Borrar</string>
+    <string name="action_magic_erase">Borre región</string>
+    <string name="action_cut_path">Corte inteligente</string>
+    <string name="action_heal">Sanar</string>
+</resources>
