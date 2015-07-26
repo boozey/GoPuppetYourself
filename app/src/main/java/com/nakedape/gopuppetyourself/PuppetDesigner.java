@@ -1213,11 +1213,11 @@ public class PuppetDesigner extends View {
         if (pivotsSnapped){
             upperJawPivotPoint = new Point(lowerJawPivotPoint.x, lowerJawPivotPoint.y);
         }
-        Log.d(LOG_TAG, "Upper jaw pivot x = " + String.valueOf(upperJawPivotPoint.x - upperJawBox.left));
+        //Log.d(LOG_TAG, "Upper jaw pivot x = " + String.valueOf(upperJawPivotPoint.x - upperJawBox.left));
         return new Point(upperJawPivotPoint.x - upperJawBox.left, upperJawBox.height());
     }
     public Point getLowerJawPivotPoint() { // (0, 0) is top left of box
-        Log.d(LOG_TAG, "Lower jaw pivot x = " + String.valueOf(lowerJawPivotPoint.x - lowerJawBox.left));
+        //Log.d(LOG_TAG, "Lower jaw pivot x = " + String.valueOf(lowerJawPivotPoint.x - lowerJawBox.left));
         return new Point(lowerJawPivotPoint.x - lowerJawBox.left, 0);
     }
     public Bitmap getUpperJaw(){
