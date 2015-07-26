@@ -397,37 +397,39 @@ public class DesignerActivity extends Activity {
             newName = "Unnamed";
         }
         // If this was an edit and the puppet's name hasn't changed, save save and finish
-        if (puppet != null && newName.equals(puppet.getName()))
+        if (puppet != null && newName.equals(puppet.getName())) {
             FinishAndSave(newName);
-        // If the puppet name has changed, prompt if there is already a puppet with this name
-        final String name = newName;
-        File[] files = puppetDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.getName().equals(name + getString(R.string.puppet_extension)) || file.getName().equals(name);
+        } else {
+            // If the puppet name has changed, prompt if there is already a puppet with this name
+            final String name = newName;
+            File[] files = puppetDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.getName().equals(name + getString(R.string.puppet_extension)) || file.getName().equals(name);
+                }
+            });
+            if (files.length > 0) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setMessage(R.string.alert_dialog_message_overwrite);
+                builder.setTitle(R.string.alert_dialog_title_overwrite);
+                builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+                builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                        FinishAndSave(name);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            } else {
+                FinishAndSave(newName);
             }
-        });
-        if (files.length > 0){
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setMessage(R.string.alert_dialog_message_overwrite);
-            builder.setTitle(R.string.alert_dialog_title_overwrite);
-            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.dismiss();
-                }
-            });
-            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    FinishAndSave(name);
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-        else {
-            FinishAndSave(newName);
         }
 
     }
@@ -450,7 +452,7 @@ public class DesignerActivity extends Activity {
         // Pass file name back to MainActivity
         Intent data = new Intent();
         data.putExtra(MainActivity.PUPPET_PATH, filePath);
-        Log.d(LOG_TAG, "Saved to " + filePath);
+        Log.i(LOG_TAG, "Saved to " + filePath);
         // Pass index back in case this was an edit
         data.putExtra(MainActivity.PUPPET_INDEX, stageIndex);
 
