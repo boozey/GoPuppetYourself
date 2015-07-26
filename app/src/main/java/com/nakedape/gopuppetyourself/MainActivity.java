@@ -325,8 +325,8 @@ public class MainActivity extends Activity {
         mainControlFadeOut(1000);
     }
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop(){
+        super.onStop();
         if (!isFinishing()){ // Save instance data for activity restart
             // Save puppet positions
             for (int i = 0; i < stage.getChildCount(); i++){
@@ -340,7 +340,13 @@ public class MainActivity extends Activity {
                     savedData.puppetShow = showRecorder.getShow();
                 }
             }
+        } else {
+            mHandler.removeCallbacksAndMessages(null);
         }
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -906,7 +912,7 @@ public class MainActivity extends Activity {
         }
     }// Called from stage animation listener
     private void SwitchToShowStage(){
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int)(rootLayout.getWidth() * 0.75), (int)(rootLayout.getHeight() * 0.75));
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int)(rootLayout.getWidth()), rootLayout.getHeight());
         params.addRule(RelativeLayout.CENTER_IN_PARENT);
         showStage.setLayoutParams(params);
         //showStage.setLayoutParams(stage.getLayoutParams());
@@ -1003,7 +1009,6 @@ public class MainActivity extends Activity {
     public void GoBackstage(View v){
         isBackstage = true;
         savedData.isBackstage = isBackstage;
-        selectedPuppet = null;
         for (int i = 0; i < stage.getChildCount(); i++){
             stage.getChildAt(i).setOnTouchListener(backstageListener);
             if (stage.getChildAt(i).getVisibility() == View.GONE) {
@@ -1068,7 +1073,6 @@ public class MainActivity extends Activity {
         }
     };
     private boolean HandleBackstageTouch(Puppet view, MotionEvent event){
-        Puppet puppet = (Puppet)view;
         final int X = (int) event.getRawX();
         final int Y = (int) event.getRawY();
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -1077,17 +1081,13 @@ public class MainActivity extends Activity {
                 dx = X - lParams.leftMargin;
                 dy = Y - lParams.topMargin;
                 lastScaleFactor = view.getScaleX();
-                if (selectedPuppet == null){
-                    selectedPuppet = view;
-                    selectedPuppet.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
-                    puppetActionMode = startActionMode(puppetActionModeCallback);
-                } else if (!selectedPuppet.equals(view)){
+                if (selectedPuppet != null && !selectedPuppet.equals(view)){
                     selectedPuppet.setBackground(null);
-                    view.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
-                    selectedPuppet = view;
-                    if (puppetActionMode == null)
-                        puppetActionMode = startActionMode(puppetActionModeCallback);
                 }
+                view.setBackground(getResources().getDrawable(R.drawable.selected_puppet));
+                selectedPuppet = view;
+                if (puppetActionMode == null)
+                    puppetActionMode = startActionMode(puppetActionModeCallback);
                 break;
             case MotionEvent.ACTION_UP:
                 break;
@@ -1102,6 +1102,7 @@ public class MainActivity extends Activity {
 
         return true;
     }
+
     // Puppet ActionMode methods
     private ActionMode.Callback puppetActionModeCallback = new ActionMode.Callback() {
         @Override
