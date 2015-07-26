@@ -15,13 +15,11 @@
     <!-- Puppet ActionMode strings -->
     <string name="action_edit_puppet">Edit</string>
     <string name="action_puppet_visible">Visible in scene</string>
-    <string name="action_clone_puppet">Clone</string>
     <string name="action_delete_remove">Return to library</string>
     <string name="action_scale">Scale</string>
     <string name="action_flip_horz">Flip</string>
     <string name="action_bring_to_front">Bring to front</string>
     <string name="action_rotate">Rotate</string>
-    <string name="toast_scale">Pinch background to shrink or grow</string>
 
     <!-- Puppet library strings -->
     <string name="puppet_library_title">Puppet Library</string>
