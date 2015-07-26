@@ -5,20 +5,14 @@
     android:id="@+id/relative_layout">
 
     <!-- Puppet Designer Layout -->
-    <FrameLayout
-        android:id="@+id/designer_frame_layout"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:padding="16dp"
-        android:background="@color/light_grey">
         <com.nakedape.gopuppetyourself.PuppetDesigner
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_width="fill_parent"
             android:layout_gravity="center"
+            android:layout_centerInParent="true"
             android:id="@+id/designer"
             android:clickable="false"
             android:background="@color/white"/>
-    </FrameLayout>
     <ImageButton
         android:id="@+id/undo_button"
         android:layout_width="wrap_content"

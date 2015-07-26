@@ -67,7 +67,7 @@ public class PuppetDesigner extends View {
     private static final String UNDO_DRAW = "draw";
 
     private Context context;
-    private Bitmap backgroundBitmap, backgroundOriginal, drawBitmap, viewBitmap;
+    private Bitmap backgroundBitmap, backgroundOriginal, drawBitmap;
     private File cacheDir;
     private ArrayList<Bitmap> backgroundUndoStack;
     private ArrayList<Bitmap> drawUndoStack;
@@ -76,9 +76,9 @@ public class PuppetDesigner extends View {
     private Bitmap upperProfileBitmap, lowerProfileBitmap;
     private Point upperJawPivotPoint, lowerJawPivotPoint;
     private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
-    private int drawColor;
+    private int drawColor = Color.BLACK;
     private Path drawPath;
-    private Canvas drawCanvas, backgroundCanvas, viewCanvas;
+    private Canvas drawCanvas, backgroundCanvas;
     private int edgeThresh = 30, pointThresh = 30;
     private double colorSimilarity = 75;
     private Path cutPath;
@@ -126,16 +126,6 @@ public class PuppetDesigner extends View {
         // Initialize rotation handle
         rotateHandle = new Point();
 
-        // Setup view with tiled background
-        viewBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
-        viewCanvas = new Canvas(viewBitmap);
-        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
-        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
-        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
-        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-        tile.setBounds(viewCanvas.getClipBounds());
-        tile.draw(viewCanvas);
-
         // Setup blank drawing canvas
         drawBitmap = Bitmap.createBitmap(SMALL_WIDTH, SMALL_HEIGHT, Bitmap.Config.ARGB_8888);
         drawBitmap.setHasAlpha(true);
@@ -150,9 +140,9 @@ public class PuppetDesigner extends View {
         scaleGestureDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         // Set initial positions of jaw boxes
-        upperJawBox = new Rect(40, 40, viewBitmap.getWidth() - 40, viewBitmap.getHeight() / 2);
-        lowerJawBox = new Rect(40, viewBitmap.getHeight() / 2, viewBitmap.getWidth() - 40, viewBitmap.getHeight() - 40);
-        upperJawPivotPoint= new Point(viewBitmap.getWidth() / 2, viewBitmap.getHeight() / 2);
+        upperJawBox = new Rect(40, 40, drawBitmap.getWidth() - 40, drawBitmap.getHeight() / 2);
+        lowerJawBox = new Rect(40, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - 40, drawBitmap.getHeight() - 40);
+        upperJawPivotPoint= new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
 
@@ -171,7 +161,6 @@ public class PuppetDesigner extends View {
         undoStack = new ArrayList<>();
     }
     public void release(){
-        if (viewBitmap != null) viewBitmap.recycle();
         if (backgroundOriginal != null) backgroundOriginal.recycle();
         if (backgroundBitmap != null) backgroundBitmap.recycle();
         if (backgroundUndoStack != null) {
@@ -264,6 +253,7 @@ public class PuppetDesigner extends View {
             backgroundUndoStack.add(backgroundBitmap.copy(backgroundBitmap.getConfig(), true));
             Runtime runtime = Runtime.getRuntime();
             if (3 * backgroundBitmap.getByteCount() + runtime.totalMemory() >= runtime.maxMemory()) {
+                backgroundUndoStack.get(0).recycle();
                 backgroundUndoStack.remove(0);
                 Log.i(LOG_TAG, "Memory low, removing undo level");
             }
@@ -1038,6 +1028,13 @@ public class PuppetDesigner extends View {
     // Draw mode methods
     public void setIsDrawMode(boolean isDrawMode) {
         designerMode = MODE_DRAW;
+        drawPaint = new Paint();
+        drawPaint.setColor(drawColor);
+        drawPaint.setAntiAlias(true);
+        drawPaint.setStrokeWidth(18);
+        drawPaint.setStyle(Paint.Style.STROKE);
+        drawPaint.setStrokeJoin(Paint.Join.ROUND);
+        drawPaint.setStrokeCap(Paint.Cap.ROUND);
     }
     public boolean isDrawMode() {
         return isDrawMode;
@@ -1175,16 +1172,6 @@ public class PuppetDesigner extends View {
             drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
             drawCanvas = new Canvas(drawBitmap);
 
-            // Setup view background
-            viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            viewCanvas = new Canvas(viewBitmap);
-            viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
-            Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
-            BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
-            tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-            tile.setBounds(viewCanvas.getClipBounds());
-            tile.draw(viewCanvas);
-
             // Re-position the crop boxes
             int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
             upperJawBox = new Rect(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
@@ -1207,16 +1194,6 @@ public class PuppetDesigner extends View {
             backgroundOriginal = Bitmap.createBitmap(backgroundOriginal, 0, 0, backgroundOriginal.getWidth(), backgroundOriginal.getHeight(), m, false);
             drawBitmap = Bitmap.createBitmap(drawBitmap, 0, 0, drawBitmap.getWidth(), drawBitmap.getHeight(), m, false);
             drawCanvas = new Canvas(drawBitmap);
-
-            // Setup view background
-            viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            viewCanvas = new Canvas(viewBitmap);
-            viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
-            Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
-            BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
-            tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-            tile.setBounds(viewCanvas.getClipBounds());
-            tile.draw(viewCanvas);
 
             // Re-position the crop boxes
             int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
@@ -1309,17 +1286,9 @@ public class PuppetDesigner extends View {
         drawBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         drawBitmap.setHasAlpha(true);
         drawCanvas = new Canvas(drawBitmap);
-        viewBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        viewCanvas = new Canvas(viewBitmap);
-        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
-        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
-        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
-        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-        tile.setBounds(viewCanvas.getClipBounds());
-        tile.draw(viewCanvas);
 
         // Set initial positions of UI elements
-        int padding = (int)(Math.min(image.getHeight() * 0.1, image.getWidth()) * 0.2);
+        int padding = (int)(Math.min(image.getHeight() / 4, image.getWidth()) / 4);
         upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
         upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
         lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
@@ -1338,15 +1307,6 @@ public class PuppetDesigner extends View {
     }
     public void CreatBlankImage(int w, int h){
         release();
-        // Setup view background
-        viewBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        viewCanvas = new Canvas(viewBitmap);
-        viewCanvas.drawColor(Color.WHITE, PorterDuff.Mode.ADD);
-        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
-        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
-        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-        tile.setBounds(viewCanvas.getClipBounds());
-        tile.draw(viewCanvas);
 
         // Setup blank drawing canvas
         drawBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -1424,6 +1384,8 @@ public class PuppetDesigner extends View {
         }
         showLowerJawBox = true;
         showUpperJawBox = true;
+        zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         invalidate();
     }
     private boolean handleSelectionTouch(MotionEvent event){
@@ -1639,9 +1601,8 @@ public class PuppetDesigner extends View {
             case MotionEvent.ACTION_MOVE:
                 if (pointerCount == 1) {
                     zoomPoint.offset(-(int) (x - x1Start), -(int) (y - y1Start));
-                    zoomPoint.x = Math.max(0, Math.min(zoomPoint.x, drawBitmap.getWidth() - 1));
-                    zoomPoint.y = Math.max(0, Math.min(zoomPoint.y, drawBitmap.getHeight() - 1));
-                    Log.d(LOG_TAG, "zoom point: " + zoomPoint.x + ", " + zoomPoint.y);
+                    zoomPoint.x = (int)Math.max((getLeft() - drawBitmap.getWidth()) / zoomFactor, Math.min(zoomPoint.x, (getRight() - drawBitmap.getWidth()) / zoomFactor));
+                    zoomPoint.y = (int)Math.max((getTop() - drawBitmap.getWidth()) / zoomFactor, Math.min(zoomPoint.y, (getBottom() - drawBitmap.getHeight()) / zoomFactor));
                     zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
                     invalidate();
                 }
@@ -1659,6 +1620,7 @@ public class PuppetDesigner extends View {
             zoomFactor = Math.max(1f, Math.min(zoomFactor, 5.0f));
             zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
             invalidate();
+            requestLayout();
             return true;
         }
     }
@@ -1692,12 +1654,13 @@ public class PuppetDesigner extends View {
     @Override
     protected void onMeasure(int reqWidth, int reqHeight){
 
-        setMeasuredDimension(viewBitmap.getWidth(), viewBitmap.getHeight());
+        //setMeasuredDimension(viewBitmap.getWidth(), viewBitmap.getHeight());
+        //setMeasuredDimension((int)Math.min(drawBitmap.getWidth() * zoomFactor, MeasureSpec.getSize(reqWidth)), (int)Math.min(drawBitmap.getHeight() * zoomFactor, MeasureSpec.getSize(reqHeight)));
+        setMeasuredDimension((int)(drawBitmap.getWidth() * zoomFactor), (int)(drawBitmap.getHeight() * zoomFactor));
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawBitmap(viewBitmap, 0, 0, null);
         if (backgroundBitmap != null) {
             canvas.drawBitmap(backgroundBitmap, zoomMatrix, null);
         }

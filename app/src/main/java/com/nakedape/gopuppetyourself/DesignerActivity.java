@@ -12,9 +12,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Shader;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -85,6 +88,12 @@ public class DesignerActivity extends Activity {
         designer = (PuppetDesigner)findViewById(R.id.designer);
         undoButton = findViewById(R.id.undo_button);
 
+        Bitmap tileBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.transparency_tile_16x16);
+        BitmapDrawable tile = new BitmapDrawable(getResources(), tileBitmap);
+        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        rootLayout.setBackground(tile);
+        designer.setBackground(new ColorDrawable(Color.TRANSPARENT));
+
         // Prepare brush size bar
         brushSizeBar = getLayoutInflater().inflate(R.layout.brush_size_bar, null);
         brushSizeBar.setVisibility(View.INVISIBLE);
@@ -125,8 +134,8 @@ public class DesignerActivity extends Activity {
             designer.post(new Runnable() {
                 @Override
                 public void run() {
-                    View view = findViewById(R.id.designer_frame_layout);
-                    designer.CreatBlankImage(view.getWidth(), view.getHeight());
+                    //View view = findViewById(R.id.designer_frame_layout);
+                    designer.CreatBlankImage(rootLayout.getWidth(), rootLayout.getHeight());
                     ShowGetNewImagePopup(300);
                 }
             });
@@ -171,7 +180,6 @@ public class DesignerActivity extends Activity {
                 showUndoButton();
                 if (mActionMode != null) mActionMode.finish();
                 mActionMode = startActionMode(drawActionCallback);
-                designer.setIsDrawMode(true);
                 return true;
             case R.id.action_edit_image:
                 if (mActionMode != null) mActionMode.finish();
@@ -321,7 +329,7 @@ public class DesignerActivity extends Activity {
         }
     }
     public void NewBlankImageClick(View v){
-        View view = findViewById(R.id.designer_frame_layout);
+        View view = findViewById(R.id.relative_layout);
         designer.CreatBlankImage(view.getWidth(), view.getHeight());
         CloseGetNewImagePopup(v);
     }
@@ -330,7 +338,7 @@ public class DesignerActivity extends Activity {
         Bitmap bitmap = null;
         // Release all the memory used by the designer before trying to load a new image
         designer.release();
-        View view = findViewById(R.id.designer_frame_layout);
+        View view = findViewById(R.id.relative_layout);
         try {
             try {
                 bitmap = Utils.decodeSampledBitmapFromContentResolver(getContentResolver(), imageUri, view.getWidth(), view.getHeight());
@@ -358,7 +366,7 @@ public class DesignerActivity extends Activity {
         // Release all the memory used by the designer before trying to load a new image
         designer.release();
         // Get the dimensions of the View
-        View view = findViewById(R.id.designer_frame_layout);
+        View view = findViewById(R.id.relative_layout);
         int targetW = (int)view.getWidth();
         int targetH = (int)view.getHeight();
         Bitmap bitmap = null;
@@ -539,8 +547,11 @@ public class DesignerActivity extends Activity {
             slider.setMax(MAX_BRUSH_SIZE);
             slider.setProgress(paletteBrushSize);
 
+            // Set last selected color
+
             // Set brush view to current value
             final View view = brushBar.findViewById(R.id.brush_size);
+            designer.setIsDrawMode(true);
             designer.setStrokeWidth((float) paletteBrushSize);
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)view.getLayoutParams();
             params.width = paletteBrushSize;
