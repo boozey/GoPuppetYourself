@@ -368,17 +368,17 @@ public class PuppetDesigner extends View {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startCutPathFlow();
-                    cutPath.moveTo(x, y);
+                    cutPath.moveTo(event.getX(), event.getY());
                     cutPathPoints.add(new Point((int) x, (int) y));
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    cutPath.lineTo(x, y);
+                    cutPath.lineTo(event.getX(), event.getY());
                     cutPathPoints.add(new Point((int) x, (int) y));
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
                     isSaved = false;
-                    cutPath.lineTo(x, y);
+                    cutPath.lineTo(event.getX(), event.getY());
                     cutPathPoints.add(new Point((int) x, (int) y));
                     cutPath.lineTo(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
                     cutPath.setLastPoint(cutPathPoints.get(0).x, cutPathPoints.get(0).y);
@@ -1385,8 +1385,10 @@ public class PuppetDesigner extends View {
         showLowerJawBox = true;
         showUpperJawBox = true;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
-        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomFactor = 1f;
+        zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         invalidate();
+        requestLayout();
     }
     private boolean handleSelectionTouch(MotionEvent event){
         float[] point = {event.getX(), event.getY()};
