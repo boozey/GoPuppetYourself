@@ -498,7 +498,10 @@ public class MainActivity extends Activity {
     }
     private void moveMouth(Puppet puppet, float Y0, float Y1){
         double width = Math.abs(Y1 - Y0);
-        if (width < metrics.densityDpi * 0.8){
+        if (width < metrics.densityDpi * 0.6){
+            puppet.OpenMouth(0);
+            if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 0));
+        } else if (width < metrics.densityDpi * 0.8){
             puppet.OpenMouth(20);
             if (showRecorder.isRecording()) showRecorder.RecordFrame(showRecorder.getOpenMouthFrame(puppet.getName(), 20));
         }
