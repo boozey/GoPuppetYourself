@@ -269,8 +269,8 @@ public class Puppet extends View implements Serializable {
         this.scaleX = Math.abs(scaleX);
         if (scaleX < 0 && !isFlippedHorz) FlipHoriz();
         if (scaleX > 0 && isFlippedHorz) FlipHoriz();
-        Log.d(LOG_TAG, "isFlippedHorz = " + isFlippedHorz);
-        Log.d(LOG_TAG, "ScaleX = " + scaleX);
+        //Log.d(LOG_TAG, "isFlippedHorz = " + isFlippedHorz);
+        //Log.d(LOG_TAG, "ScaleX = " + scaleX);
         setPadding();
         invalidate();
         requestLayout();
