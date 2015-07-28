@@ -137,6 +137,7 @@ public class PuppetDesigner extends View {
         zoomMatrix = new Matrix();
         zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.postTranslate((getWidth() - drawBitmap.getWidth()) / 2, (getHeight() - drawBitmap.getHeight()) / 2);
         scaleGestureDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         // Set initial positions of jaw boxes
@@ -1330,6 +1331,7 @@ public class PuppetDesigner extends View {
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         zoomFactor = 1f;
         zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.postTranslate((getWidth() - drawBitmap.getWidth()) / 2, (getHeight() - drawBitmap.getHeight()) / 2);
 
         invalidate();
         requestLayout();
