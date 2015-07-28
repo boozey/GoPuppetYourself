@@ -1299,7 +1299,9 @@ public class PuppetDesigner extends View {
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
-        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomFactor = 1f;
+        zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.postTranslate((getWidth() - drawBitmap.getWidth()) / 2, (getHeight() - drawBitmap.getHeight()) / 2);
         isSaved = false;
 
         invalidate();
@@ -1326,7 +1328,8 @@ public class PuppetDesigner extends View {
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
-        zoomMatrix.setScale(1f, 1f, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomFactor = 1f;
+        zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
 
         invalidate();
         requestLayout();
@@ -1601,15 +1604,17 @@ public class PuppetDesigner extends View {
                 y1Start = y;
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (pointerCount == 1) {
-                    zoomPoint.offset(-(int) (x - x1Start), -(int) (y - y1Start));
-                    zoomPoint.x = (int)Math.max((getLeft() - drawBitmap.getWidth()) / zoomFactor, Math.min(zoomPoint.x, (getRight() - drawBitmap.getWidth()) / zoomFactor));
-                    zoomPoint.y = (int)Math.max((getTop() - drawBitmap.getWidth()) / zoomFactor, Math.min(zoomPoint.y, (getBottom() - drawBitmap.getHeight()) / zoomFactor));
-                    zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
-                    invalidate();
+                if (pointerCount > 1) {
+                    int dx = (int) (x - x1Start);
+                    int dy = (int) (y - y1Start);
+                    zoomMatrix.preTranslate(dx, dy);
+                } else {
+                    zoomMatrix.postTranslate((int) (x - x1Start), (int) (y - y1Start));
                 }
+                invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
+                invalidate();
                 return true;
         }
         return true;
@@ -1619,7 +1624,7 @@ public class PuppetDesigner extends View {
         public boolean onScale(ScaleGestureDetector detector) {
             zoomFactor *= detector.getScaleFactor();
             // Don't let the object get too small or too large.
-            zoomFactor = Math.max(1f, Math.min(zoomFactor, 5.0f));
+            zoomFactor = Math.max(1f, Math.min(zoomFactor, 6.0f));
             zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
             invalidate();
             requestLayout();
@@ -1655,10 +1660,9 @@ public class PuppetDesigner extends View {
 
     @Override
     protected void onMeasure(int reqWidth, int reqHeight){
-
-        //setMeasuredDimension(viewBitmap.getWidth(), viewBitmap.getHeight());
-        //setMeasuredDimension((int)Math.min(drawBitmap.getWidth() * zoomFactor, MeasureSpec.getSize(reqWidth)), (int)Math.min(drawBitmap.getHeight() * zoomFactor, MeasureSpec.getSize(reqHeight)));
-        setMeasuredDimension((int)(drawBitmap.getWidth() * zoomFactor), (int)(drawBitmap.getHeight() * zoomFactor));
+        //setMeasuredDimension((int) Math.min(drawBitmap.getWidth() * zoomFactor, MeasureSpec.getSize(reqWidth)),
+        //        (int) Math.min(drawBitmap.getHeight() * zoomFactor, MeasureSpec.getSize(reqHeight)));
+        setMeasuredDimension(MeasureSpec.getSize(reqWidth), MeasureSpec.getSize(reqHeight));
     }
 
     @Override
