@@ -542,7 +542,7 @@ public class DesignerActivity extends Activity {
 
             // Configure brush bar view
             View brushBar = getLayoutInflater().inflate(R.layout.brush_size_bar, null);
-            brushBar.findViewById(R.id.close_button).setVisibility(View.GONE);
+            brushBar.findViewById(R.id.popup_close_button).setVisibility(View.GONE);
 
             // Set slider to current value
             SeekBar slider = (SeekBar)brushBar.findViewById(R.id.brush_slider);
@@ -788,7 +788,7 @@ public class DesignerActivity extends Activity {
         if (brushSizeBar.getVisibility() != View.VISIBLE) {
             // Configure brush bar view
             brushSizeBar.setBackground(new ColorDrawable(Color.WHITE));
-            View closeButton = brushSizeBar.findViewById(R.id.close_button);
+            View closeButton = brushSizeBar.findViewById(R.id.popup_close_button);
             closeButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

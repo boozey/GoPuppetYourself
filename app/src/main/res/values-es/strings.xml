@@ -59,4 +59,7 @@
     <string name="action_magic_erase">Borre región</string>
     <string name="action_cut_path">Corte inteligente</string>
     <string name="action_heal">Sanar</string>
+    <string name="facebook_app_id">125905341083258</string>
+    <string name="rate_us">Valorar nos</string>
+    <string name="share_message">Dile a tus amigos</string>
 </resources>

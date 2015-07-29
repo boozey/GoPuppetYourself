@@ -28,7 +28,10 @@ android {
     productFlavors {
     }
 }
-
+repositories {
+    mavenCentral()
+}
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.facebook.android:facebook-android-sdk:4.1.0'
 }

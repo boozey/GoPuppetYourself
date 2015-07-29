@@ -7,6 +7,7 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
@@ -14,7 +15,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -25,7 +25,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -42,7 +41,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.TouchDelegate;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -52,6 +50,7 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
@@ -65,6 +64,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 
+import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
+import com.facebook.share.model.AppInviteContent;
+import com.facebook.share.widget.AppInviteDialog;
+import com.facebook.share.widget.LikeView;
+import com.facebook.share.widget.ShareButton;
 
 public class MainActivity extends Activity {
 
@@ -187,6 +192,9 @@ public class MainActivity extends Activity {
         if (actionBar != null){
             actionBar.hide();
         }
+
+        // Initialize Facebook SDK
+        FacebookSdk.sdkInitialize(getApplicationContext());
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(context, stage);
@@ -322,7 +330,15 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume(){
         super.onResume();
+        // Logs 'install' and 'app activate' App Events to Facebook.
+        //AppEventsLogger.activateApp(this);
         mainControlFadeOut(1000);
+    }
+    @Override
+    protected void onPause(){
+        super.onPause();
+        // Logs 'app deactivate' App Event to Facebook.
+        //AppEventsLogger.deactivateApp(this);
     }
     @Override
     protected void onStop(){
@@ -402,6 +418,7 @@ public class MainActivity extends Activity {
     public boolean onKeyDown(int keycode, KeyEvent e){
         switch (keycode){
             case KeyEvent.KEYCODE_BACK:
+                if (ClosePopupMenu()) return true;
                 View v = findViewById(R.id.new_image_popup);
                 if (isLibraryOpen) {
                     ClosePuppetLibrary();
@@ -1019,6 +1036,12 @@ public class MainActivity extends Activity {
                 set.start();
             }
         }
+        stage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ShowPopupMenu();
+            }
+        });
     } // Called on main control action down
     public void GoToPerformance(View v){
         if (!isLibraryOpen && puppetActionMode == null) {
@@ -1026,6 +1049,7 @@ public class MainActivity extends Activity {
             if (selectedPuppet != null) {
                 selectedPuppet.setBackground(null);
             }
+            stage.setOnClickListener(null);
             isBackstage = false;
             if (!isPlaying) {
                 for (int i = 0; i < stage.getChildCount(); i++) {
@@ -1101,6 +1125,115 @@ public class MainActivity extends Activity {
         }
 
         return true;
+    }
+
+    // Main popup menu methods
+    private void ShowPopupMenu(){
+        final View layout = getLayoutInflater().inflate(R.layout.about_popup, null);
+        // Prepare popup window
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        ImageButton closeButton = (ImageButton)layout.findViewById(R.id.popup_close_button);
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ClosePopupMenu();
+            }
+        });
+        // Click listener to close popup when touched outside
+        layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ClosePopupMenu();
+            }
+        });
+        // Click listener to prevent closing window when touched inside
+        View popup = layout.findViewById(R.id.popup_window);
+        popup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
+        // Prepare Facebook share button
+        ShareButton shareButton = (ShareButton)layout.findViewById(R.id.facebook_sharebutton);
+        shareButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String appLinkUrl, previewImageUrl;
+
+                appLinkUrl = "https://fb.me/126205617719897";
+                //previewImageUrl = "https://lh3.googleusercontent.com/_ZVml3xa_MvzyOyo287zjo0eD2ot1AJhVMcHEFPnpn9JWBbMwMD0vEAr-WiGfgrTMAz9=w300-rw";
+
+                if (AppInviteDialog.canShow()) {
+                    AppInviteContent content = new AppInviteContent.Builder()
+                            .setApplinkUrl(appLinkUrl)
+                            //.setPreviewImageUrl(previewImageUrl)
+                            .build();
+                    AppInviteDialog.show((Activity)context, content);
+                }
+            }
+        });
+        // Prepare Facebook like button
+        LikeView likeView = (LikeView)layout.findViewById(R.id.facebook_likeview);
+        likeView.setObjectIdAndType(
+                "https://www.facebook.com/gopuppetyourself",
+                LikeView.ObjectType.PAGE);
+
+        // Prepare Google Play button
+        ImageButton playButton = (ImageButton)layout.findViewById(R.id.google_play_button);
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Uri uri = Uri.parse("market://details?id=" + getPackageName());
+                Intent myAppLinkToMarket = new Intent(Intent.ACTION_VIEW, uri);
+                try {
+                    startActivity(myAppLinkToMarket);
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(context, " unable to find market app", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        // Animate popup
+        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
+        set.setTarget(layout);
+        layout.setAlpha(0f);
+        set.start();
+        rootLayout.addView(layout);
+    }
+    private boolean ClosePopupMenu(){
+        final View layout = findViewById(R.id.popup_root_layout);
+        if (layout != null) {
+            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_out);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    rootLayout.removeView(layout);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            });
+            set.setTarget(layout);
+            set.start();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Puppet ActionMode methods
