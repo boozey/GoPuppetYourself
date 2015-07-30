@@ -1090,6 +1090,7 @@ public class PuppetDesigner extends View {
         }
     }
     public void setColor(int color){
+        drawPaint.setXfermode(null);
         drawPaint.setColor(color);
         drawColor = color;
     }
