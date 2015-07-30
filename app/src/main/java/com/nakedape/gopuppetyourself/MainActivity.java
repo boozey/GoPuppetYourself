@@ -50,7 +50,6 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
@@ -328,17 +327,21 @@ public class MainActivity extends Activity {
 
     }
     @Override
+    protected void onStart() {
+        super.onStart();
+    }
+    @Override
     protected void onResume(){
         super.onResume();
         // Logs 'install' and 'app activate' App Events to Facebook.
-        //AppEventsLogger.activateApp(this);
+        AppEventsLogger.activateApp(this);
         mainControlFadeOut(1000);
     }
     @Override
     protected void onPause(){
         super.onPause();
         // Logs 'app deactivate' App Event to Facebook.
-        //AppEventsLogger.deactivateApp(this);
+        AppEventsLogger.deactivateApp(this);
     }
     @Override
     protected void onStop(){
@@ -1036,6 +1039,7 @@ public class MainActivity extends Activity {
                 set.start();
             }
         }
+        stage.setOnTouchListener(null);
         stage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
