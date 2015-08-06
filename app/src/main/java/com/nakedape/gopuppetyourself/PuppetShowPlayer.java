@@ -4,13 +4,15 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.content.Context;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.os.*;
+import android.os.Environment;
+import android.os.Message;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,233 +26,44 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
- * Created by Nathan on 6/25/2015.
+ * Created by Nathan on 8/2/2015.
  */
+public class PuppetShowPlayer {
 
-public class PuppetShowRecorder {
-    private static final String LOG_TAG = "PuppetShowPlayer";
-    public static final int COUNTER_UPDATE = 919;
-    public static final int COUNTER_END = 920;
-    private boolean stopCounterThread = false, isReady = false,
-            isRecording = false, isPlaying = false;
-    private long startMillis = SystemClock.elapsedRealtime(),
-            showLength = -1;
+    public interface OnPlayFinishedListener {
+        void OnPlayFinish();
+    }
+
+    final private static String LOG_TAG = "PuppetShowPlayer";
+
     private Context context;
+    private OnPlayFinishedListener onPlayFinishedListener;
     private RelativeLayout stage;
-    private ArrayList<KeyFrame> frameSequence;
-    private Handler mHandler = new Handler();
-    private PlayLoop playLoop;
-    private MediaRecorder mRecorder;
-    private String audioFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "//recording.3gp";
-    private MediaPlayer mPlayer;
     private int width, height;
-    public  PuppetShow puppetShow;
-    private ArrayList<String> bitmapPaths;
+    private PuppetShow puppetShow;
+    private String audioFilePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "//audio.3gp";
+    private MediaPlayer mPlayer;
+    private boolean isPlaying = false, isPaused = false;
+    private PlayLoop playLoop;
     private float xScaleFactor, yScaleFactor;
+    private ArrayList<KeyFrame> frameSequence;
+    private long startMillis, showLength, pausePoint;
 
-    public PuppetShowRecorder(Context context, RelativeLayout stage){
+    public PuppetShowPlayer(Context context, RelativeLayout stage){
         this.context = context;
         this.stage = stage;
         width = stage.getWidth();
         height = stage.getHeight();
     }
-    public void setHandler(Handler handler){
-        mHandler = handler;
-    }
-    public void setStage(RelativeLayout stage){
-        this.stage = stage;
+    public void setOnPlayFinishedListener(OnPlayFinishedListener listener){
+        onPlayFinishedListener = listener;
     }
 
-    // Recording flow
-    public void prepareToRecord(){
-        puppetShow = new PuppetShow(stage);
-        bitmapPaths = new ArrayList<>();
-        bitmapPaths.add("empty");
-        width = stage.getWidth();
-        height = stage.getHeight();
-        puppetShow.origWidth = width;
-        puppetShow.origHeight = height;
-        isReady = true;
-    }
-    public void RecordStart(){
-        //frameSequence = new ArrayList<>();
-        //frameSequence.add(new KeyFrame(0, KeyFrame.START));
-        if (isReady) {
-            puppetShow.addFrame(getStartFrame());
-            startMillis = SystemClock.elapsedRealtime();
-            showLength = -1;
-
-            // Setup audio recording
-            mRecorder = new MediaRecorder();
-            mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            mRecorder.setOutputFile(audioFilePath);
-            mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            try {
-                mRecorder.prepare();
-                mRecorder.start();
-                Log.d(LOG_TAG, "Audio recording started");
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "MediaRecorder.prepare() failed");
-                e.printStackTrace();
-            }
-
-            isRecording = true;
-            Log.d(LOG_TAG, "Show recording started");
-        }
-    } // Start recording
-    public boolean isRecording(){
-        return isRecording;
-    }
-    public void RecordFrame(String puppetId, int event){
-        puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event));
-    } // Record a keyframe event
-    public void RecordFrame(String puppetId, int event, float x, float y){
-        puppetShow.addFrame(new KeyFrame(getTimeFromStartMillis(), puppetId, event, x, y));
-    } // Record a keyframe event with movement
-    public void RecordFrame(KeyFrame frame){
-        puppetShow.addFrame(frame);
-    }
-    public KeyFrame getStartFrame(){
-        return new KeyFrame(0, KeyFrame.START);
-    }
-    public KeyFrame getOpenMouthFrame(String puppetId, int degrees){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.OPEN_MOUTH_DEGREES, degrees);
-    }
-    public KeyFrame getCloseMouthFrame(String puppetId){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.CLOSE_MOUTH);
-    }
-    public KeyFrame getMoveFrame(String puppetId, int x, int y){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.MOVEMENT, x / width, y / height);
-    }
-    public KeyFrame getScaleFrame(String puppetId, float xScale, float yScale){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.SET_SCALE, xScale, yScale);
-    }
-    public KeyFrame getVisiblilityFrame(String puppetId, boolean visible){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.VISIBILITY, visible);
-    }
-    public KeyFrame getBackgroundFrame(String bitmapPath){
-        bitmapPaths.add(bitmapPath);
-        return new KeyFrame(getTimeFromStartMillis(), KeyFrame.SET_BACKGROUND, bitmapPaths.size() - 1);
-    }
-    public KeyFrame getRotateFrame(String puppetId, float degrees){
-        return new KeyFrame(getTimeFromStartMillis(), puppetId, KeyFrame.ROTATE, degrees);
-    }
-    public void addPuppetToShow(Puppet p){
-        puppetShow.addPuppet(p);
-        if (isRecording)
-            RecordFrame(new KeyFrame(getTimeFromStartMillis(), p.getName(), KeyFrame.VISIBILITY, true));
-    }
-    public void RecordStop(){
-        if (isRecording()) {
-            showLength = getTimeFromStartMillis();
-            //frameSequence.add(new KeyFrame(showLength, KeyFrame.END));
-            puppetShow.addFrame(new KeyFrame(showLength, KeyFrame.END));
-
-            // Stop audio recording
-            if (mRecorder != null) {
-                mRecorder.stop();
-                mRecorder.release();
-                mRecorder = null;
-            }
-
-            isRecording = false;
-            Log.i(LOG_TAG, "Recording stopped. Length: " + showLength);
-        }
-    } // Stop recording
-    public void FinalizeRecording(){
-        for (String path : bitmapPaths){
-            if (!path.equals("empty")){
-                puppetShow.addBackground(BitmapFactory.decodeFile(path));
-            }
-        }
-    }
-
-    public PuppetShow getShow(){
-        return puppetShow;
-    }
-    public void setShow(PuppetShow puppetShow){
-        this.puppetShow = puppetShow;
-        this.puppetShow.SetContext(context);
-    }
-    public void WriteShowToFile(File saveFile){
-        ObjectOutputStream out = null;
-        if (saveFile.isFile()) saveFile.delete();
-
-        try {
-            saveFile.createNewFile();
-            if (saveFile.canWrite()) {
-                out = new ObjectOutputStream(new FileOutputStream(saveFile));
-                puppetShow.writeObject(out);
-                out.close();
-                Log.d(LOG_TAG, "File written");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    public void WriteShowToZipFile(File saveFile){
-        OutputStream os;
-        ZipOutputStream zos;
-        try {
-            os = new FileOutputStream(saveFile);
-            zos = new ZipOutputStream(os);
-            byte[] bytes = puppetShow.getAsByteArray();
-            ZipEntry entry = new ZipEntry("puppet_show");
-            zos.putNextEntry(entry);
-            zos.write(bytes);
-            zos.closeEntry();
-            entry = new ZipEntry("audio");
-            zos.putNextEntry(entry);
-            BufferedInputStream is = new BufferedInputStream(new FileInputStream(audioFilePath));
-            bytes = new byte[1024 * 16];
-            while (is.read(bytes) != -1){
-                zos.write(bytes);
-            }
-            zos.closeEntry();
-            zos.close();
-        } catch (IOException e){e.printStackTrace();}
-    }
-    public void WriteShowToOutputStream(OutputStream os){
-        ZipOutputStream zos;
-        try {
-            zos = new ZipOutputStream(os);
-            byte[] bytes = puppetShow.getAsByteArray();
-            ZipEntry entry = new ZipEntry("puppet_show");
-            zos.putNextEntry(entry);
-            zos.write(bytes);
-            zos.closeEntry();
-            entry = new ZipEntry("audio");
-            zos.putNextEntry(entry);
-            BufferedInputStream is = new BufferedInputStream(new FileInputStream(audioFilePath));
-            bytes = new byte[1024 * 16];
-            while (is.read(bytes) != -1){
-                zos.write(bytes);
-            }
-            zos.closeEntry();
-            zos.close();
-            os.close();
-        } catch (IOException e){e.printStackTrace();}
-    }
-    public void LoadShow(File file){
-        ObjectInputStream input;
-        puppetShow = new PuppetShow(context);
-        try {
-            input = new ObjectInputStream(new FileInputStream(file));
-            puppetShow.readObject(input);
-            input.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
     public void LoadShowFromZipFile(File file){
         try {
             InputStream is = new FileInputStream(file);
@@ -279,7 +92,6 @@ public class PuppetShowRecorder {
             is.close();
         } catch (IOException | ClassNotFoundException e) {e.printStackTrace();}
     }
-
     public long getLength(){
         showLength = -1;
         int i = 0;
@@ -295,7 +107,6 @@ public class PuppetShowRecorder {
         Log.i(LOG_TAG, "Show length: " + showLength);
         return showLength;
     }
-
     public long getTimeFromStartMillis(){
         return SystemClock.elapsedRealtime() - startMillis;
     }
@@ -303,8 +114,10 @@ public class PuppetShowRecorder {
     // Play flow
     public boolean prepareToPlay(){
         if (puppetShow != null){
+            pausePoint = 0;
             // Set the width/height
             Point newDimensions = Utils.getScaledDimension(new Point(puppetShow.origWidth, puppetShow.origHeight), new Point(stage.getWidth(), stage.getHeight()));
+            Log.d(LOG_TAG, "puppetShow.origWidth = " + puppetShow.origWidth);
             RelativeLayout.LayoutParams stageParams = (RelativeLayout.LayoutParams)stage.getLayoutParams();
             stageParams.width = newDimensions.x;
             stageParams.height = newDimensions.y;
@@ -339,6 +152,7 @@ public class PuppetShowRecorder {
             frameSequence = puppetShow.getFrameSequence();
             getLength();
 
+            stage.setAlpha(0f);
             stage.setVisibility(View.VISIBLE);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
             set.setTarget(stage);
@@ -369,25 +183,48 @@ public class PuppetShowRecorder {
             return false;
     }
     public void Play(){
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            // Start playing audio
-            mPlayer = new MediaPlayer();
-            try {
-                mPlayer.setDataSource(audioFilePath);
-                mPlayer.prepare();
-                mPlayer.start();
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+        if (!isPaused) {
+            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                // Start playing audio
+                mPlayer = new MediaPlayer();
+                try {
+                    mPlayer.setDataSource(audioFilePath);
+                    mPlayer.prepare();
+                    mPlayer.start();
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+                }
+                // Start playing animation
+                isPlaying = true;
+                playLoop = new PlayLoop();
+                new Thread(playLoop).start();
+            } else {
+                Toast.makeText(context, "Unable to gain audio focus", Toast.LENGTH_SHORT).show();
             }
-            // Start playing animation
+        } else {
+            isPaused = false;
+            isPlaying = true;
             playLoop = new PlayLoop();
             new Thread(playLoop).start();
-            isPlaying = true;
-        } else {
-            Toast.makeText(context, "Unable to gain audio focus", Toast.LENGTH_SHORT).show();
+            mPlayer.start();
         }
+    }
+    public boolean isPlaying(){ return isPlaying; }
+    public long Pause(){
+        if (isPlaying){
+            pausePoint = getTimeFromStartMillis();
+            mPlayer.pause();
+            isPlaying = false;
+            isPaused = true;
+            return pausePoint;
+        } else {
+            return 0;
+        }
+    }
+    public void PlayFrom(int timeMillis){
+
     }
     public void Stop(){
         // Stop media player
@@ -398,8 +235,6 @@ public class PuppetShowRecorder {
 
         // Stop animation loop
         isPlaying = false;
-        isRecording = false;
-        stopCounterThread = true;
     }
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
@@ -419,10 +254,17 @@ public class PuppetShowRecorder {
     private class PlayLoop implements Runnable{
         @Override
         public void run(){
-            //Log.d(LOG_TAG, "Play loop started");
+            Log.d(LOG_TAG, "Play loop started");
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
-            startMillis = SystemClock.elapsedRealtime();
-            for (int i = 0; i < frameSequence.size() && isPlaying; i++) {
+            int startIndex = 0;
+            if (pausePoint > 0){
+                for (startIndex = 0; startIndex < frameSequence.size() && frameSequence.get(startIndex).time < pausePoint; startIndex++);
+                startMillis = SystemClock.elapsedRealtime() - pausePoint;
+                pausePoint = 0;
+            } else {
+                startMillis = SystemClock.elapsedRealtime();
+            }
+            for (int i = startIndex; i < frameSequence.size() && isPlaying; i++) {
                 final KeyFrame frame = frameSequence.get(i);
                 while (getTimeFromStartMillis() < frame.time && isPlaying){
                     try {
@@ -430,13 +272,11 @@ public class PuppetShowRecorder {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    Message msg = mHandler.obtainMessage(COUNTER_UPDATE);
-                    msg.sendToTarget();
                 }
                 final Puppet p = (Puppet)stage.findViewWithTag(frame.puppetId);
                 switch (frame.eventType){
                     case KeyFrame.OPEN_MOUTH_DEGREES:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 p.OpenMouth(frame.integer);
@@ -444,7 +284,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.CLOSE_MOUTH:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 p.OpenMouth(0);
@@ -452,7 +292,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.MOVEMENT:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) p
@@ -466,7 +306,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.SET_SCALE:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 p.setScaleX(frame.x * xScaleFactor);
@@ -475,7 +315,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.VISIBILITY:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 if (frame.visible)
@@ -486,7 +326,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.ROTATE:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 p.setRotation(frame.x);
@@ -494,7 +334,7 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.SET_BACKGROUND:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
                                 stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
@@ -502,28 +342,17 @@ public class PuppetShowRecorder {
                         });
                         break;
                     case KeyFrame.END:
-                        mHandler.post(new Runnable() {
+                        stage.post(new Runnable() {
                             @Override
                             public void run() {
-                                stage.removeAllViews();
+                                if (onPlayFinishedListener != null)
+                                    onPlayFinishedListener.OnPlayFinish();
                             }
                         });
-                        Message msg = mHandler.obtainMessage(COUNTER_END);
-                        msg.sendToTarget();
-                        //Log.d(LOG_TAG, "Show end time: " + frame.time);
-                        //Log.d(LOG_TAG, "Actual end time: " + getTimeFromStartMillis());
                         return;
 
                 }
             }
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    stage.removeAllViews();
-                }
-            });
-            Message msg = mHandler.obtainMessage(COUNTER_END);
-            msg.sendToTarget();
 
         }
     }

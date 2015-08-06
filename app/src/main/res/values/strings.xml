@@ -4,6 +4,7 @@
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_designer">Puppet Designer</string>
+    <string name="title_activity_player">Go Puppet Yourself Player</string>
 
     <!-- Misc string -->
     <string name="default_puppet_name">Unnamed</string>
@@ -11,11 +12,21 @@
     <string name="puppet_directory">puppets</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
     <string name="toast_oom_scaling">Out of memory, scaling image down. </string>
 
     <!-- Main Menu Popup strings-->
     <string name="share_message">Tell your friends</string>
     <string name="rate_us">Rate us</string>
+    <string name="no_puppet_show_toast">You must record a show before it can be shared</string>
+
+    <!-- FB Share Alert Dialog Strings -->
+    <string name="share_alert_message">In order to share a puppet show to Facebook, Go Puppet Yourself will create a public folder in your Google Drive in which to save the
+        necessary files.  This folder will be accessible to anyone on the web.  This folder will not be automatically removed if you uninstall the app.
+        You may view and remove the folder at anytime through your <a href="https://drive.google.com/drive/my-drive">Google Drive account</a>.
+    </string>
+    <string name="do_not_show_again">Do not show this again</string>
 
     <!-- Puppet ActionMode strings -->
     <string name="action_edit_puppet">Edit</string>
@@ -64,4 +75,30 @@
     <string name="action_magic_erase">Erase region</string>
     <string name="action_cut_path">Smart cut</string>
     <string name="action_heal">Heal</string>
+
+    <!-- AppLink HTML-->
+    <string name="app_link_html">
+        <![CDATA[
+        <html>
+        <head>
+        <meta property=\"al:android:url\" content=\"gopuppetyourself://download_link\" />
+        <meta property=\"al:android:package\" content=\"com.nakedape.gopuppetyourself\" />
+        <meta property=\"al:android:app_name\" content=\"Go Puppet Yourself!\" />
+        <meta property=\"al:web:should_fallback\" content=\"true\" />
+        <meta property=\"og:type\" content=\"website\" />
+        <meta property=\"og:url\" content=\"fb_link\" />
+        <meta property=\"og:title\" content=\"user_title\" />
+        <meta property=\"fb:app_id\" content=\"125905341083258\" />
+        <meta property=\"og:image\" content=\"https://www.googledrive.com/host/0B1yEGoIiwiA8flJyM1djU2UxNkZtMUt3UlNSc1dkcXp1RTdReXJ3RV9kaDNlVzR2NEN3YzQ/fb_share_image.jpg\" />
+        <meta property=\"og:image:width\" content=\"1200\" />
+        <meta property=\"og:image:height\" content=\"630\" />
+        </head>
+        <body style=\"background-color:purple\">
+	    <a href=\"https://play.google.com/store/apps/details?id=com.nakedape.gopuppetyourself\">Download Go Puppet Yourself</a> for Android to watch the show.<br><br>
+        <img src=\"https://www.googledrive.com/host/0B1yEGoIiwiA8flJyM1djU2UxNkZtMUt3UlNSc1dkcXp1RTdReXJ3RV9kaDNlVzR2NEN3YzQ/banana.png\">
+        </body>
+        </html>
+    ]]>
+    </string>
+
 </resources>

@@ -21,6 +21,7 @@ import java.util.ArrayList;
  * Created by Nathan on 6/26/2015.
  */
 public class PuppetShow implements Serializable {
+    transient int serializationVersion = 0;
     transient private static final String LOG_TAG = "PuppetShow";
     transient private ViewGroup stage;
     transient private String showName = "Untitled";
@@ -122,6 +123,12 @@ public class PuppetShow implements Serializable {
     public ArrayList<KeyFrame> getFrameSequence(){ return  frameSequence; }
 
     public void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeInt(serializationVersion);
+        // Serialization version 0
+        out.writeInt(origWidth);
+        out.writeInt(origHeight);
+        initialXs = new float[initialPositions.size()];
+        initialYs = new float[initialPositions.size()];
         for (int i = 0; i < initialPositions.size(); i++){
             Point p = initialPositions.get(i);
             initialXs[i] = p.x;
@@ -130,8 +137,6 @@ public class PuppetShow implements Serializable {
         out.writeObject(showName);
         out.writeObject(puppets);
         out.writeObject(frameSequence);
-        initialXs = new float[initialPositions.size()];
-        initialYs = new float[initialPositions.size()];
         out.writeObject(initialXs);
         out.writeObject(initialYs);
         out.writeObject(initOffStage);
@@ -145,6 +150,10 @@ public class PuppetShow implements Serializable {
         }
     }
     public void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+        serializationVersion = in.readInt();
+        // serialization version 0
+        origWidth = in.readInt();
+        origHeight = in.readInt();
         showName = (String)in.readObject();
         puppets = (ArrayList<byte[]>)in.readObject();
         frameSequence = (ArrayList<KeyFrame>)in.readObject();
@@ -157,6 +166,7 @@ public class PuppetShow implements Serializable {
             in.readFully(bytes);
             backgrounds.add(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
         }
+        initialPositions = new ArrayList<>(initialXs.length);
         for (int i = 0; i < initialXs.length; i++){
             initialPositions.add(new Point((int)initialXs[i], (int)initialYs[i]));
         }

@@ -52,6 +52,12 @@
                 android:maxLines="2"
                 android:maxWidth="150dp" />
         </LinearLayout>
+        <Button android:id="@+id/share_show_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="Share"
+            android:onClick="ShareButtonClick"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
