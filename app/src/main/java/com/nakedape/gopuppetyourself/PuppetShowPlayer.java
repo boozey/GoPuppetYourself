@@ -182,6 +182,14 @@ public class PuppetShowPlayer {
         } else
             return false;
     }
+    public void release(){
+        isPlaying = false;
+        if (mPlayer != null){
+            if (mPlayer.isPlaying()) mPlayer.stop();
+            mPlayer.release();
+            mPlayer = null;
+        }
+    }
     public void Play(){
         if (!isPaused) {
             AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -223,7 +231,71 @@ public class PuppetShowPlayer {
             return 0;
         }
     }
-    public void PlayFrom(int timeMillis){
+    public void PlayFrom(long timeMillis){
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            // Start playing audio
+            mPlayer = new MediaPlayer();
+            try {
+                mPlayer.setDataSource(audioFilePath);
+                mPlayer.prepare();
+                mPlayer.seekTo((int)timeMillis);
+                mPlayer.start();
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "MediaPlayer.prepare() failed");
+            }
+            // Start playing animation
+            isPlaying = true;
+            isPaused = true;
+            pausePoint = timeMillis;
+            playLoop = new PlayLoop();
+            new Thread(playLoop).start();
+        } else {
+            Toast.makeText(context, "Unable to gain audio focus", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void seekTo(long timeMillis){
+        for (int i = 0; i < frameSequence.size() && frameSequence.get(i).time < timeMillis; i++) {
+            final KeyFrame frame = frameSequence.get(i);
+            Puppet p = (Puppet)stage.findViewWithTag(frame.puppetId);
+            switch (frame.eventType){
+                case KeyFrame.OPEN_MOUTH_DEGREES:
+                    p.OpenMouth(frame.integer);
+                    break;
+                case KeyFrame.CLOSE_MOUTH:
+                    p.OpenMouth(0);
+                    break;
+                case KeyFrame.MOVEMENT:
+                    RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) p
+                            .getLayoutParams();
+                    layoutParams.leftMargin = Math.round(frame.x * xScaleFactor);
+                    layoutParams.topMargin = Math.round(frame.y * yScaleFactor);
+                    layoutParams.rightMargin = -250;
+                    layoutParams.bottomMargin = -250;
+                    p.setLayoutParams(layoutParams);
+                    break;
+                case KeyFrame.SET_SCALE:
+                    p.setScaleX(frame.x * xScaleFactor);
+                    p.setScaleY(frame.y * yScaleFactor);
+                    break;
+                case KeyFrame.VISIBILITY:
+                    if (frame.visible)
+                        p.setVisibility(View.VISIBLE);
+                    else
+                        p.setVisibility(View.GONE);
+                    break;
+                case KeyFrame.ROTATE:
+                    p.setRotation(frame.x);
+                    break;
+                case KeyFrame.SET_BACKGROUND:
+                    stage.setBackground(new BitmapDrawable(context.getResources(), puppetShow.getBackground(frame.integer)));
+                    break;
+                case KeyFrame.END:
+                    if (onPlayFinishedListener != null)
+                        onPlayFinishedListener.OnPlayFinish();
+            }
+        }
 
     }
     public void Stop(){
