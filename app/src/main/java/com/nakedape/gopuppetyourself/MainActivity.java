@@ -144,42 +144,9 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     private float prevX, prevY, x1Start, y1Start, x2Start, y2Start;
     private Puppet selectedPuppet;
     private boolean isBackstage = false;
-    private File storageDir, showDir, backgroundDir;
+    private File storageDir, showDir, backgroundDir, showFile;
     private HashSet<String> puppetsOnStage;
     private PuppetShowRecorder showRecorder;
-    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what){
-                case PuppetShowRecorder.COUNTER_UPDATE:
-                    progressBar.setProgress((int)showRecorder.getTimeFromStartMillis());
-                    break;
-                case PuppetShowRecorder.COUNTER_END:
-                    mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_plain));
-                    Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
-                    fadeOut.setAnimationListener(new Animation.AnimationListener() {
-                        @Override
-                        public void onAnimationStart(Animation animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animation animation) {
-                            progressBar.setVisibility(View.GONE);
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animation animation) {
-
-                        }
-                    });
-                    progressBar.startAnimation(fadeOut);
-                    SwitchToRecordStage();
-                    mainControlFadeOut(1000);
-                    isPlaying = false;
-            }
-        }
-    };
     private SeekBar progressBar;
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
@@ -262,7 +229,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
 
         // Prepare show recorder
         showRecorder = new PuppetShowRecorder(context, stage);
-        showRecorder.setHandler(mHandler);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Prepare shared preferences
@@ -428,8 +394,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                     savedData.puppetShow = showRecorder.getShow();
                 }
             }
-        } else {
-            mHandler.removeCallbacksAndMessages(null);
         }
     }
     @Override
@@ -459,7 +423,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                 break;
             case R.id.action_test_show_load:
                 showRecorder = new PuppetShowRecorder(context, stage);
-                showRecorder.setHandler(mHandler);
                 File file = new File(showDir, "puppet_show_test.show");
                 Log.d(LOG_TAG, "Show size: " + file.length());
                 //showRecorder.LoadShow(file);
@@ -772,13 +735,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                 secondControlsFadeIn();
                 return true;
             case MotionEvent.ACTION_UP:
-                if (isPlaying) {
-                    StopPlay();
-                    secondControlsFadeOut(1000);
-                    mainControlFadeOut(1000);
-                    isControlPressed = false;
-                    return true;
-                }
                 playButton.getGlobalVisibleRect(hitRect);
                 if (hitRect.contains((int) motionEvent.getRawX(), (int) motionEvent.getRawY())) {
                     secondControlsFadeOut(1000);
@@ -1074,7 +1030,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     public void RecordClick(View v){
         if (!isRecording) {
             showRecorder = new PuppetShowRecorder(context, stage);
-            showRecorder.setHandler(mHandler);
             showRecorder.prepareToRecord();
             showRecorder.RecordStart();
             progressBar.setProgress(progressBar.getMax());
@@ -1092,123 +1047,22 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             mainControlFadeOut(1000);
             secondControlsFadeOut(1000);
             isRecording = false;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    showFile = new File(showDir, "recording.show");
+                    if (showFile.isFile())
+                        showFile.delete();
+                    showRecorder.WriteShowToZipFile(showFile);
+                }
+            }).start();
         }
     }
     public void PlayClick(View v){
-        if (showRecorder != null){
-            if (showRecorder.isRecording())
-                showRecorder.RecordStop();
-            SwitchToShowStage(); // Calls PlayShow
-        }
-    }
-    private void PlayShow(){
-        if (showRecorder.prepareToPlay()) {
-            progressBar.setMax((int)showRecorder.getLength());
-            progressBar.setVisibility(View.VISIBLE);
-            Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            progressBar.startAnimation(fadeIn);
-            fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
-            mainControlButton.setBackground(getResources().getDrawable(R.drawable.ic_av_stop_plain));
-            mainControlButton.startAnimation(fadeIn);
-            showRecorder.Play();
-            isPlaying = true;
-        } else {
-            SwitchToRecordStage();
-            isPlaying = false;
-            Toast.makeText(context, "Error playing show", Toast.LENGTH_SHORT).show();
-        }
-    }// Called from stage animation listener
-    private void SwitchToShowStage(){
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int)(rootLayout.getWidth()), rootLayout.getHeight());
-        params.addRule(RelativeLayout.CENTER_IN_PARENT);
-        showStage.setLayoutParams(params);
-        //showStage.setLayoutParams(stage.getLayoutParams());
-        showStage.setAlpha(0f);
-        showStage.setVisibility(View.VISIBLE);
-        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
-        set.setTarget(stage);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                //rootLayout.removeView(stage);
-                //rootLayout.addView(showStage, 0);
-                stage.setVisibility(View.GONE);
-                showRecorder.setStage(showStage);
-                PlayShow();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        set.start();
-    }
-    private void SwitchToRecordStage(){
-        AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_out);
-        set.setTarget(showStage);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                showStage.setVisibility(View.GONE);
-                stage.setVisibility(View.VISIBLE);
-                AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
-                set.setTarget(stage);
-                set.start();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
-        set.start();
-    } // Called from mHandler when show ends
-    public void StopPlay(){
-        if (isPlaying){
-            showRecorder.Stop();
-            SwitchToRecordStage();
-            Animation fadeOut = AnimationUtils.loadAnimation(context, R.anim.anim_pause1000_fade_out);
-            fadeOut.setAnimationListener(new Animation.AnimationListener() {
-                @Override
-                public void onAnimationStart(Animation animation) {
-
-                }
-
-                @Override
-                public void onAnimationEnd(Animation animation) {
-                    progressBar.setVisibility(View.GONE);
-                }
-
-                @Override
-                public void onAnimationRepeat(Animation animation) {
-
-                }
-            });
-            progressBar.startAnimation(fadeOut);
-            mainControlFadeOut(1000);
-            secondControlsFadeOut(1000);
-            isPlaying = false;
+        if (showFile != null) {
+            Intent intent = new Intent(this, PlayerActivity.class);
+            intent.putExtra(PlayerActivity.SHOW_PATH, showFile.getAbsolutePath());
+            startActivity(intent);
         }
     }
 
@@ -2414,7 +2268,7 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                             final Puppet p = new Puppet(context, null);
                             Utils.ReadPuppetFromFile(p, f);
                             if (stage.findViewWithTag(p.getName()) == null) {
-                                mHandler.post(new Runnable() {
+                                runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
                                         puppetListAdapter.add(f);

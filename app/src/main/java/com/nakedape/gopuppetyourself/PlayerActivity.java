@@ -34,6 +34,8 @@ import bolts.AppLinks;
 public class PlayerActivity extends Activity {
     private static String LOG_TAG = "Player Activity";
 
+    public final static String SHOW_PATH = "com.nakedape.playeractivity.SHOW_PATH";
+
     private Context mContext;
     private RelativeLayout playerStage;
     private ImageButton playButton;
@@ -56,6 +58,7 @@ public class PlayerActivity extends Activity {
         AdView mAdView = (AdView) findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder()
                 .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                 .build();
         mAdView.loadAd(adRequest);
 
@@ -143,6 +146,23 @@ public class PlayerActivity extends Activity {
                 };
                 registerReceiver(downloadReceiver, filter);
 
+            } else {
+                String showPath = getIntent().getStringExtra(SHOW_PATH);
+                if (showPath != null){
+                    puppetShowFile = new File(showPath);
+                    savedData.puppetShowFile = puppetShowFile;
+                    playerStage.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            ImageButton playButton = (ImageButton) findViewById(R.id.player_play_button);
+                            playButton.setAlpha(0f);
+                            playButton.setVisibility(View.VISIBLE);
+                            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.pop_in);
+                            set.setTarget(playButton);
+                            set.start();
+                        }
+                    });
+                }
             }
         }
     }
