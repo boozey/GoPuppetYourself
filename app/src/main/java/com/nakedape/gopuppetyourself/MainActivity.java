@@ -141,17 +141,14 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     private RelativeLayout stage;
     private int dx;
     private int dy;
-    private float prevX, prevY, x1Start, y1Start, x2Start, y2Start;
     private Puppet selectedPuppet;
     private boolean isBackstage = false;
     private File storageDir, showDir, backgroundDir, showFile;
     private HashSet<String> puppetsOnStage;
     private PuppetShowRecorder showRecorder;
-    private SeekBar progressBar;
     private int nextPuppetId = 0;
     private MainActivityDataFrag savedData;
     private ImageButton mainControlButton, recordButton, playButton, libraryButton, backgroundLibraryButton, menuButton;
-    private PopupMenu puppetMenu;
     private RelativeLayout rootLayout;
     private boolean isControlPressed = false;
     private boolean isSecondControlShowing = false;
@@ -159,15 +156,11 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     private boolean isPlaying = false;
     private boolean isRecording = false;
     private boolean isBackgroundLibraryOpen = false;
-    private boolean isScaling = false;
     private float lastScaleFactor = 1;
-    private int lastRotation = 0;
-    private boolean scaleUp, scaleDown;
     private DisplayMetrics metrics;
     private String cameraCapturePath;
     private PuppetListAdapter puppetListAdapter;
     private BitmapFileListAdapter backgroundListAdapter;
-    private RelativeLayout showStage;
     private boolean isFirstRun;
     private RotationGestureDetector mRotationDetector;
     private ScaleGestureDetector mScaleDetector;
@@ -186,11 +179,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     final HttpTransport transport = AndroidHttp.newCompatibleTransport();
     final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
-    // Gesture fields
-    private GestureDetector gestureDetector;
-    private boolean flingRight, flingLeft, flingUp, flingDown, longPress, scrollLeft, scrollRight, scrollUp, scrollDown;
-    private float scrollAmount;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -200,9 +188,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         metrics = getResources().getDisplayMetrics();
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
         stage = (RelativeLayout)findViewById(R.id.stage);
-        showStage = (RelativeLayout)findViewById(R.id.show_stage);
-        progressBar = (SeekBar)findViewById(R.id.progress_bar);
-        progressBar.setVisibility(View.GONE);
         mainControlButton = (ImageButton)findViewById(R.id.bottom_left_button);
         mainControlButton.setOnTouchListener(mainControlTouchListener);
         recordButton = (ImageButton)findViewById(R.id.record_button);
@@ -214,11 +199,9 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         backgroundLibraryButton = (ImageButton)findViewById(R.id.background_library_button);
         backgroundLibraryButton.setVisibility(View.GONE);
         menuButton = (ImageButton)findViewById(R.id.main_nav_menu_button);
-        menuButton.setVisibility(View.GONE);
-        gestureDetector = new GestureDetector(context, new MyGestureListener());
         mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 
-        // Hid the Action Bar if present
+        // Hide the Action Bar if present
         ActionBar actionBar = getActionBar();
         if (actionBar != null){
             actionBar.hide();
@@ -234,7 +217,7 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         // Prepare shared preferences
         SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
 
-        // Prepare puppet storage directory for access
+        // Prepare puppet storage directories for access
         if (Utils.isExternalStorageWritable()){
             storageDir = new File(getExternalFilesDir(null), getResources().getString(R.string.puppet_directory));
             if (!storageDir.exists())
@@ -618,19 +601,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         });
     }
 
-    // Main menu methods
-    public void MenuClick(View v){
-        PopupMenu menu = new PopupMenu(context, menuButton);
-        menu.inflate(R.menu.menu_main);
-        menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                return false;
-            }
-        });
-        menu.show();
-    }
-
     // Performance Methods
     private View.OnTouchListener headTouchListener = new View.OnTouchListener() {
         @Override
@@ -1004,27 +974,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         });
         mainControlButton.startAnimation(fade_out);
     }
-    private void progressBarFadeOut(){
-        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.anim_pause1000_fade_out);
-        fade_out.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                //progressBar.setBackground(new ColorDrawable(Color.TRANSPARENT));
-                progressBar.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-        progressBar.startAnimation(fade_out);
-    }
 
     // Record/play show methods
     public void RecordClick(View v){
@@ -1032,7 +981,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             showRecorder = new PuppetShowRecorder(context, stage);
             showRecorder.prepareToRecord();
             showRecorder.RecordStart();
-            progressBar.setProgress(progressBar.getMax());
             Animation fadeIn = AnimationUtils.loadAnimation(context, R.anim.anim_fade_in);
             mainControlButton.setBackground(getResources().getDrawable(R.drawable.record_background));
             mainControlButton.startAnimation(fadeIn);
@@ -1173,6 +1121,9 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     }
 
     // Main popup menu methods
+    public void MenuClick(View v){
+        ShowPopupMenu();
+    }
     private void ShowPopupMenu(){
         final View layout = getLayoutInflater().inflate(R.layout.about_popup, null);
         // Prepare popup window
@@ -1415,37 +1366,39 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                         return;
                     }
                     final DriveContents driveContents = result.getDriveContents();
-
                     // Perform I/O off the UI thread.
                     new Thread() {
                         @Override
                         public void run() {
                             // write content to DriveContents
-                            OutputStream outputStream = driveContents.getOutputStream();
-                            showRecorder.WriteShowToOutputStream(outputStream);
-                            try {
-                                outputStream.close();
-                            } catch (IOException e) { e.printStackTrace(); }
-
-                            // Generate unique file name using date/time
-                            Calendar c = Calendar.getInstance();
-                            puppetShowFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
-                                    c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".show";
-
-                            MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                                    .setTitle(puppetShowFileName)
-                                    .setMimeType("application/zip")
-                                    .build();
-
-                            // create a file in app web folder
-                            if (driveFolderId != null)
-                            Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
-                                    .createFile(mGoogleApiClient, changeSet, driveContents)
-                                    .setResultCallback(showFileCallback);
+                            writeShowToDrive(driveContents);
                         }
                     }.start();
                 }
             };
+    private void writeShowToDrive(DriveContents driveContents){
+        OutputStream outputStream = driveContents.getOutputStream();
+        showRecorder.WriteShowToOutputStream(outputStream);
+        try {
+            outputStream.close();
+        } catch (IOException e) { e.printStackTrace(); }
+
+        // Generate unique file name using date/time
+        Calendar c = Calendar.getInstance();
+        puppetShowFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
+                c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".show";
+
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                .setTitle(puppetShowFileName)
+                .setMimeType("application/zip")
+                .build();
+
+        // create a file in app web folder
+        if (driveFolderId != null)
+            Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
+                    .createFile(mGoogleApiClient, changeSet, driveContents)
+                    .setResultCallback(showFileCallback);
+    }
     final private ResultCallback<DriveFolder.DriveFileResult> showFileCallback = new
             ResultCallback<DriveFolder.DriveFileResult>() {
                 @Override
@@ -1524,43 +1477,45 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                         return;
                     }
                     final DriveContents driveContents = result.getDriveContents();
-
                     // Perform I/O off the UI thread.
                     new Thread() {
                         @Override
                         public void run() {
-                            // Generate unique file name using date/time
-                            Calendar c = Calendar.getInstance();
-                            appLinkFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
-                                    c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".html";
-                            // write content to DriveContents
-                            OutputStream outputStream = driveContents.getOutputStream();
-                            Writer writer = new OutputStreamWriter(outputStream);
-                            try {
-                                SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-                                appLink = settings.getString(DRIVE_FOLDER_WEBLINK, "") + appLinkFileName;
-                                String html = getString(R.string.app_link_html);
-                                html = html.replace("download_link", showDownloadLink);
-                                html = html.replace("fb_link", appLink);
-                                html = html.replace("user_title", "Go Puppet Yourself! Puppet Show");
-                                writer.write(html);
-                                writer.close();
-                            } catch (IOException e) { e.printStackTrace(); }
-
-                            MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                                    .setTitle(appLinkFileName)
-                                    .setMimeType("text/html")
-                                    .build();
-
-                            // create a file in web folder
-                            if (driveFolderId != null)
-                                Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
-                                        .createFile(mGoogleApiClient, changeSet, driveContents)
-                                        .setResultCallback(appLinkFileCallback);
+                            writeAppLinkToDrive(driveContents);
                         }
                     }.start();
                 }
             };
+    private void writeAppLinkToDrive(DriveContents driveContents){
+        // Generate unique file name using date/time
+        Calendar c = Calendar.getInstance();
+        appLinkFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
+                c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".html";
+        // write content to DriveContents
+        OutputStream outputStream = driveContents.getOutputStream();
+        Writer writer = new OutputStreamWriter(outputStream);
+        try {
+            SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
+            appLink = settings.getString(DRIVE_FOLDER_WEBLINK, "") + appLinkFileName;
+            String html = getString(R.string.app_link_html);
+            html = html.replace("download_link", showDownloadLink);
+            html = html.replace("fb_link", appLink);
+            html = html.replace("user_title", "Go Puppet Yourself! Puppet Show");
+            writer.write(html);
+            writer.close();
+        } catch (IOException e) { e.printStackTrace(); }
+
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                .setTitle(appLinkFileName)
+                .setMimeType("text/html")
+                .build();
+
+        // create a file in web folder
+        if (driveFolderId != null)
+            Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
+                    .createFile(mGoogleApiClient, changeSet, driveContents)
+                    .setResultCallback(appLinkFileCallback);
+    }
     final private ResultCallback<DriveFolder.DriveFileResult> appLinkFileCallback = new
             ResultCallback<DriveFolder.DriveFileResult>() {
                 @Override
@@ -1655,7 +1610,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                 case R.id.action_puppet_scale:
                     selectedPuppet.setOnTouchListener(scaleListener);
                     lastScaleFactor = selectedPuppet.getScaleX();
-                    isScaling = true;
                     return true;
                 case R.id.action_puppet_flip_horz:
                     if (isRecording)
@@ -1722,7 +1676,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                     if (!isControlPressed) {
                         GoToPerformance(null);
                     }
-                    isScaling = false;
                     return true;
             }
             return false;
@@ -1753,7 +1706,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                     if (!isControlPressed) {
                         GoToPerformance(null);
                     }
-                    isScaling = false;
                     return true;
             }
             return false;
@@ -2595,76 +2547,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         dialog.show();
     }
 
-    class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
-        private static final String DEBUG_TAG = "Gestures";
-
-        @Override
-        public boolean onDown(MotionEvent event) {
-            Log.d(DEBUG_TAG,"onDown: " + event.toString());
-            flingRight = false;
-            flingLeft = false;
-            flingDown = false;
-            flingUp = false;
-            scrollDown = false;
-            scrollUp = false;
-            scrollLeft = false;
-            scrollRight = false;
-            scaleDown = false;
-            scaleUp = false;
-            return true;
-        }
-
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY){
-            Log.d(DEBUG_TAG, "onScroll: " + e1.toString()+e2.toString());
-            if (Math.abs(distanceX) >= Math.abs(distanceY)) {
-                if (distanceX > 0)
-                    scrollRight = true;
-                else
-                    scrollLeft = true;
-            } else {
-                if (distanceY > 0)
-                    scrollDown = true;
-                else
-                    scrollUp = true;
-            }
-            float dX = e2.getRawX() - e1.getRawX();
-            float dY = e2.getRawY() - e1.getRawY();
-            scrollAmount = (float)Math.sqrt(dX*dX + dY*dY);
-            if (dX < 0 && dY < 0) {
-                scrollAmount = -scrollAmount;
-            }
-            Log.d(LOG_TAG, "scroll amount = " + scrollAmount);
-            return true;
-        }
-
-        @Override
-        public boolean onFling(MotionEvent event1, MotionEvent event2,
-                               float velocityX, float velocityY) {
-            Log.d(DEBUG_TAG, "onFling: " + event1.toString()+event2.toString());
-            if (Math.abs(velocityX) >= Math.abs(velocityY)) {
-                Log.d(LOG_TAG, "horizontal fling");
-                if (velocityX > 0)
-                    flingRight = true;
-                else if (velocityX < 0)
-                    flingLeft = true;
-            }
-            else {
-                Log.d(LOG_TAG, "vertical fling");
-                if (velocityY > 0)
-                    flingUp = true;
-                else if (velocityY < 0)
-                    flingDown = true;
-            }
-            return true;
-        }
-
-        @Override
-        public void onLongPress(MotionEvent event) {
-            Log.d(DEBUG_TAG, "onLongPress: " + event.toString());
-            longPress = true;
-        }
-    }
     private class PuppetListAdapter extends BaseAdapter {
         private ArrayList<Puppet> puppets;
         private LayoutInflater mInflater;

@@ -8,7 +8,6 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
         android:id="@+id/stage"
         android:background="#8B37AF">
 
@@ -89,14 +88,4 @@
         android:background="@drawable/ic_image_photo_library"
         android:onClick="BackgroundGalleryButtonClick"/>
 
-    <SeekBar
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/bottom_left_button"
-        android:layout_toRightOf="@id/bottom_left_button"
-        android:paddingBottom="18dp"
-        android:layout_marginEnd="15dp"
-        android:layout_marginRight="15dp"
-        android:layout_alignParentBottom="true"
-        android:id="@+id/progress_bar"/>
 </RelativeLayout>
