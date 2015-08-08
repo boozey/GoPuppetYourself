@@ -651,76 +651,76 @@ public class DesignerActivity extends Activity {
         }
     }
     public void ColorSelect(View v){
-        View brushSize = findViewById(R.id.brush_size);
+        View brushSize = mActionMode.getCustomView().findViewById(R.id.brush_size);
         colorSelection = v.getId();
         switch (colorSelection){
             case R.id.black:
-                designer.setColor(getResources().getColor(R.color.black));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.black_oval));
+                designer.setColor(getResources().getColor(R.color.black));
                 break;
             case R.id.blue:
-                designer.setColor(getResources().getColor(R.color.blue));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.blue_oval));
+                designer.setColor(getResources().getColor(R.color.blue));
                 break;
             case R.id.brown:
-                designer.setColor(getResources().getColor(R.color.brown));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.brown_oval));
+                designer.setColor(getResources().getColor(R.color.brown));
                 break;
             case R.id.green:
-                designer.setColor(getResources().getColor(R.color.green));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.green_oval));
+                designer.setColor(getResources().getColor(R.color.green));
                 break;
             case R.id.light_blue:
-                designer.setColor(getResources().getColor(R.color.light_blue));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.light_blue_oval));
+                designer.setColor(getResources().getColor(R.color.light_blue));
                 break;
             case R.id.light_brown:
-                designer.setColor(getResources().getColor(R.color.light_brown));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.light_brown_oval));
+                designer.setColor(getResources().getColor(R.color.light_brown));
                 break;
             case R.id.light_green:
-                designer.setColor(getResources().getColor(R.color.light_green));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.light_green_oval));
+                designer.setColor(getResources().getColor(R.color.light_green));
                 break;
             case R.id.orange:
-                designer.setColor(getResources().getColor(R.color.orange));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.orange_oval));
+                designer.setColor(getResources().getColor(R.color.orange));
                 break;
             case R.id.pink:
-                designer.setColor(getResources().getColor(R.color.pink));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.pink_oval));
+                designer.setColor(getResources().getColor(R.color.pink));
                 break;
             case R.id.red:
-                designer.setColor(getResources().getColor(R.color.red));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.red_oval));
+                designer.setColor(getResources().getColor(R.color.red));
                 break;
             case R.id.violet:
-                designer.setColor(getResources().getColor(R.color.violet));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.violet_oval));
+                designer.setColor(getResources().getColor(R.color.violet));
                 break;
             case R.id.white:
-                designer.setColor(getResources().getColor(R.color.white));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.white_oval));
+                designer.setColor(getResources().getColor(R.color.white));
                 break;
             case R.id.yellow:
-                designer.setColor(getResources().getColor(R.color.yellow));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.yellow_oval));
+                designer.setColor(getResources().getColor(R.color.yellow));
                 break;
             case R.id.indigo:
-                designer.setColor(getResources().getColor(R.color.indigo));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.indigo_oval));
+                designer.setColor(getResources().getColor(R.color.indigo));
                 break;
             case R.id.light_grey:
-                designer.setColor(getResources().getColor(R.color.light_grey));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.light_grey_oval));
+                designer.setColor(getResources().getColor(R.color.light_grey));
                 break;
             case R.id.dark_grey:
-                designer.setColor(getResources().getColor(R.color.dark_grey));
                 brushSize.setBackground(getResources().getDrawable(R.drawable.dark_grey_oval));
+                designer.setColor(getResources().getColor(R.color.dark_grey));
                 break;
             case R.id.eraser:
-                designer.setEraseMode(true);
                 brushSize.setBackground(getResources().getDrawable(R.drawable.dashed_oval));
+                designer.setEraseMode(true);
                 break;
         }
         cancelPopup();
