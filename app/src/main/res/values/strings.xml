@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Go Puppet Yourself!</string>
     <string name="facebook_app_id">125905341083258</string>
+    <string name="player_banner_ad_id">ca-app-pub-4640479150069852/8407915527</string>
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_designer">Puppet Designer</string>

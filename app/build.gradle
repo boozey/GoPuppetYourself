@@ -41,4 +41,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-base:7.5.0'
     compile 'com.google.android.gms:play-services-drive:7.5.0'
     compile 'com.google.android.gms:play-services-plus:7.5.0'
+    compile 'com.google.android.gms:play-services-ads:7.5.0'
 }

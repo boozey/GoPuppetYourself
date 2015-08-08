@@ -24,6 +24,8 @@ import android.widget.RelativeLayout;
 
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 
 import java.io.File;
 
@@ -49,6 +51,13 @@ public class PlayerActivity extends Activity {
         mContext = this;
         playerStage = (RelativeLayout)findViewById(R.id.player_stage);
         playButton = (ImageButton) findViewById(R.id.player_play_button);
+
+        // Initialize banner ad
+        AdView mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                .build();
+        mAdView.loadAd(adRequest);
 
         // Set volume control
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
