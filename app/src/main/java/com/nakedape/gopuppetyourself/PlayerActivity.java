@@ -23,6 +23,7 @@ import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
 import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
 
 import java.io.File;
 
@@ -135,6 +136,20 @@ public class PlayerActivity extends Activity {
 
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Logs 'install' and 'app activate' App Events to Facebook.
+        //AppEventsLogger.activateApp(this);
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        // Logs 'app deactivate' App Event to Facebook.
+        //AppEventsLogger.deactivateApp(this);
     }
 
     @Override
