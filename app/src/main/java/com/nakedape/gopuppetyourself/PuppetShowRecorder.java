@@ -4,7 +4,10 @@ import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
@@ -273,6 +276,25 @@ public class PuppetShowRecorder {
             zis.close();
             is.close();
         } catch (IOException | ClassNotFoundException e) {e.printStackTrace();}
+    }
+    public Bitmap getScreenShot(){
+        if (puppetShow != null) {
+            int width = 1200, height = 630;
+            Bitmap image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(image);
+            if (puppetShow.backgroundCount() > 0) {
+                Matrix m = new Matrix();
+                m.setScale((float)width / puppetShow.getBackground(0).getWidth(), (float)height / puppetShow.getBackground(0).getHeight());
+                canvas.drawBitmap(puppetShow.getBackground(0), m, null);
+            }
+            if (puppetShow.getPuppets().size() > 0) {
+                Bitmap puppetThumb = puppetShow.getPuppet(0).getThumbnail();
+                canvas.drawBitmap(puppetThumb, (width - puppetThumb.getWidth()) / 2, (height - puppetThumb.getHeight()) / 2, null);
+            }
+            return image;
+        } else {
+            return Utils.decodeSampledBitmapFromResource(context.getResources(), R.drawable.fb_share_image, 600, 315);
+        }
     }
 
     public long getLength(){
