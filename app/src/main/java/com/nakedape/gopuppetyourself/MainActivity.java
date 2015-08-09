@@ -14,7 +14,6 @@ import android.content.ClipDescription;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -29,9 +28,6 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
@@ -39,8 +35,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.DragEvent;
-import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -53,22 +47,18 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -78,39 +68,27 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import com.facebook.FacebookSdk;
-import com.facebook.share.model.AppInviteContent;
 import com.facebook.share.model.ShareLinkContent;
-import com.facebook.share.widget.AppInviteDialog;
-import com.facebook.share.widget.LikeView;
-import com.facebook.share.widget.ShareButton;
 
 import com.facebook.share.widget.ShareDialog;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.DriveContents;
-import com.google.android.gms.drive.DriveFile;
-import com.google.android.gms.drive.DriveFolder;
-import com.google.android.gms.drive.DriveId;
-import com.google.android.gms.drive.MetadataChangeSet;
-import com.google.android.gms.plus.Plus;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 
 import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.ParentReference;
 import com.google.api.services.drive.model.Permission;
 
 import android.accounts.AccountManager;
 
-public class MainActivity extends Activity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks{
+public class MainActivity extends Activity {
 
     private static String LOG_TAG = "GoPuppetYourself";
 
@@ -134,7 +112,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
-    static final int RESOLVE_CONNECTION_REQUEST_CODE = 1003;
     private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY };
 
     private Context context;
@@ -143,7 +120,7 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     private int dy;
     private Puppet selectedPuppet;
     private boolean isBackstage = false;
-    private File storageDir, showDir, backgroundDir, showFile;
+    private File storageDir, showDir, backgroundDir, showFile, thumbFile;
     private HashSet<String> puppetsOnStage;
     private PuppetShowRecorder showRecorder;
     private int nextPuppetId = 0;
@@ -165,17 +142,13 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     private RotationGestureDetector mRotationDetector;
     private ScaleGestureDetector mScaleDetector;
     private ActionMode puppetActionMode;
-    private DriveFile showDriveFile;
-    private String showDownloadLink;
+    private String showDownloadLink, thumbLink;
     private String appLink;
-    private DriveId driveFolderId;
     private boolean restartFbShareFlow;
-    private String puppetShowFileName, appLinkFileName;
 
     // Google Api fields
     com.google.api.services.drive.Drive mService;
     GoogleAccountCredential credential;
-    GoogleApiClient mGoogleApiClient;
     final HttpTransport transport = AndroidHttp.newCompatibleTransport();
     final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
@@ -343,8 +316,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     @Override
     protected void onStart() {
         super.onStart();
-        if (mGoogleApiClient != null)
-            mGoogleApiClient.connect();
     }
     @Override
     protected void onResume(){
@@ -362,8 +333,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     @Override
     protected void onStop(){
         super.onStop();
-        if (mGoogleApiClient != null)
-            mGoogleApiClient.disconnect();
         if (!isFinishing()){ // Save instance data for activity restart
             // Save puppet positions
             for (int i = 0; i < stage.getChildCount(); i++){
@@ -377,6 +346,9 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                     savedData.puppetShow = showRecorder.getShow();
                 }
             }
+        } else {
+            if (showFile != null && showFile.exists()) showFile.delete();
+            if (thumbFile != null && thumbFile.exists()) thumbFile.delete();
         }
     }
     @Override
@@ -449,6 +421,8 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
+                        if (restartFbShareFlow)
+                            startFbShareFlow();
                     }
                 } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(context, "Account unspecified.", Toast.LENGTH_SHORT).show();
@@ -457,13 +431,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             case REQUEST_AUTHORIZATION:
                 if (resultCode != RESULT_OK) {
                     chooseAccount();
-                }
-                break;
-            case RESOLVE_CONNECTION_REQUEST_CODE:
-                if (resultCode == RESULT_OK) {
-                    mGoogleApiClient.connect();
-                } else {
-                    mGoogleApiClient = null;
                 }
                 break;
         }
@@ -520,52 +487,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     }
 
     // Google Api Methods
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        if (connectionResult.hasResolution()) {
-            Log.d(LOG_TAG, "Resolving connection failure");
-            try {
-                connectionResult.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
-            } catch (IntentSender.SendIntentException e) {
-                // Unable to resolve, message user appropriately
-            }
-        } else {
-            GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), this, 0).show();
-        }
-    }
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        if (mService == null) {
-            SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-            String accountName = settings.getString(PREF_ACCOUNT_NAME, null);
-            if (accountName == null) {
-                accountName = Plus.AccountApi.getAccountName(mGoogleApiClient);
-                SharedPreferences.Editor prefEditor = settings.edit();
-                prefEditor.putString(PREF_ACCOUNT_NAME, accountName);
-                prefEditor.apply();
-            }
-
-            credential = GoogleAccountCredential.usingOAuth2(
-                    getApplicationContext(), Arrays.asList(SCOPES))
-                    .setBackOff(new ExponentialBackOff())
-                    .setSelectedAccountName(accountName);
-
-            mService = new com.google.api.services.drive.Drive.Builder(
-                    transport, jsonFactory, credential)
-                    .setApplicationName(getString(R.string.app_name))
-                    .build();
-            if (restartFbShareFlow){
-                restartFbShareFlow = false;
-                SharePuppetShow();
-            }
-        }
-
-    }
-    @Override
-    public void onConnectionSuspended(int i) {
-        // Attempt to reconnect
-        mGoogleApiClient.connect();
-    }
     private void chooseAccount() {
         startActivityForResult(
                 credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
@@ -995,13 +916,22 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             mainControlFadeOut(1000);
             secondControlsFadeOut(1000);
             isRecording = false;
+            showLoadingPopup(getString(R.string.recording_finished));
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    thumbFile = new File(showDir, "thumb.png");
+                    Utils.WriteImage(showRecorder.getScreenShot(), thumbFile.getPath());
                     showFile = new File(showDir, "recording.show");
-                    if (showFile.isFile())
+                    if (showFile.exists())
                         showFile.delete();
                     showRecorder.WriteShowToZipFile(showFile);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dismissLoadingPopup();
+                        }
+                    });
                 }
             }).start();
         }
@@ -1123,6 +1053,10 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
     // Main popup menu methods
     public void MenuClick(View v){
         ShowPopupMenu();
+        //showRecorder.LoadShowFromZipFile(showFile);
+        //ImageView imageView = new ImageView(context);
+        //imageView.setBackground(new BitmapDrawable(getResources(), showRecorder.getScreenShot()));
+        //rootLayout.addView(imageView);
     }
     private void ShowPopupMenu(){
         final View layout = getLayoutInflater().inflate(R.layout.about_popup, null);
@@ -1243,27 +1177,49 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         }
     }
     private void startFbShareFlow(){
+        restartFbShareFlow = false;
         ClosePopupMenu();
-        showLoadingPopup();
-        if (mGoogleApiClient == null) {
-            // Initialize Google Api credentials and service object.
-            mGoogleApiClient = new GoogleApiClient.Builder(context)
-                    .addApi(Drive.API)
-                    .addScope(Drive.SCOPE_FILE)
-                    .addApi(Plus.API)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-            restartFbShareFlow = true;
-            mGoogleApiClient.connect();
+        showLoadingPopup(getString(R.string.uploading_msg));
+        if (isDeviceOnline()) {
+            if (mService == null) {
+                SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
+                String accountName = settings.getString(PREF_ACCOUNT_NAME, null);
+
+                credential = GoogleAccountCredential.usingOAuth2(
+                        getApplicationContext(), Arrays.asList(SCOPES))
+                        .setBackOff(new ExponentialBackOff())
+                        .setSelectedAccountName(accountName);
+
+                mService = new com.google.api.services.drive.Drive.Builder(
+                        transport, jsonFactory, credential)
+                        .setApplicationName(getString(R.string.app_name))
+                        .build();
+
+            }
+            if (credential.getSelectedAccountName() == null) {
+                restartFbShareFlow = true;
+                dismissLoadingPopup();
+                chooseAccount();
+            } else {
+                SharePuppetShow();
+            }
         } else {
-            SharePuppetShow();
+            dismissLoadingPopup();
+            Toast.makeText(context, "Device not connected to network", Toast.LENGTH_SHORT).show();
         }
     }
-    private void showLoadingPopup(){
+    private void showLoadingPopup(String message){
         View layout = getLayoutInflater().inflate(R.layout.loading_popup, null);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return true;
+            }
+        });
+        TextView text = (TextView)layout.findViewById(R.id.loading_text);
+        text.setText(message);
         // Animate popup
         AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);
         set.setTarget(layout);
@@ -1294,8 +1250,23 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
                 }
             }).start();
         } else {
-            Drive.DriveApi.fetchDriveId(mGoogleApiClient, id)
-                .setResultCallback(idCallback);
+            //Drive.DriveApi.fetchDriveId(mGoogleApiClient, id)
+            //    .setResultCallback(idCallback);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    writeShowToDrive();
+                    writeThumbToDrive();
+                    writeAppLinkToDrive();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dismissLoadingPopup();
+                            shareAppLink();
+                        }
+                    });
+                }
+            }).start();
         }
     }
     private void createGoogleDriveFolder(){
@@ -1320,203 +1291,120 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             Log.d(LOG_TAG, "Folder WebLink: " + file.getWebViewLink());
             Log.d(LOG_TAG, "Folder id: " + file.getId());
         } catch (UserRecoverableAuthIOException e) {
+            restartFbShareFlow = true;
             startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
         } catch (IOException e) {e.printStackTrace();}
     }
-    final private ResultCallback<DriveApi.DriveIdResult> idCallback = new
-            ResultCallback<DriveApi.DriveIdResult>() {
-                @Override
-                public void onResult(DriveApi.DriveIdResult result) {
-                    driveFolderId = result.getDriveId();
-                    Drive.DriveApi.newDriveContents(mGoogleApiClient)
-                            .setResultCallback(writeShowToDriveCallback);
-                }
-            };
-    final private ResultCallback<DriveApi.DriveContentsResult> writeShowToDriveCallback = new
-            ResultCallback<DriveApi.DriveContentsResult>() {
-                @Override
-                public void onResult(DriveApi.DriveContentsResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Toast.makeText(context, "Error while trying to create new file contents", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    final DriveContents driveContents = result.getDriveContents();
-                    // Perform I/O off the UI thread.
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            // write content to DriveContents
-                            writeShowToDrive(driveContents);
-                        }
-                    }.start();
-                }
-            };
-    private void writeShowToDrive(DriveContents driveContents){
-        OutputStream outputStream = driveContents.getOutputStream();
-        showRecorder.WriteShowToOutputStream(outputStream);
+    private void writeShowToDrive(){
         try {
-            outputStream.close();
-        } catch (IOException e) { e.printStackTrace(); }
-
-        // Generate unique file name using date/time
-        Calendar c = Calendar.getInstance();
-        puppetShowFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
-                c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".show";
-
-        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                .setTitle(puppetShowFileName)
-                .setMimeType("application/zip")
-                .build();
-
-        // create a file in app web folder
-        if (driveFolderId != null)
-            Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
-                    .createFile(mGoogleApiClient, changeSet, driveContents)
-                    .setResultCallback(showFileCallback);
-    }
-    final private ResultCallback<DriveFolder.DriveFileResult> showFileCallback = new
-            ResultCallback<DriveFolder.DriveFileResult>() {
-                @Override
-                public void onResult(DriveFolder.DriveFileResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Toast.makeText(context, "Error while trying to create the file", Toast.LENGTH_SHORT).show();
-                        return;
-                    } else {
-                        Log.d(LOG_TAG, "File created in Google Drive");
-                        showDriveFile = result.getDriveFile();
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                showDownloadLink = shareDriveFile(puppetShowFileName, true);
-                                creatAppLink();
-                            }
-                        }).start();
-                    }
-                }
-            };
-    private String shareDriveFile(String title, boolean getWebLink){
-        com.google.api.services.drive.Drive.Files f1 = mService.files();
-        com.google.api.services.drive.Drive.Files.List request = null;
-        ArrayList list = new ArrayList();
-        do {
-            try {
-                Thread.sleep(200);
-                request = f1.list();
-                request.setQ("trashed=false and title='" + title + "'");
-                com.google.api.services.drive.model.FileList fileList = request.execute();
-                list.addAll(fileList.getItems());
-                request.setPageToken(fileList.getNextPageToken());
-            } catch (UserRecoverableAuthIOException e) {
-                startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        } while (request != null && list.size() == 0);
-
-        if (list.size() > 0) {
-            com.google.api.services.drive.model.File file = (com.google.api.services.drive.model.File) list.get(0);
-            Log.d(LOG_TAG, "DriveFile updating permissions");
-            try {
-                insertPermission(mService, file.getId());
-                file = mService.files().get(file.getId()).execute();
-                String shareLink;
-                if (getWebLink)
-                    shareLink = file.getWebContentLink();
-                else
-                    shareLink = file.getDownloadUrl();
-                Log.d(LOG_TAG, "Url: " + shareLink);
-                return shareLink;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-    private Permission insertPermission(com.google.api.services.drive.Drive service, String fileId) throws Exception{
-        Permission newPermission = new Permission();
-        newPermission.setType("anyone");
-        newPermission.setRole("reader");
-        newPermission.setValue("");
-        return service.permissions().insert(fileId, newPermission).execute();
-    }
-    private void creatAppLink(){
-        Drive.DriveApi.newDriveContents(mGoogleApiClient)
-                .setResultCallback(writeAppLinkToDriveCallback);
-    }
-    final private ResultCallback<DriveApi.DriveContentsResult> writeAppLinkToDriveCallback = new
-            ResultCallback<DriveApi.DriveContentsResult>() {
-                @Override
-                public void onResult(DriveApi.DriveContentsResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Toast.makeText(context, "Error while trying to create new file contents", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    final DriveContents driveContents = result.getDriveContents();
-                    // Perform I/O off the UI thread.
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            writeAppLinkToDrive(driveContents);
-                        }
-                    }.start();
-                }
-            };
-    private void writeAppLinkToDrive(DriveContents driveContents){
-        // Generate unique file name using date/time
-        Calendar c = Calendar.getInstance();
-        appLinkFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
-                c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".html";
-        // write content to DriveContents
-        OutputStream outputStream = driveContents.getOutputStream();
-        Writer writer = new OutputStreamWriter(outputStream);
-        try {
+            // Prepare file
             SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-            appLink = settings.getString(DRIVE_FOLDER_WEBLINK, "") + appLinkFileName;
+            String parentId = settings.getString(DRIVE_FOLDER_ID, null);
+            com.google.api.services.drive.model.File body = new com.google.api.services.drive.model.File();
+            // Generate unique file name using date/time
+            Calendar c = Calendar.getInstance();
+            String puppetShowFileName = "puppet_show_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
+                    c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".show";
+            body.setTitle(puppetShowFileName);
+            body.setMimeType("application/zip");
+            if (parentId != null)
+            body.setParents(
+                    Arrays.asList(new ParentReference().setId(parentId)));
+            // Prepare file content
+
+            FileContent fileContent = new FileContent("application/zip", showFile);
+            // Insert the file
+            com.google.api.services.drive.model.File file = mService.files().insert(body, fileContent).execute();
+            // Set permission to readable by anyone
+            Permission permission = new Permission();
+            permission.setValue("");
+            permission.setType("anyone");
+            permission.setRole("reader");
+            mService.permissions().insert(file.getId(), permission).execute();
+            showDownloadLink = settings.getString(DRIVE_FOLDER_WEBLINK, "http://www.googledrive.com/host/" + parentId + "/") + puppetShowFileName;
+
+        } catch (UserRecoverableAuthIOException e) {
+            restartFbShareFlow = true;
+            startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+        } catch (IOException e) {e.printStackTrace();}
+    }
+    private void writeThumbToDrive(){
+        try {
+            // Prepare file
+            SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
+            String parentId = settings.getString(DRIVE_FOLDER_ID, null);
+            com.google.api.services.drive.model.File body = new com.google.api.services.drive.model.File();
+            // Generate unique file name using date/time
+            Calendar c = Calendar.getInstance();
+            String imageFileName = "thumb_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
+                    c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".png";
+            body.setTitle(imageFileName);
+            body.setMimeType("image/png");
+            if (parentId != null)
+                body.setParents(
+                        Arrays.asList(new ParentReference().setId(parentId)));
+            // Prepare file content
+            FileContent fileContent = new FileContent("image/png", thumbFile);
+            // Insert the file
+            com.google.api.services.drive.model.File file = mService.files().insert(body, fileContent).execute();
+            thumbLink = "http://www.googledrive.com/host/" + file.getId();
+            // Set permission to readable by anyone
+            Permission permission = new Permission();
+            permission.setValue("");
+            permission.setType("anyone");
+            permission.setRole("reader");
+            mService.permissions().insert(file.getId(), permission).execute();
+
+        } catch (UserRecoverableAuthIOException e) {
+            restartFbShareFlow = true;
+            startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+        } catch (IOException e) {e.printStackTrace();}
+    }
+    private void writeAppLinkToDrive(){
+        try {
+            // Prepare file
+            SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
+            String parentId = settings.getString(DRIVE_FOLDER_ID, null);
+            com.google.api.services.drive.model.File body = new com.google.api.services.drive.model.File();
+            // Generate unique file name using date/time
+            Calendar c = Calendar.getInstance();
+            String appLinkFileName = "applink_" + c.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + "_" + c.get(Calendar.DAY_OF_MONTH) + "_" + c.get(Calendar.YEAR) + "_" +
+                    c.get(Calendar.HOUR_OF_DAY) + "_" + c.get(Calendar.MINUTE) + "_" + c.get(Calendar.SECOND) + ".html";
+            body.setTitle(appLinkFileName);
+            body.setMimeType("text/html");
+            if (parentId != null)
+                body.setParents(
+                        Arrays.asList(new ParentReference().setId(parentId)));
+
+            appLink = settings.getString(DRIVE_FOLDER_WEBLINK, "http://www.googledrive.com/host/" + parentId + "/") + appLinkFileName;
+            // Prepare file content
             String html = getString(R.string.app_link_html);
             html = html.replace("download_link", showDownloadLink);
             html = html.replace("fb_link", appLink);
+            html = html.replace("thumb_link", thumbLink);
             html = html.replace("user_title", "Go Puppet Yourself! Puppet Show");
+            File htmlFile = new File(showDir, "appLink.html");
+            FileOutputStream fos = new FileOutputStream(htmlFile);
+            Writer writer = new OutputStreamWriter(fos);
             writer.write(html);
             writer.close();
-        } catch (IOException e) { e.printStackTrace(); }
+            FileContent fileContent = new FileContent("text/html", htmlFile);
+            // Insert the file
+            com.google.api.services.drive.model.File file = mService.files().insert(body, fileContent).execute();
+            // Set permission to readable by anyone
+            Permission permission = new Permission();
+            permission.setValue("");
+            permission.setType("anyone");
+            permission.setRole("reader");
+            mService.permissions().insert(file.getId(), permission).execute();
+            htmlFile.delete();
 
-        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                .setTitle(appLinkFileName)
-                .setMimeType("text/html")
-                .build();
-
-        // create a file in web folder
-        if (driveFolderId != null)
-            Drive.DriveApi.getFolder(mGoogleApiClient, driveFolderId)
-                    .createFile(mGoogleApiClient, changeSet, driveContents)
-                    .setResultCallback(appLinkFileCallback);
+        } catch (UserRecoverableAuthIOException e) {
+            restartFbShareFlow = true;
+            startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+        } catch (IOException e) {e.printStackTrace();}
     }
-    final private ResultCallback<DriveFolder.DriveFileResult> appLinkFileCallback = new
-            ResultCallback<DriveFolder.DriveFileResult>() {
-                @Override
-                public void onResult(DriveFolder.DriveFileResult result) {
-                    if (!result.getStatus().isSuccess()) {
-                        Toast.makeText(context, "Error while trying to create the file", Toast.LENGTH_SHORT).show();
-                        return;
-                    } else {
-                        Log.d(LOG_TAG, "File created in Google Drive");
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                shareDriveFile(appLinkFileName, true);
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        shareAppLink();
-                                    }
-                                });
-                            }
-                        }).start();
-                    }
-                }
-            };
     private void shareAppLink(){
-        dismissLoadingPopup();
         ShareDialog dialog = new ShareDialog((Activity)context);
         if (ShareDialog.canShow(ShareLinkContent.class)) {
             ShareLinkContent linkContent = new ShareLinkContent.Builder()
