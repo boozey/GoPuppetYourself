@@ -59,6 +59,7 @@ public class PlayerActivity extends Activity {
         AdRequest adRequest = new AdRequest.Builder()
                 .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
                 .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                .addTestDevice("5E3D3DD85078633EE1836B9FC5FB4D89")
                 .build();
         mAdView.loadAd(adRequest);
 
@@ -128,11 +129,11 @@ public class PlayerActivity extends Activity {
                     public void onReceive(Context context, Intent intent) {
                         long reference = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                         if (downloadId == reference) {
-                            Log.d(LOG_TAG, "File downloaded");
                             unregisterReceiver(downloadReceiver);
                             playerStage.post(new Runnable() {
                                 @Override
                                 public void run() {
+                                    prepareToPlay();
                                     ImageButton playButton = (ImageButton) findViewById(R.id.player_play_button);
                                     playButton.setAlpha(0f);
                                     playButton.setVisibility(View.VISIBLE);
@@ -154,12 +155,11 @@ public class PlayerActivity extends Activity {
                     playerStage.post(new Runnable() {
                         @Override
                         public void run() {
+                            prepareToPlay();
                             ImageButton playButton = (ImageButton) findViewById(R.id.player_play_button);
                             playButton.setAlpha(0f);
                             playButton.setVisibility(View.VISIBLE);
-                            AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.pop_in);
-                            set.setTarget(playButton);
-                            set.start();
+                            player.Play();
                         }
                     });
                 }
