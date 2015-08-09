@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Go Puppet Yourself!</string>
-    <string name="facebook_app_id">125905341083258</string>
+    <string name="facebook_app_id" translatable="false">125905341083258</string>
     <string name="player_banner_ad_id" translatable="false">ca-app-pub-4640479150069852/8407915527</string>
 
     <string name="action_settings">Settings</string>
@@ -22,6 +22,8 @@
     <string name="share_message">Tell your friends</string>
     <string name="rate_us">Rate us</string>
     <string name="no_puppet_show_toast">You must record a show before it can be shared</string>
+    <string name="uploading_msg">Uploading to Google Drive&#8230;</string>
+    <string name="recording_finished">Saving recording&#8230;</string>
 
     <!-- FB Share Alert Dialog Strings -->
     <string name="share_alert_message">In order to share a puppet show to Facebook, Go Puppet Yourself will create a public folder in your Google Drive in which to save the
@@ -94,7 +96,7 @@
         <meta property=\"og:url\" content=\"fb_link\" />
         <meta property=\"og:title\" content=\"user_title\" />
         <meta property=\"fb:app_id\" content=\"125905341083258\" />
-        <meta property=\"og:image\" content=\"https://www.googledrive.com/host/0B1yEGoIiwiA8flJyM1djU2UxNkZtMUt3UlNSc1dkcXp1RTdReXJ3RV9kaDNlVzR2NEN3YzQ/fb_share_image.jpg\" />
+        <meta property=\"og:image\" content=\"thumb_link\" />
         <meta property=\"og:image:width\" content=\"1200\" />
         <meta property=\"og:image:height\" content=\"630\" />
         </head>
