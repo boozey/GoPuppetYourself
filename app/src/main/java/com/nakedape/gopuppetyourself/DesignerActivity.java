@@ -36,6 +36,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -260,7 +261,7 @@ public class DesignerActivity extends Activity {
             }
             layout.setLayoutParams(params);
             if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-                Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
+                TextView cameraButton = (TextView) layout.findViewById(R.id.camera_button);
                 cameraButton.setVisibility(View.GONE);
             }
 

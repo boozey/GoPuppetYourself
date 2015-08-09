@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="fill_parent"
+    android:orientation="vertical" android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
     android:background="@drawable/popup_background_dark"
+    android:padding="16dp"
     android:id="@+id/new_image_popup">
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,60 +25,52 @@
             android:background="@drawable/ic_action_navigation_close"
             android:onClick="CloseGetNewImagePopup"/>
     </LinearLayout>
-    <LinearLayout
+    <TextView
+        android:id="@+id/camera_button"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:background="@drawable/ic_image_camera"/>
-        <Button
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Camera"
-            android:textColor="@color/white"
-            android:layout_gravity="start"
-            style="@android:style/Widget.Holo.Button.Borderless"
-            android:id="@+id/camera_button"
-            android:onClick="NewCameraImageClick" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:background="@drawable/ic_gallery"/>
-    <Button
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Photo Gallery"
+        android:layout_gravity="center_horizontal"
+        android:textSize="18sp"
         android:textColor="@color/white"
-        style="@android:style/Widget.Holo.Button.Borderless"
+        android:text="@string/camera"
+        android:gravity="center"
+        android:drawableLeft="@drawable/ic_image_camera"
+        android:drawableStart="@drawable/ic_image_camera"
+        android:drawablePadding="8dp"
+        android:background="@drawable/button_transparent"
+        android:padding="2dp"
+        android:clickable="true"
+        android:onClick="NewCameraImageClick"/>
+    <TextView
         android:id="@+id/gallery_button"
-        android:onClick="NewGalleryImageClick" />
-        </LinearLayout>
-    <LinearLayout
-        android:id="@+id/blank_image_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:background="@drawable/ic_file_new"/>
-    <Button
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textSize="18sp"
         android:textColor="@color/white"
-        style="@android:style/Widget.Holo.Button.Borderless"
-        android:text="Blank Image"
+        android:text="@string/gallery"
+        android:gravity="center"
+        android:drawableLeft="@drawable/ic_gallery"
+        android:drawableStart="@drawable/ic_gallery"
+        android:drawablePadding="8dp"
+        android:background="@drawable/button_transparent"
+        android:padding="2dp"
+        android:clickable="true"
+        android:onClick="NewGalleryImageClick"/>
+    <TextView
         android:id="@+id/blank_image_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:text="@string/blank_image"
+        android:gravity="center"
+        android:drawableLeft="@drawable/ic_file_new"
+        android:drawableStart="@drawable/ic_file_new"
+        android:drawablePadding="8dp"
+        android:background="@drawable/button_transparent"
+        android:padding="2dp"
+        android:clickable="true"
         android:onClick="NewBlankImageClick"/>
-        </LinearLayout>
 </LinearLayout>

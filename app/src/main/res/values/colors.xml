@@ -25,4 +25,5 @@
     <color name="color_primary_dark">#3F51B5</color>
     <color name="color_primary">#9FA8DA</color>
     <color name="color_accent">#00E5FF</color>
+    <color name="button_pressed">#cccccc</color>
 </resources>

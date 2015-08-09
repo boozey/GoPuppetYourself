@@ -1152,33 +1152,8 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             }
         });
 
-        // Prepare Facebook share button
-        ShareButton shareButton = (ShareButton)layout.findViewById(R.id.facebook_sharebutton);
-        shareButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String appLinkUrl, previewImageUrl;
-
-                appLinkUrl = "https://fb.me/126205617719897";
-                //previewImageUrl = "https://lh3.googleusercontent.com/_ZVml3xa_MvzyOyo287zjo0eD2ot1AJhVMcHEFPnpn9JWBbMwMD0vEAr-WiGfgrTMAz9=w300-rw";
-
-                if (AppInviteDialog.canShow()) {
-                    AppInviteContent content = new AppInviteContent.Builder()
-                            .setApplinkUrl(appLinkUrl)
-                            //.setPreviewImageUrl(previewImageUrl)
-                            .build();
-                    AppInviteDialog.show((Activity)context, content);
-                }
-            }
-        });
-        // Prepare Facebook like button
-        LikeView likeView = (LikeView)layout.findViewById(R.id.facebook_likeview);
-        likeView.setObjectIdAndType(
-                "https://www.facebook.com/gopuppetyourself",
-                LikeView.ObjectType.PAGE);
-
         // Prepare Google Play button
-        ImageButton playButton = (ImageButton)layout.findViewById(R.id.google_play_button);
+        TextView playButton = (TextView)layout.findViewById(R.id.google_play_button);
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -1237,7 +1212,6 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             Toast.makeText(context, getString(R.string.no_puppet_show_toast), Toast.LENGTH_SHORT).show();
         }
         else if (settings.getBoolean(SHOW_SHARE_ALERT, true)){
-            ClosePopupMenu();
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             View layout = getLayoutInflater().inflate(R.layout.share_alert, null);
             TextView textView = (TextView)layout.findViewById(R.id.textView);
@@ -1269,6 +1243,7 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
         }
     }
     private void startFbShareFlow(){
+        ClosePopupMenu();
         showLoadingPopup();
         if (mGoogleApiClient == null) {
             // Initialize Google Api credentials and service object.
@@ -2021,11 +1996,11 @@ public class MainActivity extends Activity implements GoogleApiClient.OnConnecti
             }
             layout.setLayoutParams(params);
             if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-                Button cameraButton = (Button) layout.findViewById(R.id.camera_button);
+                TextView cameraButton = (TextView) layout.findViewById(R.id.camera_button);
                 cameraButton.setVisibility(View.GONE);
             }
             // Hide blank image option
-            View blankImageView = layout.findViewById(R.id.blank_image_layout);
+            View blankImageView = layout.findViewById(R.id.blank_image_button);
             blankImageView.setVisibility(View.GONE);
 
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.pop_in);

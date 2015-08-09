@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Go Puppet Yourself!</string>
     <string name="facebook_app_id">125905341083258</string>
-    <string name="player_banner_ad_id">ca-app-pub-4640479150069852/8407915527</string>
+    <string name="player_banner_ad_id" translatable="false">ca-app-pub-4640479150069852/8407915527</string>
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_designer">Puppet Designer</string>
@@ -13,11 +13,12 @@
     <string name="puppet_directory">puppets</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="toast_oom_scaling">Out of memory, scaling image down. </string>
 
     <!-- Main Menu Popup strings-->
+    <string name="share_show_text">Share puppet show</string>
     <string name="share_message">Tell your friends</string>
     <string name="rate_us">Rate us</string>
     <string name="no_puppet_show_toast">You must record a show before it can be shared</string>
@@ -53,6 +54,9 @@
     <string name="puppet_name_hint">Name this puppet</string>
     <string name="get_new_image_popup_title">Get new image</string>
     <string name="action_new_image">New image</string>
+    <string name="camera">Camera</string>
+    <string name="gallery">Photo Gallery</string>
+    <string name="blank_image">Blank Image</string>
     <string name="alert_dialog_title_unsaved">Wait a minute&#8230;</string>
     <string name="alert_dialog_message_unsaved">Do you want to save your changes?</string>
     <string name="toast_magic_erase">Touch to erase a region of similar colors</string>
@@ -78,7 +82,7 @@
     <string name="action_heal">Heal</string>
 
     <!-- AppLink HTML-->
-    <string name="app_link_html">
+    <string name="app_link_html" translatable="false">
         <![CDATA[
         <html>
         <head>

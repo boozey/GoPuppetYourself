@@ -18,11 +18,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="end"
             android:orientation="horizontal">
-            <Space
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent" />
             <ImageButton
                 android:id="@+id/popup_close_button"
                 android:layout_width="wrap_content"
@@ -35,7 +32,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_margin="8dp">
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="36dp">
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -52,49 +51,35 @@
                 android:maxLines="2"
                 android:maxWidth="150dp" />
         </LinearLayout>
-        <Button android:id="@+id/share_show_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="Share"
-            android:onClick="ShareButtonClick"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
+            android:layout_gravity="center_horizontal"
             android:textSize="16sp"
             android:textColor="@color/white"
-            android:text="@string/share_message"/>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_margin="8dp">
-            <com.facebook.share.widget.ShareButton
-                android:id="@+id/facebook_sharebutton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="8dp"/>
-            <com.facebook.share.widget.LikeView
-                android:id="@+id/facebook_likeview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone"/>
-        </LinearLayout>
+            android:text="@string/share_show_text"
+            android:gravity="center_vertical"
+            android:drawableLeft="@drawable/ic_fb_logo"
+            android:drawableStart="@drawable/ic_fb_logo"
+            android:drawablePadding="8dp"
+            android:background="@drawable/button_transparent"
+            android:padding="8dp"
+            android:clickable="true"
+            android:onClick="ShareButtonClick"/>
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:textSize="16sp"
-                android:textColor="@color/white"
-                android:text="@string/rate_us"/>
-            <ImageButton
                 android:id="@+id/google_play_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
                 android:layout_gravity="center_horizontal"
-                android:background="@drawable/ic_app_on_google_play"/>
+                android:layout_marginTop="36dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:text="@string/rate_us"
+                android:drawableRight="@drawable/ic_app_on_google_play"
+                android:drawableEnd="@drawable/ic_app_on_google_play"
+                android:drawablePadding="8dp"
+                android:clickable="true"/>
     </LinearLayout>
 </RelativeLayout>
