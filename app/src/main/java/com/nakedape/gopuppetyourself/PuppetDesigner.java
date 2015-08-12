@@ -12,9 +12,7 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.Shader;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -72,10 +70,11 @@ public class PuppetDesigner extends View {
     private ArrayList<Bitmap> backgroundUndoStack;
     private ArrayList<Bitmap> drawUndoStack;
     private ArrayList<String> undoStack;
-    private Rect upperJawBox, lowerJawBox;
+    private RectF upperJawBox, upperBoxDrawRect, lowerJawBox, lowerBoxDrawRect;
     private Bitmap upperProfileBitmap, lowerProfileBitmap;
     private Point upperJawPivotPoint, lowerJawPivotPoint;
-    private Paint upperJawPaint, upperTextPaint, lowerJawPaint, lowerTextPaint, pivotPaint1, pivotPaint2, drawPaint;
+    private float[] upperPivotDrawPoint;
+    private Paint upperJawPaint, lowerJawPaint, pivotPaint1, pivotPaint2, drawPaint;
     private int drawColor = Color.BLACK;
     private Path drawPath;
     private Canvas drawCanvas, backgroundCanvas;
@@ -91,7 +90,10 @@ public class PuppetDesigner extends View {
     private boolean isCutPath = false, showUpperJawBox = false, showLowerJawBox = false,
             pivotsSnapped = true, isDrawMode = false, isEraseMode = false, isSaved = true;
     private float rotation = 0;
+    private float prevAngle = 0;
+    private float prevRotation = 0;
     private Point rotateHandle;
+    private float[] rotateHandleDrawPoint;
     private float rotateHandleLengthScale = 0.30859375f;
     private int orientation = Puppet.PROFILE_RIGHT;
     private float x1Start, x2Start, y1Start, y2Start, zoomFactor;
@@ -107,10 +109,6 @@ public class PuppetDesigner extends View {
         lowerJawPaint.setARGB(64, 0, 128, 0);
         upperJawPaint = new Paint();
         upperJawPaint.setARGB(64, 128, 0, 0);
-        upperTextPaint = new Paint();
-        upperTextPaint.setColor(Color.RED);
-        lowerTextPaint = new Paint();
-        lowerTextPaint.setColor(Color.GREEN);
         pivotPaint1 = new Paint();
         pivotPaint1.setColor(Color.BLACK);
         pivotPaint2 = new Paint();
@@ -141,11 +139,15 @@ public class PuppetDesigner extends View {
         scaleGestureDetector = new ScaleGestureDetector(context, new ScaleListener());
 
         // Set initial positions of jaw boxes
-        upperJawBox = new Rect(40, 40, drawBitmap.getWidth() - 40, drawBitmap.getHeight() / 2);
-        lowerJawBox = new Rect(40, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - 40, drawBitmap.getHeight() - 40);
+        upperJawBox = new RectF(40, 40, drawBitmap.getWidth() - 40, drawBitmap.getHeight() / 2);
+        upperBoxDrawRect = new RectF(upperJawBox);
+        lowerJawBox = new RectF(40, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - 40, drawBitmap.getHeight() - 40);
+        lowerBoxDrawRect = new RectF(lowerJawBox);
         upperJawPivotPoint= new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         lowerJawPivotPoint = upperJawPivotPoint;
+        upperPivotDrawPoint = new float[]{upperJawPivotPoint.x, upperJawPivotPoint.y};
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+        rotateHandleDrawPoint = new float[]{rotateHandle.x, rotateHandle.y};
 
 
         // Prepare cache directory for access
@@ -172,6 +174,46 @@ public class PuppetDesigner extends View {
             for (Bitmap b : drawUndoStack)
                 b.recycle();
         }
+    }
+    public void saveData(DesignerActivityDataFrag data){
+        data.undoStack = undoStack;
+        data.backgroundBitmap = backgroundBitmap;
+        data.backgroundOriginal = backgroundOriginal;
+        data.backgroundUndoStack = backgroundUndoStack;
+        data.drawBitmap = drawBitmap;
+        data.drawColor = drawColor;
+        data.drawUndoStack = drawUndoStack;
+        data.lowerJawBox = lowerJawBox;
+        data.upperJawBox = upperJawBox;
+        data.upperJawPivotPoint = upperJawPivotPoint;
+        data.lowerJawPivotPoint = lowerJawPivotPoint;
+        data.orientation = orientation;
+        data.rotation = rotation;
+        data.zoomMatrix = zoomMatrix;
+        data.zoomPoint = zoomPoint;
+        data.zoomFactor = zoomFactor;
+        data.isSaved = isSaved;
+    }
+    public void loadData(DesignerActivityDataFrag data){
+        undoStack = data.undoStack;
+        backgroundBitmap = data.backgroundBitmap;
+        backgroundCanvas = new Canvas(backgroundBitmap);
+        backgroundOriginal = data.backgroundOriginal;
+        backgroundUndoStack = data.backgroundUndoStack;
+        drawBitmap = data.drawBitmap;
+        drawCanvas = new Canvas(drawBitmap);
+        drawColor = data.drawColor;
+        drawUndoStack = data.drawUndoStack;
+        lowerJawBox = data.lowerJawBox;
+        upperJawBox = data.upperJawBox;
+        upperJawPivotPoint = data.upperJawPivotPoint;
+        lowerJawPivotPoint = data.lowerJawPivotPoint;
+        orientation = data.orientation;
+        rotation = data.rotation;
+        zoomMatrix = data.zoomMatrix;
+        zoomPoint = data.zoomPoint;
+        zoomFactor = data.zoomFactor;
+        isSaved = data.isSaved;
     }
 
     public String getMode(){
@@ -232,9 +274,9 @@ public class PuppetDesigner extends View {
     public void resetJawBoxes(){
         // Set initial positions of jaw boxes
         int padding = (int)(Math.min(drawBitmap.getHeight() * 0.2, drawBitmap.getWidth()) * 0.2);
-        upperJawBox = new Rect(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
-        lowerJawBox = new Rect(padding, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - padding, drawBitmap.getHeight() - padding);
-        upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, upperJawBox.bottom);
+        upperJawBox = new RectF(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
+        lowerJawBox = new RectF(padding, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - padding, drawBitmap.getHeight() - padding);
+        upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, (int)upperJawBox.bottom);
         lowerJawPivotPoint = upperJawPivotPoint;
         if (orientation == Puppet.PROFILE_RIGHT) {
             rotateHandle = new Point(upperJawPivotPoint.x + (int) (upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
@@ -1176,9 +1218,9 @@ public class PuppetDesigner extends View {
 
             // Re-position the crop boxes
             int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
-            upperJawBox = new Rect(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
-            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, upperJawBox.bottom);
-            lowerJawBox = new Rect(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
+            upperJawBox = new RectF(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
+            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, (int)upperJawBox.bottom);
+            lowerJawBox = new RectF(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
             //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
             lowerJawPivotPoint = upperJawPivotPoint;
 
@@ -1199,9 +1241,9 @@ public class PuppetDesigner extends View {
 
             // Re-position the crop boxes
             int padding = (int)(Math.min(backgroundBitmap.getHeight() * 0.1, backgroundBitmap.getWidth()) * 0.1);
-            upperJawBox = new Rect(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
-            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, upperJawBox.bottom);
-            lowerJawBox = new Rect(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
+            upperJawBox = new RectF(padding, padding, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() / 2);
+            upperJawPivotPoint = new Point(backgroundBitmap.getWidth() / 2, (int)upperJawBox.bottom);
+            lowerJawBox = new RectF(padding, backgroundBitmap.getHeight() / 2, backgroundBitmap.getWidth() - padding, backgroundBitmap.getHeight() - padding);
             //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
             lowerJawPivotPoint = upperJawPivotPoint;
 
@@ -1210,17 +1252,25 @@ public class PuppetDesigner extends View {
         }
     }
 
-    // Methods for getting and setting images
+    // Methods for getting and setting images and puppet
+    public Puppet getPuppet(){
+        Puppet puppet = new Puppet(context, null);
+        puppet.setOrientation(getOrientation());
+        puppet.setRotation(getRotation());
+        puppet.setImages(getUpperJaw(), getLowerJaw(), getUpperJawPivotPoint(), getLowerJawPivotPoint());
+
+        return puppet;
+    }
     public Point getUpperJawPivotPoint(){ // (0, h) is bottom left of box
         if (pivotsSnapped){
             upperJawPivotPoint = new Point(lowerJawPivotPoint.x, lowerJawPivotPoint.y);
         }
         //Log.d(LOG_TAG, "Upper jaw pivot x = " + String.valueOf(upperJawPivotPoint.x - upperJawBox.left));
-        return new Point(upperJawPivotPoint.x - upperJawBox.left, upperJawBox.height());
+        return new Point(upperJawPivotPoint.x - (int)upperJawBox.left, (int)upperJawBox.height());
     }
     public Point getLowerJawPivotPoint() { // (0, 0) is top left of box
         //Log.d(LOG_TAG, "Lower jaw pivot x = " + String.valueOf(lowerJawPivotPoint.x - lowerJawBox.left));
-        return new Point(lowerJawPivotPoint.x - lowerJawBox.left, 0);
+        return new Point(lowerJawPivotPoint.x - (int)lowerJawBox.left, 0);
     }
     public Bitmap getUpperJaw(){
         int size = (int)Math.sqrt(drawBitmap.getWidth() * drawBitmap.getWidth() + drawBitmap.getHeight() * drawBitmap.getHeight());
@@ -1235,8 +1285,8 @@ public class PuppetDesigner extends View {
         canvas.drawBitmap(drawBitmap, widthPadding, heightPadding, null);
         canvas.restore();
         Bitmap upperJaw = null;
-        int left = upperJawBox.left + widthPadding, top = upperJawBox.top + heightPadding;
-        int width = upperJawBox.width(), height = upperJawBox.height();
+        int left = (int)upperJawBox.left + widthPadding, top = (int)upperJawBox.top + heightPadding;
+        int width = (int)upperJawBox.width(), height = (int)upperJawBox.height();
         if (left < 0) {
             width = width + left;
             left = 0;
@@ -1264,8 +1314,8 @@ public class PuppetDesigner extends View {
         canvas.drawBitmap(drawBitmap, widthPadding, heightPadding, null);
         canvas.restore();
         Bitmap lowerJaw = null;
-        int left = lowerJawBox.left + widthPadding, top = lowerJawBox.top + heightPadding;
-        int width = lowerJawBox.width(), height = lowerJawBox.height();
+        int left = (int)lowerJawBox.left + widthPadding, top = (int)lowerJawBox.top + heightPadding;
+        int width = (int)lowerJawBox.width(), height = (int)lowerJawBox.height();
         if (left < 0) {
             width = width + left;
             left = 0;
@@ -1291,11 +1341,11 @@ public class PuppetDesigner extends View {
 
         // Set initial positions of UI elements
         int padding = (int)(Math.min(image.getHeight() / 4, image.getWidth()) / 4);
-        upperJawBox = new Rect(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
-        upperJawPivotPoint = new Point(image.getWidth() / 2, upperJawBox.bottom);
-        lowerJawBox = new Rect(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
-        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, upperJawBox.width(), upperJawBox.height());
-        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, lowerJawBox.width(), lowerJawBox.height());
+        upperJawBox = new RectF(padding, padding, image.getWidth() - padding, image.getHeight() / 2);
+        upperJawPivotPoint = new Point(image.getWidth() / 2, (int)upperJawBox.bottom);
+        lowerJawBox = new RectF(padding, image.getHeight() / 2, image.getWidth() - padding, image.getHeight() - padding);
+        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
+        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
@@ -1321,11 +1371,11 @@ public class PuppetDesigner extends View {
 
         // Set initial positions of UI elements
         int padding = (int)(Math.min(drawBitmap.getHeight() * 0.1, drawBitmap.getWidth()) * 0.1);
-        upperJawBox = new Rect(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
-        upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, upperJawBox.bottom);
-        lowerJawBox = new Rect(padding, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - padding, drawBitmap.getHeight() - padding);
-        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, upperJawBox.width(), upperJawBox.height());
-        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, lowerJawBox.width(), lowerJawBox.height());
+        upperJawBox = new RectF(padding, padding, drawBitmap.getWidth() - padding, drawBitmap.getHeight() / 2);
+        upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, (int)upperJawBox.bottom);
+        lowerJawBox = new RectF(padding, drawBitmap.getHeight() / 2, drawBitmap.getWidth() - padding, drawBitmap.getHeight() - padding);
+        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
+        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         lowerJawPivotPoint = upperJawPivotPoint;
         rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
         rotation = 0;
@@ -1362,10 +1412,10 @@ public class PuppetDesigner extends View {
         canvas.drawBitmap(upperJawBitmap, puppet.getUpperLeftPadding(), 0, null);
         canvas.drawBitmap(lowerJawBitmap, puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
         SetNewImage(overlay);
-        upperJawBox = new Rect(puppet.getUpperLeftPadding(), 0, puppet.getUpperLeftPadding() + upperJawBitmap.getWidth(), upperJawBitmap.getHeight());
-        lowerJawBox = new Rect(puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), puppet.getLowerLeftPadding() + lowerJawBitmap.getWidth(), overlay.getHeight());
-        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, upperJawBox.width(), upperJawBox.height());
-        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, lowerJawBox.width(), lowerJawBox.height());
+        upperJawBox = new RectF(puppet.getUpperLeftPadding(), 0, puppet.getUpperLeftPadding() + upperJawBitmap.getWidth(), upperJawBitmap.getHeight());
+        lowerJawBox = new RectF(puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), puppet.getLowerLeftPadding() + lowerJawBitmap.getWidth(), overlay.getHeight());
+        upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
+        lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         lowerJawPivotPoint = new Point(puppet.getLowerLeftPadding() + puppet.getLowerPivotPoint().x, upperJawBitmap.getHeight());
         upperJawPivotPoint = lowerJawPivotPoint;
         this.orientation = puppet.getOrientation();
@@ -1385,28 +1435,43 @@ public class PuppetDesigner extends View {
     public void setSelectionMode(){
         designerMode = MODE_SELECT;
         if (upperProfileBitmap == null || lowerProfileBitmap == null) {
-            upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, upperJawBox.width(), upperJawBox.height());
-            lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, lowerJawBox.width(), lowerJawBox.height());
+            upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
+            lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         }
         showLowerJawBox = true;
         showUpperJawBox = true;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         zoomFactor = 1f;
-        zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.setScale(zoomFactor, zoomFactor, zoomPoint.x, zoomPoint.y);
+        zoomMatrix.postTranslate((getWidth() - drawBitmap.getWidth()) / 2, (getHeight() - drawBitmap.getHeight()) / 2);
         invalidate();
         requestLayout();
     }
     private boolean handleSelectionTouch(MotionEvent event){
         float[] point = {event.getX(), event.getY()};
-        Matrix unrotate = new Matrix();
-        unrotate.setRotate(-rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
-        unrotate.mapPoints(point);
+        Matrix reverse = new Matrix(zoomMatrix);
+        float[] pivotPoint = {upperJawPivotPoint.x, upperJawPivotPoint.y};
+        reverse.mapPoints(pivotPoint);
+        reverse = new Matrix();
+        reverse.setRotate(-rotation, pivotPoint[0], pivotPoint[1]);
+        reverse.mapPoints(point);
+        reverse = new Matrix(zoomMatrix);
+        reverse.invert(reverse);
+        reverse.mapPoints(point);
+
         float x = point[0], y = point[1];
-        //float x = event.getX(), y = event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 prevX = x;
                 prevY = y;
+                float a = event.getRawX() - upperJawPivotPoint.x;
+                float b = event.getRawY() - upperJawPivotPoint.y;
+                double rads = Math.atan(b / a);
+                float angle = ((float)Math.toDegrees(rads)) % 360;
+                if (angle < -180.f) angle += 360.0f;
+                if (angle > 180.f) angle -= 360.0f;
+                prevAngle = angle;
+                prevRotation = rotation;
                 setSelectionId(x, y);
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -1416,7 +1481,11 @@ public class PuppetDesigner extends View {
                     setSelectionId(x, y);
                 } else {
                     isSaved = false;
-                    moveSelection((int) prevX, (int) prevY, (int) event.getX(), (int) event.getY());
+                    if (selectionId == ROTATE_HANDLE){
+                        moveSelection((int) prevX, (int) prevY, (int) event.getRawX(), (int) event.getRawY());
+                    } else {
+                        moveSelection((int) prevX, (int) prevY, (int) x, (int) y);
+                    }
                 }
                 return true;
             case MotionEvent.ACTION_UP:
@@ -1488,13 +1557,13 @@ public class PuppetDesigner extends View {
                 upperJawBox.top = y2;
                 break;
             case UPPER_JAW_BOTTOM:
-                upperJawBox.bottom = y2;
-                upperJawPivotPoint.y = y2;
-                rotateHandle.y = y2;
+                /*upperJawBox.bottom = upperJawBox.bottom + dy;
+                upperJawPivotPoint.y = upperJawPivotPoint.y + dy;
+                rotateHandle.y = rotateHandle.y + dy;
                 if (pivotsSnapped){
                     lowerJawBox.top = upperJawBox.bottom;
                     //lowerJawPivotPoint.y = upperJawPivotPoint.y;
-                }
+                }*/
                 break;
             case UPPER_JAW_LEFT:
                 upperJawBox.left = x2;
@@ -1526,13 +1595,13 @@ public class PuppetDesigner extends View {
                 }
                 break;
             case LOWER_JAW_TOP:
-                lowerJawBox.top = y2;
-                lowerJawPivotPoint.y = y2;
-                rotateHandle.y = y2;
+                /*lowerJawBox.top = lowerJawBox.top + dy;
+                lowerJawPivotPoint.y = lowerJawPivotPoint.y + dy;
+                rotateHandle.y = rotateHandle.y + dy;
                 if (pivotsSnapped){
                     upperJawBox.bottom = lowerJawBox.top;
                     //upperJawPivotPoint.y = lowerJawPivotPoint.y;
-                }
+                }*/
                 break;
             case LOWER_JAW_BOTTOM:
                 lowerJawBox.bottom = y2;
@@ -1556,14 +1625,23 @@ public class PuppetDesigner extends View {
                 }*/
                 break;
             case ROTATE_HANDLE:
-                rotateHandle.x = x2;
-                rotateHandle.y = y2;
-                float a = rotateHandle.x - upperJawPivotPoint.x;
-                float b = rotateHandle.y - upperJawPivotPoint.y;
+                float a = x2 - upperJawPivotPoint.x;
+                float b = y2 - upperJawPivotPoint.y;
                 double rads = Math.atan(b / a);
-                rotation = ((float)Math.toDegrees(rads)) % 360;
-                if (rotation < -90.f) rotation += 360.0f;
-                if (rotation > 270.f) rotation -= 360.0f;
+                float angle = ((float)Math.toDegrees(rads)) % 360;
+                if (angle < -180.f) angle += 180.0f;
+                if (angle > 180.f) angle -= 180.0f;
+                rotation = (float)Math.max(-90, Math.min(prevRotation + angle - prevAngle, 90));
+                float[] point;
+                if (orientation == Puppet.PROFILE_RIGHT)
+                    point = new float[]{upperJawPivotPoint.x + 150, upperJawPivotPoint.y};
+                else
+                    point = new float[]{upperJawPivotPoint.x - 150, upperJawPivotPoint.y};
+                Matrix rotate = new Matrix();
+                rotate.setRotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
+                rotate.mapPoints(point);
+                rotateHandle.set((int)point[0], (int)point[1]);
+                Log.d(LOG_TAG, "Rotation angle = " + rotation);
                 break;
 
         }
@@ -1675,26 +1753,35 @@ public class PuppetDesigner extends View {
         }
         canvas.drawBitmap(drawBitmap, zoomMatrix, null);
         if (showLowerJawBox || showUpperJawBox) {
+            zoomMatrix.mapRect(upperBoxDrawRect, upperJawBox);
+            zoomMatrix.mapRect(lowerBoxDrawRect, lowerJawBox);
+            upperPivotDrawPoint[0] = upperJawPivotPoint.x;
+            upperPivotDrawPoint[1] = upperJawPivotPoint.y;
+            zoomMatrix.mapPoints(upperPivotDrawPoint);
+            rotateHandleDrawPoint[0] = rotateHandle.x;
+            rotateHandleDrawPoint[1] = rotateHandle.y;
+            zoomMatrix.mapPoints(rotateHandleDrawPoint);
             canvas.save();
-            canvas.rotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
-            canvas.drawBitmap(upperProfileBitmap, null, upperJawBox, null);
-            canvas.drawBitmap(lowerProfileBitmap, null, lowerJawBox, null);
-            canvas.drawRect(lowerJawBox, lowerJawPaint);
-            canvas.drawRect(upperJawBox, upperJawPaint);
+            canvas.rotate(rotation, upperPivotDrawPoint[0], upperPivotDrawPoint[1]);
+            canvas.drawBitmap(upperProfileBitmap, null, upperBoxDrawRect, null);
+            canvas.drawBitmap(lowerProfileBitmap, null, lowerBoxDrawRect, null);
+            canvas.drawRect(lowerBoxDrawRect, lowerJawPaint);
+            canvas.drawRect(upperBoxDrawRect, upperJawPaint);
             canvas.restore();
             // Draw pivot point
-            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 16, pivotPaint1);
-            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 12, pivotPaint2);
-            canvas.drawCircle(upperJawPivotPoint.x, upperJawPivotPoint.y, 8, pivotPaint1);
+            canvas.drawCircle(upperPivotDrawPoint[0], upperPivotDrawPoint[1], 16, pivotPaint1);
+            canvas.drawCircle(upperPivotDrawPoint[0], upperPivotDrawPoint[1], 12, pivotPaint2);
+            canvas.drawCircle(upperPivotDrawPoint[0], upperPivotDrawPoint[1], 8, pivotPaint1);
             // Draw pivot handle
-            canvas.drawCircle(rotateHandle.x, rotateHandle.y, 16, pivotPaint1);
-            canvas.drawCircle(rotateHandle.x, rotateHandle.y, 12, pivotPaint2);
-            canvas.drawCircle(rotateHandle.x, rotateHandle.y, 8, pivotPaint1);
-            canvas.drawLine(upperJawPivotPoint.x, upperJawPivotPoint.y, rotateHandle.x, rotateHandle.y, pivotPaint1);
+            canvas.drawCircle(rotateHandleDrawPoint[0], rotateHandleDrawPoint[1], 16, pivotPaint1);
+            canvas.drawCircle(rotateHandleDrawPoint[0], rotateHandleDrawPoint[1], 12, pivotPaint2);
+            canvas.drawCircle(rotateHandleDrawPoint[0], rotateHandleDrawPoint[1], 8, pivotPaint1);
+            canvas.drawLine(upperPivotDrawPoint[0], upperPivotDrawPoint[1], rotateHandleDrawPoint[0], rotateHandleDrawPoint[1], pivotPaint1);
 
         }
         if (designerMode.equals(MODE_CUT_PATH)){
             canvas.drawPath(cutPath, cutPathPaint);
         }
     }
+
 }

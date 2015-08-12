@@ -39,7 +39,6 @@
         <activity
             android:name=".DesignerActivity"
             android:label="@string/title_activity_designer"
-            android:screenOrientation="portrait"
             android:theme="@style/DesignerTheme" >
         </activity>
         <activity

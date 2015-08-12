@@ -7,6 +7,7 @@ import android.animation.ObjectAnimator;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -56,6 +57,7 @@ public class DesignerActivity extends Activity {
 
     private PuppetDesigner designer;
     private Context context = this;
+    private DesignerActivityDataFrag savedData;
     private View popup;
     private RelativeLayout rootLayout;
     private View.OnTouchListener backgroundTouchListener = new View.OnTouchListener() {
@@ -121,25 +123,33 @@ public class DesignerActivity extends Activity {
             appDir = getFilesDir();
         }
 
-        // Load data from intent or open file picker
-        Intent intent = getIntent();
-        if (intent.hasExtra(MainActivity.PUPPET_PATH)){
-            puppet = new Puppet(context, null);
-            Utils.ReadPuppetFromFile(puppet, new File(intent.getStringExtra(MainActivity.PUPPET_PATH)));
-            designer.loadPuppet(puppet);
-            stageIndex = intent.getIntExtra(MainActivity.PUPPET_INDEX, -1);
-            EditText editText = (EditText)findViewById(R.id.puppet_name);
-            editText.setText(puppet.getName());
-        }
-        else {
-            designer.post(new Runnable() {
-                @Override
-                public void run() {
-                    //View view = findViewById(R.id.designer_frame_layout);
-                    designer.CreatBlankImage(rootLayout.getWidth(), rootLayout.getHeight());
-                    ShowGetNewImagePopup(300);
-                }
-            });
+        // Check for a data fragment retained after activity restart
+        FragmentManager fm = getFragmentManager();
+        savedData = (DesignerActivityDataFrag) fm.findFragmentByTag("data");
+        if (savedData != null){
+            designer.loadData(savedData);
+        } else {
+            savedData = new DesignerActivityDataFrag();
+            fm.beginTransaction().add(savedData, "data").commit();
+            // Load data from intent or open file picker
+            Intent intent = getIntent();
+            if (intent.hasExtra(MainActivity.PUPPET_PATH)) {
+                puppet = new Puppet(context, null);
+                Utils.ReadPuppetFromFile(puppet, new File(intent.getStringExtra(MainActivity.PUPPET_PATH)));
+                designer.loadPuppet(puppet);
+                stageIndex = intent.getIntExtra(MainActivity.PUPPET_INDEX, -1);
+                EditText editText = (EditText) findViewById(R.id.puppet_name);
+                editText.setText(puppet.getName());
+            } else {
+                designer.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        //View view = findViewById(R.id.designer_frame_layout);
+                        designer.CreatBlankImage(rootLayout.getWidth(), rootLayout.getHeight());
+                        ShowGetNewImagePopup(300);
+                    }
+                });
+            }
         }
     }
     @Override
@@ -147,6 +157,8 @@ public class DesignerActivity extends Activity {
         super.onStop();
         if (isFinishing()){ // Release resources used by puppet designer
             designer.release();
+        } else {
+            designer.saveData(savedData);
         }
     }
 
@@ -442,10 +454,11 @@ public class DesignerActivity extends Activity {
                 if (oldFile.delete()) Log.i(LOG_TAG, "removed previous puppet file");
         }
         // Create puppet
-        puppet = new Puppet(context, null);
-        puppet.setOrientation(designer.getOrientation());
-        puppet.setRotation(designer.getRotation());
-        puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
+        puppet = designer.getPuppet();
+        //puppet = new Puppet(context, null);
+        //puppet.setOrientation(designer.getOrientation());
+        //puppet.setRotation(designer.getRotation());
+        //puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         puppet.setName(puppetName);
         // Save puppet to storage directory
         File saveFile = new File(puppetDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
