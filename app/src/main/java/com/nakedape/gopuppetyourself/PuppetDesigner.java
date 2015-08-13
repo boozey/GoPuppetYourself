@@ -146,7 +146,7 @@ public class PuppetDesigner extends View {
         upperJawPivotPoint= new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         lowerJawPivotPoint = upperJawPivotPoint;
         upperPivotDrawPoint = new float[]{upperJawPivotPoint.x, upperJawPivotPoint.y};
-        rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+        rotateHandle = new Point(upperJawPivotPoint.x + 150, upperJawPivotPoint.y);
         rotateHandleDrawPoint = new float[]{rotateHandle.x, rotateHandle.y};
 
 
@@ -279,9 +279,9 @@ public class PuppetDesigner extends View {
         upperJawPivotPoint = new Point(drawBitmap.getWidth() / 2, (int)upperJawBox.bottom);
         lowerJawPivotPoint = upperJawPivotPoint;
         if (orientation == Puppet.PROFILE_RIGHT) {
-            rotateHandle = new Point(upperJawPivotPoint.x + (int) (upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+            rotateHandle = new Point(upperJawPivotPoint.x + 150, upperJawPivotPoint.y);
         } else {
-            rotateHandle = new Point(upperJawPivotPoint.x - (int) (upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+            rotateHandle = new Point(upperJawPivotPoint.x - 150, upperJawPivotPoint.y);
         }
         rotation = 0;
     }
@@ -1348,7 +1348,7 @@ public class PuppetDesigner extends View {
         lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         //lowerJawPivotPoint = new Point(lowerJawBox.left + lowerJawBox.width() / 2, lowerJawBox.top);
         lowerJawPivotPoint = upperJawPivotPoint;
-        rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+        rotateHandle = new Point(upperJawPivotPoint.x + 150, upperJawPivotPoint.y);
         rotation = 0;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         zoomFactor = 1f;
@@ -1377,7 +1377,7 @@ public class PuppetDesigner extends View {
         upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
         lowerProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.lower_profile_right, (int)lowerJawBox.width(), (int)lowerJawBox.height());
         lowerJawPivotPoint = upperJawPivotPoint;
-        rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+        rotateHandle = new Point(upperJawPivotPoint.x + 150, upperJawPivotPoint.y);
         rotation = 0;
         zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
         zoomFactor = 1f;
@@ -1386,20 +1386,6 @@ public class PuppetDesigner extends View {
 
         invalidate();
         requestLayout();
-    }
-    public void loadPuppet(PuppetData data){
-        int height, width;
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        Bitmap upperJawBitmap = BitmapFactory.decodeFile(data.getUpperJawBitmapPath(), bmOptions);
-        Bitmap lowerJawBitmap = BitmapFactory.decodeFile(data.getLowerJawBitmapPath(), bmOptions);
-        width = lowerJawBitmap.getWidth() + data.getLowerLeftPadding() + data.getLowerRightPadding();
-        height = upperJawBitmap.getHeight() + lowerJawBitmap.getHeight();
-        Bitmap overlay = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(overlay);
-        canvas.drawBitmap(upperJawBitmap, data.getUpperLeftPadding(), 0, null);
-        canvas.drawBitmap(lowerJawBitmap, data.getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
-        SetNewImage(overlay);
-        invalidate();
     }
     public void loadPuppet(Puppet puppet){
         int height, width;
@@ -1412,6 +1398,7 @@ public class PuppetDesigner extends View {
         canvas.drawBitmap(upperJawBitmap, puppet.getUpperLeftPadding(), 0, null);
         canvas.drawBitmap(lowerJawBitmap, puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), null);
         SetNewImage(overlay);
+        overlay.recycle();
         upperJawBox = new RectF(puppet.getUpperLeftPadding(), 0, puppet.getUpperLeftPadding() + upperJawBitmap.getWidth(), upperJawBitmap.getHeight());
         lowerJawBox = new RectF(puppet.getLowerLeftPadding(), upperJawBitmap.getHeight(), puppet.getLowerLeftPadding() + lowerJawBitmap.getWidth(), overlay.getHeight());
         upperProfileBitmap = Utils.loadScaledBitmap(context.getResources(), R.drawable.upper_profile_right, (int)upperJawBox.width(), (int)upperJawBox.height());
@@ -1420,15 +1407,22 @@ public class PuppetDesigner extends View {
         upperJawPivotPoint = lowerJawPivotPoint;
         this.orientation = puppet.getOrientation();
         if (orientation == Puppet.PROFILE_RIGHT) {
-            rotateHandle = new Point(upperJawPivotPoint.x + (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
+            rotateHandle = new Point(upperJawPivotPoint.x + 150, upperJawPivotPoint.y);
         } else {
-            rotateHandle = new Point(upperJawPivotPoint.x - (int)(upperJawBox.width() * rotateHandleLengthScale), upperJawPivotPoint.y);
             Matrix m = new Matrix();
             m.setScale(-1, 1);
             upperProfileBitmap = Bitmap.createBitmap(upperProfileBitmap, 0, 0, upperProfileBitmap.getWidth(), upperProfileBitmap.getHeight(), m, false);
             lowerProfileBitmap = Bitmap.createBitmap(lowerProfileBitmap, 0, 0, lowerProfileBitmap.getWidth(), lowerProfileBitmap.getHeight(), m, false);
+            rotateHandle = new Point(upperJawPivotPoint.x - 150, upperJawPivotPoint.y);
         }
+        rotation = 0;
+        zoomPoint = new Point(drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomFactor = 1f;
+        zoomMatrix.setScale(zoomFactor, zoomFactor, drawBitmap.getWidth() / 2, drawBitmap.getHeight() / 2);
+        zoomMatrix.postTranslate((getWidth() - drawBitmap.getWidth()) / 2, (getHeight() - drawBitmap.getHeight()) / 2);
+        isSaved = true;
         invalidate();
+        requestLayout();
     }
 
     // Selection mode methods
@@ -1631,7 +1625,7 @@ public class PuppetDesigner extends View {
                 float angle = ((float)Math.toDegrees(rads)) % 360;
                 if (angle < -180.f) angle += 180.0f;
                 if (angle > 180.f) angle -= 180.0f;
-                rotation = (float)Math.max(-90, Math.min(prevRotation + angle - prevAngle, 90));
+                rotation = Math.max(-90, Math.min(prevRotation + angle - prevAngle, 90));
                 float[] point;
                 if (orientation == Puppet.PROFILE_RIGHT)
                     point = new float[]{upperJawPivotPoint.x + 150, upperJawPivotPoint.y};
@@ -1641,7 +1635,6 @@ public class PuppetDesigner extends View {
                 rotate.setRotate(rotation, upperJawPivotPoint.x, upperJawPivotPoint.y);
                 rotate.mapPoints(point);
                 rotateHandle.set((int)point[0], (int)point[1]);
-                Log.d(LOG_TAG, "Rotation angle = " + rotation);
                 break;
 
         }

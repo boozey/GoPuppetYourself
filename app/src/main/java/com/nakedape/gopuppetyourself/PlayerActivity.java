@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
@@ -159,6 +160,8 @@ public class PlayerActivity extends Activity {
                             ImageButton playButton = (ImageButton) findViewById(R.id.player_play_button);
                             playButton.setAlpha(0f);
                             playButton.setVisibility(View.VISIBLE);
+                            // Keep screen on
+                            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                             player.Play();
                         }
                     });
@@ -221,6 +224,8 @@ public class PlayerActivity extends Activity {
             player.setOnPlayFinishedListener(new PuppetShowPlayer.OnPlayFinishedListener() {
                 @Override
                 public void OnPlayFinish() {
+                    // Allow screen to turn off
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                     playButton.setBackground(getResources().getDrawable(R.drawable.ic_av_replay_large));
                     AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.implode_in);
                     set.setTarget(playButton);
@@ -231,6 +236,8 @@ public class PlayerActivity extends Activity {
             });
             player.LoadShowFromZipFile(puppetShowFile);
             if (player.prepareToPlay()) {
+                // Keep the screen on while playing
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 playButton.setBackground(getResources().getDrawable(R.drawable.ic_av_pause_large));
                 AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.explode_out);
                 set.addListener(new Animator.AnimatorListener() {
@@ -259,6 +266,8 @@ public class PlayerActivity extends Activity {
             }
         } else if (player.isPlaying()){
             player.Pause();
+            // Allow screen to turn off
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             playButton.setBackground(getResources().getDrawable(R.drawable.ic_av_play_arrow_large));
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.implode_in);
             set.setTarget(playButton);
@@ -299,6 +308,8 @@ public class PlayerActivity extends Activity {
         player.setOnPlayFinishedListener(new PuppetShowPlayer.OnPlayFinishedListener() {
             @Override
             public void OnPlayFinish() {
+                // Allow screen to turn off
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 playButton.setBackground(getResources().getDrawable(R.drawable.ic_av_replay_large));
                 AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.implode_in);
                 set.setTarget(playButton);
@@ -310,6 +321,8 @@ public class PlayerActivity extends Activity {
         });
         player.LoadShowFromZipFile(puppetShowFile);
         if (player.prepareToPlay()) {
+            // Keep the screen on while playing
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             playButton.setBackground(getResources().getDrawable(R.drawable.ic_av_pause_large));
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(mContext, R.animator.explode_out);
             set.addListener(new Animator.AnimatorListener() {

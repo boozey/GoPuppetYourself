@@ -12,7 +12,9 @@
             android:layout_centerInParent="true"
             android:id="@+id/designer"
             android:clickable="false"
-            android:background="@color/white"/>
+            android:background="@color/white"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
     <ImageButton
         android:id="@+id/undo_button"
         android:layout_width="wrap_content"
@@ -29,7 +31,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:textSize="24sp"
-        android:hint="@string/puppet_name_hint" />
+        android:hint="@string/puppet_name_hint"
+        android:elegantTextHeight="false" />
 
 
 </RelativeLayout>

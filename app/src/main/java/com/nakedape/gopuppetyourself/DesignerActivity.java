@@ -136,10 +136,15 @@ public class DesignerActivity extends Activity {
             if (intent.hasExtra(MainActivity.PUPPET_PATH)) {
                 puppet = new Puppet(context, null);
                 Utils.ReadPuppetFromFile(puppet, new File(intent.getStringExtra(MainActivity.PUPPET_PATH)));
-                designer.loadPuppet(puppet);
                 stageIndex = intent.getIntExtra(MainActivity.PUPPET_INDEX, -1);
                 EditText editText = (EditText) findViewById(R.id.puppet_name);
                 editText.setText(puppet.getName());
+                designer.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        designer.loadPuppet(puppet);
+                    }
+                });
             } else {
                 designer.post(new Runnable() {
                     @Override
@@ -455,10 +460,6 @@ public class DesignerActivity extends Activity {
         }
         // Create puppet
         puppet = designer.getPuppet();
-        //puppet = new Puppet(context, null);
-        //puppet.setOrientation(designer.getOrientation());
-        //puppet.setRotation(designer.getRotation());
-        //puppet.setImages(designer.getUpperJaw(), designer.getLowerJaw(), designer.getUpperJawPivotPoint(), designer.getLowerJawPivotPoint());
         puppet.setName(puppetName);
         // Save puppet to storage directory
         File saveFile = new File(puppetDir, puppet.getName() + getResources().getString(R.string.puppet_extension));
@@ -466,7 +467,6 @@ public class DesignerActivity extends Activity {
         // Pass file name back to MainActivity
         Intent data = new Intent();
         data.putExtra(MainActivity.PUPPET_PATH, filePath);
-        Log.i(LOG_TAG, "Saved to " + filePath);
         // Pass index back in case this was an edit
         data.putExtra(MainActivity.PUPPET_INDEX, stageIndex);
 

@@ -59,7 +59,18 @@
     <string name="action_magic_erase">Borre región</string>
     <string name="action_cut_path">Corte inteligente</string>
     <string name="action_heal">Sanar</string>
-    <string name="facebook_app_id">125905341083258</string>
     <string name="rate_us">Valorar nos</string>
     <string name="share_message">Dile a tus amigos</string>
+    <string name="blank_image">Imagen en Blanco</string>
+    <string name="camera">Cámara</string>
+    <string name="do_not_show_again">No muestres esto de nuevo</string>
+    <string name="cancel">Cancelar</string>
+    <string name="gallery">Galería de Fotos</string>
+    <string name="no_puppet_show_toast">Usted debe grabar un programa antes de que pueda ser compartida</string>
+    <string name="ok">OK</string>
+    <string name="recording_finished">Grabación de ahorro&#8230;</string>
+    <string name="share_alert_message">Con el fin de compartir un espectáculo de títeres a Facebook, Go Títeres usted mismo creará una carpeta pública en Google Drive en la que guardar los archivos necesarios. Esta carpeta será accesible a cualquier persona en la web. Esta carpeta no se eliminará automáticamente si desinstala la aplicación.          Usted puede ver y eliminar la carpeta en cualquier momento a través de su <a href="https://drive.google.com/drive/my-drive"> Google Drive cuenta </a>.</string>
+    <string name="share_show_text">Compartir espectáculo de títeres</string>
+    <string name="title_activity_player">Ir Títeres usted mismo jugador</string>
+    <string name="uploading_msg">Subida a Google Drive&#8230;</string>
 </resources>
