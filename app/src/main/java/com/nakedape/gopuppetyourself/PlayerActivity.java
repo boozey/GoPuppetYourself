@@ -174,14 +174,14 @@ public class PlayerActivity extends Activity {
     protected void onResume() {
         super.onResume();
         // Logs 'install' and 'app activate' App Events to Facebook.
-        //AppEventsLogger.activateApp(this);
+        AppEventsLogger.activateApp(this);
     }
 
     @Override
     protected void onPause(){
         super.onPause();
         // Logs 'app deactivate' App Event to Facebook.
-        //AppEventsLogger.deactivateApp(this);
+        AppEventsLogger.deactivateApp(this);
     }
 
     @Override

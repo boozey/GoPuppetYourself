@@ -14,7 +14,7 @@
 
     <!-- ActionBar styles -->
     <style name="MyActionBar"
-        parent="@android:style/Theme.Holo">
+        parent="android:Widget.ActionBar">
         <item name="android:background">@drawable/actionbar_background</item>
     </style>
 

@@ -68,6 +68,7 @@ import java.util.HashSet;
 import java.util.Locale;
 
 import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
 import com.facebook.share.model.ShareLinkContent;
 
 import com.facebook.share.widget.ShareDialog;
