@@ -1254,6 +1254,14 @@ public class PuppetDesigner extends View {
 
     // Methods for getting and setting images and puppet
     public Puppet getPuppet(){
+        if (backgroundUndoStack != null) {
+            for (Bitmap b : backgroundUndoStack)
+                b.recycle();
+        }
+        if (drawUndoStack != null) {
+            for (Bitmap b : drawUndoStack)
+                b.recycle();
+        }
         Puppet puppet = new Puppet(context, null);
         puppet.setOrientation(getOrientation());
         puppet.setRotation(getRotation());
