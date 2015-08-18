@@ -79,10 +79,18 @@ public class PuppetShowRecorder {
         isReady = true;
     }
     public void RecordStart(){
-        //frameSequence = new ArrayList<>();
-        //frameSequence.add(new KeyFrame(0, KeyFrame.START));
         if (isReady) {
             puppetShow.addFrame(getStartFrame());
+            for (int i = 0; i < stage.getChildCount(); i++){
+                Puppet p = (Puppet)stage.getChildAt(i);
+                puppetShow.addFrame(new KeyFrame(0, p.getName(), KeyFrame.SET_SCALE, p.getScaleX(), p.getScaleY()));
+                puppetShow.addFrame(new KeyFrame(0, p.getName(), KeyFrame.ROTATE, p.getRotation()));
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)p.getLayoutParams();
+                puppetShow.addFrame(new KeyFrame(0, p.getName(), KeyFrame.MOVEMENT, params.leftMargin, params.topMargin));
+                if (p.getVisibility() == View.GONE){
+                    puppetShow.addFrame(new KeyFrame(0, p.getName(), KeyFrame.VISIBILITY, false));
+                }
+            }
             startMillis = SystemClock.elapsedRealtime();
             showLength = -1;
 

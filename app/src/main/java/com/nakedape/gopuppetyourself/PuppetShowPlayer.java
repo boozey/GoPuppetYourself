@@ -152,6 +152,36 @@ public class PuppetShowPlayer {
             frameSequence = puppetShow.getFrameSequence();
             getLength();
 
+            // Set initial puppet properties
+            for (int i = 0; i < frameSequence.size() && frameSequence.get(i).time == 0; i++){
+                KeyFrame frame = frameSequence.get(i);
+                p = (Puppet)stage.findViewWithTag(frame.puppetId);
+                switch (frame.eventType){
+                    case KeyFrame.MOVEMENT:
+                        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) p
+                                .getLayoutParams();
+                        layoutParams.leftMargin = Math.round(frame.x * xScaleFactor);
+                        layoutParams.topMargin = Math.round(frame.y * yScaleFactor);
+                        layoutParams.rightMargin = -250;
+                        layoutParams.bottomMargin = -250;
+                        p.setLayoutParams(layoutParams);
+                        break;
+                    case KeyFrame.SET_SCALE:
+                        p.setScaleX(frame.x * xScaleFactor);
+                        p.setScaleY(frame.y * yScaleFactor);
+                        break;
+                    case KeyFrame.VISIBILITY:
+                        if (frame.visible)
+                            p.setVisibility(View.VISIBLE);
+                        else
+                            p.setVisibility(View.GONE);
+                        break;
+                    case KeyFrame.ROTATE:
+                        p.setRotation(frame.x);
+                        break;
+                }
+            }
+
             stage.setAlpha(0f);
             stage.setVisibility(View.VISIBLE);
             AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.fade_in);
@@ -326,7 +356,7 @@ public class PuppetShowPlayer {
     private class PlayLoop implements Runnable{
         @Override
         public void run(){
-            Log.d(LOG_TAG, "Play loop started");
+            Log.i(LOG_TAG, "Play loop started");
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND);
             int startIndex = 0;
             if (pausePoint > 0){
