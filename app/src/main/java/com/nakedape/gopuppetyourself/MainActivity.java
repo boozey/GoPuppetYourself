@@ -1550,7 +1550,10 @@ public class MainActivity extends Activity {
         public boolean onScale(ScaleGestureDetector detector) {
             lastScaleFactor *= detector.getScaleFactor();
             // Don't let the object get too small or too large.
-            lastScaleFactor = Math.max(0.2f, Math.min(lastScaleFactor, 5.0f));
+            if (lastScaleFactor > 0)
+                lastScaleFactor = Math.max(0.2f, Math.min(lastScaleFactor, 5.0f));
+            else
+                lastScaleFactor = Math.max(-5.0f, Math.min(lastScaleFactor, -0.2f));
             selectedPuppet.setScaleX(lastScaleFactor);
             selectedPuppet.setScaleY(lastScaleFactor);
             if (isRecording)
