@@ -399,12 +399,10 @@ public class Puppet extends View implements Serializable {
 
             // Adjust if for horizontally flipped images
             if (scaleX < 0) {
-                FlipHoriz();
                 isFlippedHorz = true;
                 scaleX = Math.abs(scaleX);
             }
             setPadding();
-            //applyLayoutParams();
         }
         if (serializationVersion >= 2){
             setRotation(in.readFloat());
