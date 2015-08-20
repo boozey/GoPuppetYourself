@@ -6,11 +6,11 @@
         android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_visible"
         android:title="@string/action_puppet_visible"
-        android:icon="@drawable/ic_visibility_white_24dp"
+        android:icon="@drawable/ic_visibility_off_white_24dp"
         android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_flip_horz"
         android:title="@string/action_flip_horz"
-        android:icon="@drawable/ic_action_flip_to_front_light"
+        android:icon="@drawable/ic_action_image_flip_light"
         android:showAsAction="ifRoom"/>
     <item android:id="@+id/action_puppet_scale"
         android:title="@string/action_scale"

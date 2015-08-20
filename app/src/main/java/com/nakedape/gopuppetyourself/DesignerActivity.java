@@ -757,18 +757,25 @@ public class DesignerActivity extends Activity {
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            deselectActionIcons(actionMode.getMenu());
             switch (menuItem.getItemId()){
                 case R.id.action_erase:
                     designer.setBackgroundErase();
+                    menuItem.setChecked(true);
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_erase_background_selected));
                     showBrushSizeBar();
                     return true;
                 case R.id.action_magic_erase:
                     hideBrushSizeBar();
                     designer.setMagicEraseMode(true);
+                    menuItem.setChecked(true);
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_magic_erase_background_selected));
                     return true;
                 case R.id.action_cut_path:
                     hideBrushSizeBar();
                     designer.setCutPathMode();
+                    menuItem.setChecked(true);
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_cut_selected));
                     return true;
                 case R.id.action_flip_horz:
                     hideBrushSizeBar();
@@ -785,6 +792,8 @@ public class DesignerActivity extends Activity {
                 case R.id.action_heal:
                     designer.setHealMode(true);
                     showBrushSizeBar();
+                    menuItem.setChecked(true);
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_image_healing_selected));
                     return true;
             }
             return false;
@@ -798,6 +807,30 @@ public class DesignerActivity extends Activity {
             showNameBar();
         }
     };
+    private void deselectActionIcons(Menu menu){
+        for (int i = 0; i < menu.size(); i++){
+            MenuItem menuItem = menu.getItem(i);
+            if (menuItem.isChecked())
+                switch (menuItem.getItemId()){
+                    case R.id.action_erase:
+                        menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_erase_background));
+                        menuItem.setChecked(false);
+                        break;
+                    case R.id.action_magic_erase:
+                        menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_magic_erase_background));
+                        menuItem.setChecked(false);
+                        break;
+                    case R.id.action_cut_path:
+                        menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_cut));
+                        menuItem.setChecked(false);
+                        break;
+                    case R.id.action_heal:
+                        menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_image_healing));
+                        menuItem.setChecked(false);
+                        break;
+                }
+        }
+    }
     private void showBrushSizeBar(){
         if (brushSizeBar.getVisibility() != View.VISIBLE) {
             // Configure brush bar view

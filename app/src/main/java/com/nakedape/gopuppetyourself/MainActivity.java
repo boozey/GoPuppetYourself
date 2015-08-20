@@ -1441,13 +1441,15 @@ public class MainActivity extends Activity {
         public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
             if (!selectedPuppet.isOnStage()) {
                 MenuItem visibilityItem = menu.findItem(R.id.action_puppet_visible);
-                visibilityItem.setIcon(getResources().getDrawable(R.drawable.ic_visibility_off_white_24dp));
+                visibilityItem.setIcon(getResources().getDrawable(R.drawable.ic_visibility_white_24dp));
             }
             return true;
         }
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            actionMode.getMenu().findItem(R.id.action_puppet_scale).setIcon(getResources().getDrawable(R.drawable.ic_action_scale_light));
+            actionMode.getMenu().findItem(R.id.action_rotate).setIcon(getResources().getDrawable(R.drawable.ic_action_image_rotate_right_light));
             switch (menuItem.getItemId()){
                 case R.id.action_edit_puppet:
                     EditPuppet(selectedPuppet);
@@ -1472,6 +1474,7 @@ public class MainActivity extends Activity {
                     actionMode.finish();
                     return true;
                 case R.id.action_puppet_scale:
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_ic_action_scale_selected));
                     selectedPuppet.setOnTouchListener(scaleListener);
                     lastScaleFactor = selectedPuppet.getScaleX();
                     return true;
@@ -1496,6 +1499,7 @@ public class MainActivity extends Activity {
                     actionMode.finish();
                     return true;
                 case R.id.action_rotate:
+                    menuItem.setIcon(getResources().getDrawable(R.drawable.ic_action_image_rotate_right_selected));
                     mRotationDetector = new RotationGestureDetector(rotationGestureListener, selectedPuppet);
                     selectedPuppet.setOnTouchListener(rotateListener);
                     return true;
